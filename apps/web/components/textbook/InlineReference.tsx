@@ -9,7 +9,6 @@ export interface InlineBodyProps {
 const InlineReference: React.FC<InlineBodyProps> = ({ item }) => {
   let id = "";
   const ids = item.id.split(".");
-  id = ids[0];
   if (item.reference_type === "text") {
     if (ids.length > 1) {
       id += `#${item.id}`;
