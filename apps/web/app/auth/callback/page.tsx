@@ -3,7 +3,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const WORKER_URL = "//localhost:8787/auth/callback";
+const WORKER_URL =
+  `${process.env.NEXT_PUBLIC_WORKER_URL}/auth/callback` ||
+  "//localhost:8787/auth/callback";
 
 const GitHubLogin = () => {
   const [error, setError] = useState<unknown | null>(null);
