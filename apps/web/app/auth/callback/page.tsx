@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const WORKER_URL =
+const CALLBACK_URL =
   `${process.env.NEXT_PUBLIC_WORKER_URL}/auth/callback` ||
   "//localhost:8787/auth/callback";
 
@@ -19,7 +19,7 @@ const GitHubLogin = () => {
       router.push(path);
 
       try {
-        const response = await fetch(WORKER_URL, {
+        const response = await fetch(CALLBACK_URL, {
           method: "POST",
           mode: "cors",
           headers: {
