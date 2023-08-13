@@ -21,7 +21,6 @@ const GitHubLogin = () => {
       try {
         const response = await fetch(CALLBACK_URL, {
           method: "POST",
-          mode: "cors",
           credentials: "include",
           headers: {
             "content-type": "application/json",
