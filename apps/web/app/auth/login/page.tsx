@@ -8,18 +8,22 @@ const LOGIN_URL =
 
 const RedirectComponent = () => {
   useEffect(() => {
-    document.requestStorageAccess().then(
-      () => {
-        console.log("storage access granted");
-        window.location.href = LOGIN_URL;
-      },
-      () => {
-        console.log("storage access denied");
-      },
-    );
+    if (!!document.hasStorageAccess) {
+      document.requestStorageAccess().then(
+        () => {
+          console.log("storage access granted");
+          window.location.href = LOGIN_URL;
+        },
+        () => {
+          console.log("storage access denied");
+        },
+      );
+    } else {
+      window.location.href = LOGIN_URL;
+    }
   }, []);
 
-  return <>redirecting and checking storage access...</>;
+  return <>redirecting...</>;
 };
 
 export default RedirectComponent;
