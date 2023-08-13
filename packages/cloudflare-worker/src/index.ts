@@ -84,11 +84,8 @@ router.all('/api/*', apiRouter.handle);
 
 router
   .get('/auth/login', (request, env: Env) => {
-    // Redirect to github oauth:
-    // const url = new URL(request.url);
-    // Reconstruct host header
-    // const callbackUri = url.protocol + '//' + request.headers.get('host') + '/callback';
-    const callbackUri = 'http://127.0.0.1:3000/auth/callback';
+    // const callbackUri = 'http://127.0.0.1:3000/auth/callback';
+    const callbackUri = `${env.WEBSITE_URL}/auth/callback`;
     return Response.redirect(
       `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${callbackUri}&scope=repo`,
       302

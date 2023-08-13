@@ -18,6 +18,7 @@ export interface Env {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   GITHUB_BOT_ACCESS_TOKEN: string;
+  WEBSITE_URL: string;
   TEXT_REPOSITORY: string;
   JWT_SECRET: string;
   WEBCRYPT_SESSION_SECRET: string;
