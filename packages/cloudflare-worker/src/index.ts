@@ -11,17 +11,24 @@ import { getTextbook } from './textbook/util';
 
 export type Handler = RouteHandler<Request, [Env, ExecutionContext, { session: string }]>;
 
-const { preflight, corsify } = createCors({
+const corsConfig = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   origins: ['http://localhost:3000', 'http://127.0.0.1:3000'],
   headers: {
     'Access-Control-Allow-Credentials': 'true',
   },
-});
+};
 
 const router = Router();
 
-router.all('*', preflight);
+router.all('*', (request: Request, env: Env) => {
+  const corsConfigWithPublicOrigin = {
+    ...corsConfig,
+    origins: [...corsConfig.origins, env.WEBSITE_URL],
+  };
+  const { preflight } = createCors(corsConfigWithPublicOrigin);
+  return preflight(request);
+});
 
 router
   .get('/api/textbook/text/:reference+', withBotOctokit, async (req, env) => {
@@ -371,13 +378,22 @@ router
 //   return btoa(binString);
 // }
 
-const credentialCorsify = (response: Response) => {
-  const headers = new Headers(response.headers);
-  headers.set('Access-Control-Allow-Credentials', 'true');
-  return new Response(response.body, {
-    ...response,
-    headers,
-  });
+// const credentialCorsify = (response: Response) => {
+//   const headers = new Headers(response.headers);
+//   headers.set('Access-Control-Allow-Credentials', 'true');
+//   return new Response(response.body, {
+//     ...response,
+//     headers,
+//   });
+// };
+
+const wrappedCorsify = (request: Request, env: Env) => {
+  const corsConfigWithPublicOrigin = {
+    ...corsConfig,
+    origins: [...corsConfig.origins, env.WEBSITE_URL],
+  };
+  const { corsify } = createCors(corsConfigWithPublicOrigin);
+  return corsify(request);
 };
 
 export default {
@@ -386,6 +402,6 @@ export default {
       .handle(req, ...args)
       .then(json)
       .catch(error)
-      .then(corsify),
+      .then(wrappedCorsify),
   // .then(credentialCorsify),
 } satisfies ExportedHandler;
