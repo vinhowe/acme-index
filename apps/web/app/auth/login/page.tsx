@@ -8,7 +8,15 @@ const LOGIN_URL =
 
 const RedirectComponent = () => {
   useEffect(() => {
-    window.location.href = LOGIN_URL;
+    document.requestStorageAccess().then(
+      () => {
+        console.log("storage access granted");
+        window.location.href = LOGIN_URL;
+      },
+      () => {
+        console.log("storage access denied");
+      },
+    );
   }, []);
 
   return <>redirecting...</>;
