@@ -402,6 +402,6 @@ export default {
       .handle(req, ...args)
       .then(json)
       .catch(error)
-      .then(wrappedCorsify),
+      .then((response: Response) => wrappedCorsify(response, ...args)),
   // .then(credentialCorsify),
 } satisfies ExportedHandler;
