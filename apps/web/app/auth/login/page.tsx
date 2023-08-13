@@ -19,7 +19,7 @@ const RedirectComponent = () => {
     );
   }, []);
 
-  return <>redirecting...</>;
+  return <>redirecting and checking storage access...</>;
 };
 
 export default RedirectComponent;
