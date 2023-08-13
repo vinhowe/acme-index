@@ -1,0 +1,30 @@
+{
+  "name": "acme-index-workers",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler publish",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230807.0",
+    "@types/markdown-it": "^12.2.3",
+    "@types/node": "^20.4.9",
+    "@types/uuid": "^9.0.1",
+    "typescript": "^5.0.4",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.5.10",
+    "@octokit/rest": "^20.0.1",
+    "itty-router": "^4.0.14",
+    "jsonwebtoken": "^9.0.1",
+    "markdown-it": "^13.0.1",
+    "openai": "4.0.0-beta.7",
+    "textref": "workspace:*",
+    "toml": "^3.0.0",
+    "uuid": "^9.0.0",
+    "webcrypt-session": "^0.5.1",
+    "zod": "^3.21.4"
+  }
+}

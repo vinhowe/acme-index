@@ -1,0 +1,52 @@
+{
+  "name": "acme-index",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@tailwindcss/typography": "^0.5.9",
+    "@tldraw/editor": "2.0.0-canary.a220b2eff1d1",
+    "@tldraw/primitives": "2.0.0-canary.a220b2eff1d1",
+    "@tldraw/tldraw": "2.0.0-canary.a220b2eff1d1",
+    "@tldraw/ui": "2.0.0-canary.a220b2eff1d1",
+    "@types/node": "20.1.0",
+    "@types/uuid": "^9.0.1",
+    "autoprefixer": "10.4.14",
+    "classnames": "^2.3.2",
+    "eslint": "8.40.0",
+    "eslint-config-next": "13.4.1",
+    "katex": "^0.16.7",
+    "micromark-util-symbol": "^2.0.0",
+    "next": "13.4.13",
+    "postcss": "8.4.23",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-markdown": "^8.0.7",
+    "reactflow": "^11.7.0",
+    "rehype-highlight": "^6.0.0",
+    "rehype-katex": "^6.0.3",
+    "rehype-minify-whitespace": "^5.0.1",
+    "remark-gfm": "^3.0.1",
+    "remark-math": "^5.1.1",
+    "remark-wiki-link": "^1.0.4",
+    "tailwindcss": "3.3.2",
+    "textref": "workspace:*",
+    "typescript": "5.0.4",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.2",
+    "@types/react": "^18.2.13",
+    "@types/react-dom": "^18.2.4",
+    "client-only": "^0.0.1",
+    "mdast-util-from-markdown": "^2.0.0",
+    "micromark-util-types": "^2.0.0",
+    "unified": "^10.1.2"
+  }
+}

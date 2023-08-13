@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "apps/api"
+		},
+		{
+			"path": "apps/web"
+		},
+		{
+			"path": "apps/desktop"
+		},
+		{
+			"path": "packages/textref"
+		},
+		{
+			"path": "packages/cloudflare-worker"
+		}
+	],
+	"settings": {}
+}

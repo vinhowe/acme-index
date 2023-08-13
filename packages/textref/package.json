@@ -1,0 +1,19 @@
+{
+  "name": "textref",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "eslint": "^8.46.0",
+    "tsconfig": "^7.0.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.1.6"
+  }
+}
