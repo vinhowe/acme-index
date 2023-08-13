@@ -6,12 +6,12 @@ const LOGIN_URL =
   `${process.env.NEXT_PUBLIC_WORKER_URL}/auth/login` ||
   "//localhost:8787/auth/login";
 
-const RedirectComponent: React.FC = () => {
+const RedirectComponent = () => {
   useEffect(() => {
     window.location.href = LOGIN_URL;
   }, []);
 
-  return "redirecting...";
+  return <>redirecting...</>;
 };
 
 export default RedirectComponent;
