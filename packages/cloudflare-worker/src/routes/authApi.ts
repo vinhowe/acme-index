@@ -207,32 +207,6 @@ router
 
     pipeStream();
 
-    // const updateListener = (completion: CompletionUpdate) => {
-    //   writer = writable.getWriter();
-    //   writer.write(encoder.encode(`event: update\n`));
-    //   writer.write(encoder.encode(`data: ${JSON.stringify(completion)}\n\n`));
-    //   writer.releaseLock();
-    // };
-
-    // const endListener = () => {
-    //   writer = writable.getWriter();
-    //   writer.write(encoder.encode('event: end\n\n'));
-    //   writer.releaseLock();
-    // };
-
-    // emitter.on('update', updateListener);
-    // emitter.on('end', endListener);
-
-    // request.on('close', () => {
-    //   emitter.removeListener('update', updateListener);
-    //   emitter.removeListener('end', endListener);
-    // });
-
-    // await request.completionManager.startCompletion(chat.id, turn.id, { maxTokens });
-
-    // await writer.close();
-
-    // return new Response(readable.pipeThrough(new TextEncoderStream()), {
     return new Response(readable, {
       headers: {
         'Cache-Control': 'no-cache',
