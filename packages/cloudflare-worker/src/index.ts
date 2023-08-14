@@ -139,7 +139,7 @@ router
         status: 201,
         headers: {
           'content-type': 'application/json',
-          'Set-Cookie': sessionHeaderValue,
+          'Set-Cookie': `${sessionHeaderValue}; Path=/; SameSite=None; Secure`,
         },
       });
     } catch (error) {
