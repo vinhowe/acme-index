@@ -257,52 +257,7 @@ router
       return json({ error: "Turn doesn't belong to specified chat" }, { status: 400 });
     }
 
-    if (turn.status === 'finished') {
-      return json(turn);
-    }
-
-    const emitter = request.completionManager.getCompletionBroadcast(turn.id);
-
-    if (!emitter) {
-      // Shouldn't happen?
-      return json({ error: 'No completion found' }, { status: 500 });
-    }
-
-    const { readable, writable } = new TransformStream();
-    let writer = writable.getWriter();
-
-    writer.write(`event: start\n`);
-    writer.write(`data: ${JSON.stringify(turn)}\n\n`);
-    writer.releaseLock();
-
-    const updateListener = (completion: CompletionUpdate) => {
-      writer = writable.getWriter();
-      writer.write(`event: update\n`);
-      writer.write(`data: ${JSON.stringify(completion)}\n\n`);
-      writer.releaseLock();
-    };
-
-    const endListener = () => {
-      writer = writable.getWriter();
-      writer.write('event: end\n\n');
-      writer.releaseLock();
-    };
-
-    emitter.on('update', updateListener);
-    emitter.on('end', endListener);
-
-    // request.on('close', () => {
-    //   emitter.removeListener('update', updateListener);
-    //   emitter.removeListener('end', endListener);
-    // });
-
-    return new Response(readable.pipeThrough(new TextEncoderStream()), {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Content-Type': 'text/event-stream',
-        Connection: 'keep-alive',
-      },
-    });
+    return json(turn);
   })
   .get<AuthenticatedRequest>('/user', withAuthenticatedRequest, async (request, env: Env) => {
     if (!request.session.githubToken) {
