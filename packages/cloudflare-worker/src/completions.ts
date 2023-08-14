@@ -286,7 +286,7 @@ export class CompletionManager {
 
       // Update turn with completion
       text += delta;
-      await this.chatTurns.updateStreamingTurn(turn.id, text);
+      // await this.chatTurns.updateStreamingTurn(turn.id, text);
     }
 
     await this.chatTurns.finishTurn(turn.id, { response: text });
