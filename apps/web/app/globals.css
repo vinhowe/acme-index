@@ -1,87 +1,87 @@
 @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-	--foreground-rgb: 0, 0, 0;
-	--background-rgb: 255, 255, 255;
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
-	:root {
-		--foreground-rgb: 255, 255, 255;
-		--background-rgb: 0, 0, 0;
-	}
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-rgb: 0, 0, 0;
+  }
 }
 
 * {
-	scroll-behavior: smooth;
+  scroll-behavior: smooth;
 }
 
 body {
-	color: rgb(var(--foreground-rgb));
-	background: rgb(var(--background-rgb));
-	font-family: neue-haas-unica, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	-webkit-text-size-adjust: 100%;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: neue-haas-unica, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
 }
 
 :target {
-    transition: background 1s linear;
-	@apply bg-yellow-200/50;
+  transition: background 1s linear;
+  @apply bg-yellow-200/50;
 }
 
 @media (prefers-color-scheme: dark) {
-	:target {
-		@apply bg-yellow-900/50;
-	}
+  :target {
+    @apply bg-yellow-900/50;
+  }
 }
 
 .katex-display-wrapper {
-	display: block;
+  display: block;
 }
 
 :is(.p-4, .px-4) .katex-display-wrapper {
-	@apply -mx-4;
+  @apply -mx-4;
 }
 
 :is(.p-4, .px-4) .katex-display-wrapper .katex-display {
-	@apply px-8;
+  @apply px-8;
 }
 
 :is(.p-4, .px-4) :is(ol, ul) .katex-display-wrapper {
-	@apply -ml-12;
+  @apply -ml-12;
 }
 
 :is(.p-4, .px-4) :is(ol, ul) .katex-display-wrapper .katex-display {
-	@apply pl-16;
+  @apply pl-16;
 }
 
 :is(ol, ul) .katex-display-wrapper {
-	/* @apply -mx-4; */
-	@apply -ml-8;
+  /* @apply -mx-4; */
+  @apply -ml-8;
 }
 
 .katex-display {
-	width: max-content;
-	@apply px-4;
+  width: max-content;
+  @apply px-4;
 }
 
 .katex-display-wrapper > .katex-display {
-	@apply mx-auto;
+  @apply mx-auto;
 }
 
 .katex-display-wrapper {
-	overflow-x: scroll;
-	overflow-y: hidden;
+  overflow-x: scroll;
+  overflow-y: hidden;
 }
 
 .acme-link {
-	@apply font-button dark:bg-neutral-700 bg-neutral-200 text-black dark:text-white px-1.5 py-1 rounded no-underline;
+  @apply font-button dark:bg-neutral-700 bg-neutral-200 text-black dark:text-white px-1.5 py-1 rounded no-underline;
 }

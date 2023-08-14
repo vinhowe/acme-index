@@ -1,5 +1,5 @@
 export default function Home() {
-	return <main className="flex min-h-screen">test</main>;
+  return <main className="flex min-h-screen">test</main>;
 }
 
-export const dynamic = 'force-static';
+export const dynamic = "force-static";

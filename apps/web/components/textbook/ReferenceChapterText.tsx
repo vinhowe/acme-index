@@ -1,7 +1,7 @@
-import React from 'react';
-import { TextChapter } from '@/lib/types';
-import { BodyItems } from './BodyItem';
-import { SectionItems } from './SectionItems';
+import React from "react";
+import { TextChapter } from "@/lib/types";
+import { BodyItems } from "./BodyItem";
+import { SectionItems } from "./SectionItems";
 
 export interface ChapterTextProps {
   chapter: TextChapter;

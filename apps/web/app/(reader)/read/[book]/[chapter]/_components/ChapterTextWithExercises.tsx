@@ -15,7 +15,6 @@ type ExerciseIntegratedSectionItemsProps = SectionItemsProps & {
   exercises: ExercisesChapter;
 };
 
-
 const ExerciseIntegratedSectionWrapper: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {

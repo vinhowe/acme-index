@@ -10,11 +10,7 @@ const Figure: React.FC<React.PropsWithChildren<FigureProps>> = ({
   figure,
   children,
 }) => {
-  return (
-    <InfoBox title={`Figure ${figure.id}`}>
-      {children}
-    </InfoBox>
-  );
+  return <InfoBox title={`Figure ${figure.id}`}>{children}</InfoBox>;
 };
 
 export default Figure;

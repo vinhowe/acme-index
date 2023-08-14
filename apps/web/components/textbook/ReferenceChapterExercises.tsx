@@ -1,13 +1,15 @@
-import React from 'react';
-import { ExercisesChapter, TextChapter } from '@/lib/types';
-import { BodyItems } from './BodyItem';
-import { SectionItems } from './SectionItems';
+import React from "react";
+import { ExercisesChapter, TextChapter } from "@/lib/types";
+import { BodyItems } from "./BodyItem";
+import { SectionItems } from "./SectionItems";
 
 export interface ChapterExercisesProps {
   chapter: ExercisesChapter | TextChapter;
 }
 
-const ReferenceChapterExercises: React.FC<ChapterExercisesProps> = ({ chapter }) => {
+const ReferenceChapterExercises: React.FC<ChapterExercisesProps> = ({
+  chapter,
+}) => {
   return (
     <article className="relative">
       <h2 className="text-3xl font-normal tracking-tight">

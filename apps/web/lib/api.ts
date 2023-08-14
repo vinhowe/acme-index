@@ -55,7 +55,7 @@ export async function createChat(reference?: string) {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: 'include',
+      credentials: "include",
       body: JSON.stringify({
         reference: reference || null,
       }),
@@ -64,31 +64,39 @@ export async function createChat(reference?: string) {
 }
 
 export async function getChat(id: string): Promise<Chat> {
-  return (await fetch(`${API_URL}/chat/${id}`, {
-    credentials: 'include'
-  })).json();
+  return (
+    await fetch(`${API_URL}/chat/${id}`, {
+      credentials: "include",
+    })
+  ).json();
 }
 
 export async function getChats(): Promise<Chat[]> {
-  console.log(process.env.NEXT_PUBLIC_API_URL)
-  return (await fetch(`${API_URL}/chat`, {
-    credentials: 'include'
-  })).json();
+  console.log(process.env.NEXT_PUBLIC_API_URL);
+  return (
+    await fetch(`${API_URL}/chat`, {
+      credentials: "include",
+    })
+  ).json();
 }
 
 export async function getTurn(
   chatId: string,
   turnId: string
 ): Promise<ChatTurn> {
-  return (await fetch(`${API_URL}/chat/${chatId}/turn/${turnId}`, {
-    credentials: 'include'
-  })).json();
+  return (
+    await fetch(`${API_URL}/chat/${chatId}/turn/${turnId}`, {
+      credentials: "include",
+    })
+  ).json();
 }
 
 export async function getReference(reference: string): Promise<Reference> {
-  return (await fetch(`${API_URL}/reference/${reference}`, {
-    credentials: 'include'
-  })).json();
+  return (
+    await fetch(`${API_URL}/reference/${reference}`, {
+      credentials: "include",
+    })
+  ).json();
 }
 
 // export async function getReferenceInteractions(): Promise<
@@ -101,10 +109,11 @@ export async function getTurnsTo(
   chatId: string,
   turnId: string
 ): Promise<ChatTurn[]> {
-  return (await fetch(`${API_URL}/chat/${chatId}/turns-to/${turnId}`,
-  {
-    credentials: 'include'
-  })).json();
+  return (
+    await fetch(`${API_URL}/chat/${chatId}/turns-to/${turnId}`, {
+      credentials: "include",
+    })
+  ).json();
 }
 
 export async function generateTurnStreaming(
@@ -123,7 +132,7 @@ export async function generateTurnStreaming(
 
   await fetchEventSource(`${API_URL}/chat/${chatId}/turn`, {
     method: "POST",
-    credentials: 'include',
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -165,7 +174,7 @@ export const getTextbookChapterText = cache(
       `${API_URL}/textbook/text/acme:${volume}/text/${chapter}`,
       {
         method: "GET",
-        credentials: 'include',
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -186,7 +195,7 @@ export const getTextbookChapterExercises = cache(
       `${API_URL}/textbook/exercises/acme:${volume}/exercise/${chapter}`,
       {
         method: "GET",
-        credentials: 'include',
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -207,7 +216,7 @@ export const getTextbookChapters = cache(
       `${API_URL}/textbook/chapters/acme:${volume}/text`,
       {
         method: "GET",
-        credentials: 'include',
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

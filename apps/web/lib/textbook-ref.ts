@@ -32,4 +32,4 @@ export const buildHref = (reference: ExactReferenceMatch): string => {
     }
   }
   return href;
-}
+};
