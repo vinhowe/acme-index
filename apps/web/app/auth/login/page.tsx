@@ -16,7 +16,7 @@ const RedirectComponent = () => {
         },
         () => {
           console.log("storage access denied");
-        },
+        }
       );
     } else {
       window.location.href = LOGIN_URL;
