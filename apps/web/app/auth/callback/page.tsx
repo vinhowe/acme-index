@@ -35,14 +35,6 @@ const GitHubLogin = () => {
           console.error(result.error);
           return;
         }
-
-        const getUserResponse = await fetch("https://api.github.com/user", {
-          headers: {
-            accept: "application/vnd.github.v3+json",
-            authorization: `token ${result.token}`,
-          },
-        });
-        const { login } = await getUserResponse.json();
         router.push("/read/v1/1");
       } catch (error) {
         console.error(error);
