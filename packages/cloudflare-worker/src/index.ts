@@ -387,21 +387,23 @@ router
 //   });
 // };
 
-const wrappedCorsify = (request: Request, env: Env) => {
+const wrappedCorsify = async (request: Request, response: Response, env: Env) => {
   const corsConfigWithPublicOrigin = {
     ...corsConfig,
     origins: [...corsConfig.origins, env.WEBSITE_URL],
   };
-  const { corsify } = createCors(corsConfigWithPublicOrigin);
-  return corsify(request);
+  const { preflight, corsify } = createCors(corsConfigWithPublicOrigin);
+  // Need to get the side effects of preflight to add allow origin header
+  await preflight(request);
+  return corsify(response);
 };
 
 export default {
-  fetch: (req, ...args) =>
+  fetch: (request, ...args) =>
     router
-      .handle(req, ...args)
+      .handle(request, ...args)
       .then(json)
-      .catch(error)
-      .then((response: Response) => wrappedCorsify(response, ...args)),
+      .then((response: Response) => wrappedCorsify(request, response, ...args))
+      .catch(error),
   // .then(credentialCorsify),
 } satisfies ExportedHandler;
