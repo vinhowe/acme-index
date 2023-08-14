@@ -83,5 +83,5 @@ body {
 }
 
 .acme-link {
-	@apply font-button dark:bg-neutral-700 text-white px-1.5 py-1 rounded no-underline;
+	@apply font-button dark:bg-neutral-700 bg-neutral-200 text-black dark:text-white px-1.5 py-1 rounded no-underline;
 }

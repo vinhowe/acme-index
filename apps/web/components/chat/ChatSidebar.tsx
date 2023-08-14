@@ -337,15 +337,17 @@ const ChatTopBar = ({
 }) => {
   const { dispatch } = useContext(ChatContext);
   return (
-    <div className="w-full flex justify-start items-center h-12 gap-x-px shrink-0">
+    <div className="w-full flex justify-start items-center h-12 shrink-0 dark:bg-neutral-800 bg-neutral-200">
       <div className="font-mono px-3 h-full bg-green-300 text-green-900 dark:bg-green-900 dark:text-green-100 flex items-center select-none">
         Chat
       </div>
-      <div className="flex items-start h-full gap-px overflow-x-scroll">
+      <div className="flex items-start h-full gap-px overflow-x-scroll bg-neutral-300 dark:bg-neutral-700 gap-x-px pr-px">
         <div
           className={classNames(
             "flex items-center align-center px-3 cursor-pointer h-full",
-            activeId && "dark:bg-neutral-800"
+            !activeId
+              ? "dark:bg-[#101010] bg-neutral-100"
+              : "dark:bg-neutral-800 bg-neutral-200"
           )}
           onClick={() => openHistory(dispatch)}
         >
@@ -356,7 +358,9 @@ const ChatTopBar = ({
             key={item.id}
             className={classNames(
               "flex flex-col items-start justify-center px-2 cursor-pointer h-full font-button text-sm w-32",
-              item.id !== activeId && "dark:bg-neutral-800"
+              item.id === activeId
+                ? "dark:bg-[#101010] bg-neutral-100"
+                : "dark:bg-neutral-800 bg-neutral-200"
             )}
             onClick={() => openChat(item.id, dispatch)}
           >
