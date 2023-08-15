@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -213,18 +214,17 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
 
   const [turns, setTurns] = useState<ChatTurn[] | null>(null);
   const [streamingTurn, setStreamingTurn] = useState<ChatTurn | null>(null);
-  const [displayReference, setDisplayReference] = useState<string | null>(null);
 
   const streamingUpdateRef = useRef<(turn: ChatTurn) => void>(
     (_turn: ChatTurn) => {}
   );
 
-  useEffect(() => {
+  const displayReference = useMemo(() => {
     const reference = parseRef(referenceId);
     if (!reference) {
-      setDisplayReference(null);
+      return null;
     } else {
-      setDisplayReference(buildDisplayReference(reference));
+      return buildDisplayReference(reference);
     }
   }, [referenceId]);
 
