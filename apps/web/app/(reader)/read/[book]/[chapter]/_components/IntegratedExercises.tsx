@@ -16,7 +16,7 @@ export default function IntegratedExercises({
 }: IntegratedExercisesProps) {
   const [selectedExercise, setSelectedExercise] = useState(0);
   const [exerciseNumbers, setExerciseNumbers] = useState(
-    exercises.map((exercise) => exercise.id)
+    exercises.map((exercise) => exercise.id),
   );
   useEffect(() => {
     setExerciseNumbers(exercises.map((exercise) => exercise.id));
@@ -39,7 +39,7 @@ export default function IntegratedExercises({
                   "border",
                   selectedExercise === index
                     ? "border-black dark:border-white bg-black dark:bg-white text-white dark:text-black"
-                    : "border-neutral-700 dark:border-neutral-300"
+                    : "border-neutral-700 dark:border-neutral-300",
                 )}
                 onClick={() => setSelectedExercise(index)}
               >

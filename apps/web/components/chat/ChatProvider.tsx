@@ -309,7 +309,7 @@ export const ChatProvider: React.FC<React.PropsWithChildren> = ({
             historyItem.description = rootTurn.query;
             return historyItem;
           }
-        })
+        }),
       );
 
       const referenceInteractions = {} as {
@@ -343,7 +343,7 @@ export const ChatProvider: React.FC<React.PropsWithChildren> = ({
 
 export const newChat = async (
   referenceId: string,
-  dispatch: Dispatch<ChatAction>
+  dispatch: Dispatch<ChatAction>,
 ) => {
   dispatch({ type: "new chat", payload: { referenceId } });
 };
@@ -368,7 +368,7 @@ export const sendMessage = async (
   chat: Chat | null,
   referenceId: string,
   streamingUpdateCallback: (turn: ChatTurn) => void,
-  dispatch: Dispatch<ChatAction>
+  dispatch: Dispatch<ChatAction>,
 ) => {
   if (!chat) {
     // Create chat

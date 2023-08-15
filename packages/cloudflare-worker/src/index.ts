@@ -95,7 +95,7 @@ router
     const callbackUri = `${env.WEBSITE_URL}/auth/callback`;
     return Response.redirect(
       `https://github.com/login/oauth/authorize?client_id=${env.GITHUB_CLIENT_ID}&redirect_uri=${callbackUri}&scope=repo`,
-      302
+      302,
     );
   })
   .post<AuthenticatedRequest & Partial<OctokitRequest>>('/auth/callback', withWebCryptSession, async (request, env: Env) => {

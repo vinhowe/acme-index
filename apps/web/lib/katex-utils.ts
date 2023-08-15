@@ -26,7 +26,7 @@ type Options = {
 function findEndOfMath(
   delimiter: string,
   text: string,
-  startIndex: number
+  startIndex: number,
 ): number {
   let index = startIndex;
   let braceLevel = 0;
@@ -62,7 +62,7 @@ function splitAtDelimiters(text: string, delimiters: Delimiter[]): DataItem[] {
   let index;
   const data: DataItem[] = [];
   const regexLeft = new RegExp(
-    "(" + delimiters.map((x) => escapeRegex(x.left)).join("|") + ")"
+    "(" + delimiters.map((x) => escapeRegex(x.left)).join("|") + ")",
   );
 
   for (;;) {
@@ -110,7 +110,7 @@ function splitAtDelimiters(text: string, delimiters: Delimiter[]): DataItem[] {
 
 export function renderMathInString(
   text: string,
-  options?: KatexOptions & Options
+  options?: KatexOptions & Options,
 ): string {
   const defaultOptions: Options = {
     delimiters: [
@@ -151,7 +151,7 @@ export function renderMathInString(
           if (e instanceof katex.ParseError && options?.errorCallback) {
             options.errorCallback(
               "KaTeX auto-render: Failed to parse `" + item.data + "` with ",
-              e
+              e,
             );
             return item.rawData;
           }

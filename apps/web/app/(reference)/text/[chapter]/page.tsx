@@ -12,7 +12,7 @@ export default async function Textbook({
   const { chapter: chapterId } = params;
   const chapter = (await getTextbookChapterText(
     "v1",
-    chapterId
+    chapterId,
   )) as TextChapter;
   return (
     <div className="p-8 sm:p-10">

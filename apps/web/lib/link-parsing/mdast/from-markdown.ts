@@ -16,7 +16,7 @@ export function fromMarkdown() {
           exists: null,
         },
       },
-      token
+      token,
     );
   }
 

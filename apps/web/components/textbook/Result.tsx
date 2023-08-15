@@ -20,7 +20,7 @@ const Result: React.FC<React.PropsWithChildren<ResultProps>> = ({
 
   const resultType = useMemo(
     () => getResultType(result.result_type),
-    [result.result_type]
+    [result.result_type],
   );
 
   let title = `${resultType} ${result.id}`;

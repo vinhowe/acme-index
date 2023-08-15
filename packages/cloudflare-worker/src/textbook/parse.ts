@@ -1,5 +1,5 @@
-import MarkdownIt from "markdown-it";
-import toml from "toml";
+import MarkdownIt from 'markdown-it';
+import toml from 'toml';
 import {
   TextBodyItem,
   BodyItem,
@@ -17,7 +17,7 @@ import {
   BaseChapter,
   InlineReference,
   InlineText,
-} from "./types";
+} from './types';
 
 type Attributes = { [key: string]: string };
 
@@ -39,8 +39,7 @@ function extractRefs(input: string): Array<InlineText | InlineReference> {
     return attributes;
   }
 
-  const tagRegex =
-    /<(text|result|proof|exercise|figure|equation)ref([^>]*)>(.*?)<\/\1ref>/g;
+  const tagRegex = /<(text|result|proof|exercise|figure|equation)ref([^>]*)>(.*?)<\/\1ref>/g;
 
   const segments: Array<InlineText | InlineReference> = [];
 
@@ -56,12 +55,12 @@ function extractRefs(input: string): Array<InlineText | InlineReference> {
     const offset = match.index;
     const bodySegment = input.slice(currentIndex, offset);
     if (bodySegment) {
-      segments.push({ type: "inline", body: bodySegment });
+      segments.push({ type: 'inline', body: bodySegment });
     }
     const [, referenceType, tagAttributes, innerText] = match;
     const attributes: Attributes = parseAttributes(tagAttributes);
     segments.push({
-      type: "reference",
+      type: 'reference',
       reference_type: referenceType,
       id: attributes.id || attributes.of,
       roman: attributes.roman,
@@ -74,7 +73,7 @@ function extractRefs(input: string): Array<InlineText | InlineReference> {
 
   const lastSegment = input.slice(currentIndex);
   if (lastSegment) {
-    segments.push({ type: "inline", body: lastSegment });
+    segments.push({ type: 'inline', body: lastSegment });
   }
 
   return segments;
@@ -96,24 +95,21 @@ function extractPageBreaks(input: string): Array<InlineText | PageBreakItem> {
     const offset = match.index;
     const bodySegment = input.slice(currentIndex, offset);
     if (bodySegment) {
-      segments.push({ type: "inline", body: bodySegment });
+      segments.push({ type: 'inline', body: bodySegment });
     }
-    segments.push({ type: "pagebreak", page: parseInt(match[2]) });
+    segments.push({ type: 'pagebreak', page: parseInt(match[2]) });
     currentIndex = offset + match[0].length;
   }
 
   const lastSegment = input.slice(currentIndex);
   if (lastSegment) {
-    segments.push({ type: "inline", body: lastSegment });
+    segments.push({ type: 'inline', body: lastSegment });
   }
 
   return segments;
 }
 
-function handleHTMLContent(
-  content: string,
-  selfClosing: boolean
-): LightHTMLElement {
+function handleHTMLContent(content: string, selfClosing: boolean): LightHTMLElement {
   // Get tag attributes
   const attrs = {} as { [key: string]: string };
   const openingTagRegex = /<[^>]+?>/;
@@ -121,8 +117,7 @@ function handleHTMLContent(
 
   if (openingTagMatch) {
     const openingTag = openingTagMatch[0];
-    const attributeRegex =
-      /(\w+)=(?:"((?:[^"\\]|\\.)*)"|(?:'((?:[^'\\]|\\.)*))')/g;
+    const attributeRegex = /(\w+)=(?:"((?:[^"\\]|\\.)*)"|(?:'((?:[^'\\]|\\.)*))')/g;
     let match;
 
     while ((match = attributeRegex.exec(openingTag)) !== null) {
@@ -132,32 +127,29 @@ function handleHTMLContent(
 
   if (!selfClosing) {
     content = content
-      .replace(/^[^/>]*>/, "")
-      .replace(/<\/[^<]*$/, "")
+      .replace(/^[^/>]*>/, '')
+      .replace(/<\/[^<]*$/, '')
       .trim();
   }
 
   return { attrs, body: content };
 }
 
-function handleOlTag(
-  htmlContent: string,
-  tagAttributes: { [key: string]: string }
-): ListBodyItem {
+function handleOlTag(htmlContent: string, tagAttributes: { [key: string]: string }): ListBodyItem {
   const list = {
-    type: "list",
-    list_type: "roman",
+    type: 'list',
+    list_type: 'roman',
     body: [],
   } as ListBodyItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "type":
-        if (value === "roman" || value === "letter") {
+      case 'type':
+        if (value === 'roman' || value === 'letter') {
           list.list_type = value;
         }
         break;
-      case "page":
+      case 'page':
         list.page = parseInt(value, 10);
         break;
     }
@@ -166,18 +158,13 @@ function handleOlTag(
   // Handle li and pagebreak tags
   const liAndPagebreakRegex = /(<li[^>]*>.*?<\/li>|<pagebreak[^>]*\/>)/gms;
   let liAndPagebreakMatch;
-  while (
-    (liAndPagebreakMatch = liAndPagebreakRegex.exec(htmlContent)) !== null
-  ) {
+  while ((liAndPagebreakMatch = liAndPagebreakRegex.exec(htmlContent)) !== null) {
     const liAndPagebreakContent = liAndPagebreakMatch[1];
     if (/^<li[^>]*>.*?<\/li>$/gms.test(liAndPagebreakContent)) {
-      const { attrs: liAttrs, body } = handleHTMLContent(
-        liAndPagebreakContent,
-        false
-      );
+      const { attrs: liAttrs, body } = handleHTMLContent(liAndPagebreakContent, false);
       const innards = handleHtmlInnards(body);
       list.body.push({
-        type: "list_item",
+        type: 'list_item',
         number: parseInt(liAttrs?.value),
         roman: liAttrs?.roman,
         letter: liAttrs?.letter,
@@ -185,15 +172,14 @@ function handleOlTag(
       });
     } else if (/^<pagebreak[^>]*\/>$/gms.test(liAndPagebreakContent)) {
       const pagebreakAttrMatch = /page="(\d+)"/.exec(liAndPagebreakContent);
-      const pageNumber =
-        pagebreakAttrMatch?.[1] && parseInt(pagebreakAttrMatch[1], 10);
+      const pageNumber = pagebreakAttrMatch?.[1] && parseInt(pagebreakAttrMatch[1], 10);
 
       if (!pageNumber) {
         continue;
       }
 
       const pagebreak: PageBreakItem = {
-        type: "pagebreak",
+        type: 'pagebreak',
         page: pageNumber,
       };
       list.body.push(pagebreak);
@@ -203,21 +189,18 @@ function handleOlTag(
   return list;
 }
 
-function handleProofTag(
-  htmlContent: string,
-  tagAttributes: { [key: string]: string }
-): ProofBodyItem {
+function handleProofTag(htmlContent: string, tagAttributes: { [key: string]: string }): ProofBodyItem {
   const proof = {
-    type: "proof",
+    type: 'proof',
     body: handleHtmlInnards(htmlContent),
   } as ProofBodyItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "of":
+      case 'of':
         proof[key] = value;
         break;
-      case "page":
+      case 'page':
         proof[key] = parseInt(value, 10);
         break;
     }
@@ -226,21 +209,18 @@ function handleProofTag(
   return proof;
 }
 
-function handleExerciseTag(
-  htmlContent: string,
-  tagAttributes: { [key: string]: string }
-): ExerciseBodyItem {
+function handleExerciseTag(htmlContent: string, tagAttributes: { [key: string]: string }): ExerciseBodyItem {
   const exercise = {
-    type: "exercise",
+    type: 'exercise',
     body: handleHtmlInnards(htmlContent),
   } as ExerciseBodyItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "id":
+      case 'id':
         exercise[key] = value;
         break;
-      case "page":
+      case 'page':
         exercise[key] = parseInt(value, 10);
         break;
     }
@@ -249,21 +229,18 @@ function handleExerciseTag(
   return exercise;
 }
 
-function handleEquation(
-  htmlContent: string,
-  tagAttributes: { [key: string]: string }
-): EquationBodyItem {
+function handleEquation(htmlContent: string, tagAttributes: { [key: string]: string }): EquationBodyItem {
   const equation = {
-    type: "equation",
+    type: 'equation',
     body: handleHtmlInnards(htmlContent),
   } as EquationBodyItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "id":
+      case 'id':
         equation[key] = value;
         break;
-      case "page":
+      case 'page':
         equation[key] = parseInt(value, 10);
         break;
     }
@@ -272,21 +249,18 @@ function handleEquation(
   return equation;
 }
 
-function handleFigureTag(
-  htmlContent: string,
-  tagAttributes: { [key: string]: string }
-): FigureBodyItem {
+function handleFigureTag(htmlContent: string, tagAttributes: { [key: string]: string }): FigureBodyItem {
   const figure = {
-    type: "figure",
+    type: 'figure',
     body: handleHtmlInnards(htmlContent),
   } as FigureBodyItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "id":
+      case 'id':
         figure[key] = value;
         break;
-      case "page":
+      case 'page':
         figure[key] = parseInt(value, 10);
         break;
     }
@@ -295,28 +269,25 @@ function handleFigureTag(
   return figure;
 }
 
-function handleResultTag(
-  htmlContent: string,
-  tagAttributes: { [key: string]: string }
-): ResultBodyItem {
+function handleResultTag(htmlContent: string, tagAttributes: { [key: string]: string }): ResultBodyItem {
   const result = {
-    type: "result",
+    type: 'result',
     body: handleHtmlInnards(htmlContent),
   } as ResultBodyItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "id":
+      case 'id':
         result[key] = value;
         break;
-      case "type":
+      case 'type':
         // Convert to result_type
         result.result_type = value;
         break;
-      case "name":
+      case 'name':
         result[key] = value;
         break;
-      case "page":
+      case 'page':
         result[key] = parseInt(value, 10);
         break;
     }
@@ -325,17 +296,14 @@ function handleResultTag(
   return result;
 }
 
-function handlePageBreak(
-  _htmlContent: string,
-  tagAttributes: { [key: string]: string }
-) {
+function handlePageBreak(_htmlContent: string, tagAttributes: { [key: string]: string }) {
   const pageBreak = {
-    type: "pagebreak",
+    type: 'pagebreak',
   } as PageBreakItem;
 
   Object.entries(tagAttributes).forEach(([key, value]) => {
     switch (key) {
-      case "page":
+      case 'page':
         pageBreak[key] = parseInt(value, 10);
         break;
     }
@@ -344,10 +312,7 @@ function handlePageBreak(
   return pageBreak;
 }
 
-type HandlerFunction = (
-  body: string,
-  attrs: { [key: string]: string }
-) => BodyItem;
+type HandlerFunction = (body: string, attrs: { [key: string]: string }) => BodyItem;
 
 const handlers: { [tagName: string]: HandlerFunction } = {
   ol: handleOlTag,
@@ -365,50 +330,39 @@ function handleHtmlInnards(htmlContent: string): Array<BodyItem> {
 
   for (let i = 0; i < chunks.length; i++) {
     let currentChunk = chunks[i];
-    const openingTagMatch = /^<([a-zA-Z0-9_-]+)[^>/]*(\/)?>/i.exec(
-      currentChunk
-    );
+    const openingTagMatch = /^<([a-zA-Z0-9_-]+)[^>/]*(\/)?>/i.exec(currentChunk);
 
     // Handle opening tag
     if (openingTagMatch) {
       const openingTag = openingTagMatch[1];
-      const isSelfClosing = openingTagMatch[2] === "/";
+      const isSelfClosing = openingTagMatch[2] === '/';
 
       if (!isSelfClosing) {
         const closingTag = `</${openingTag}>`;
 
         if (!currentChunk.includes(closingTag)) {
           while (i < chunks.length - 1 && !chunks[i + 1].includes(closingTag)) {
-            currentChunk += "\n\n" + chunks[++i];
+            currentChunk += '\n\n' + chunks[++i];
           }
-          currentChunk += "\n\n" + chunks[++i];
+          currentChunk += '\n\n' + chunks[++i];
         }
       }
 
-      const { attrs: tagAttributes, body: tagBody } = handleHTMLContent(
-        currentChunk,
-        isSelfClosing
-      );
+      const { attrs: tagAttributes, body: tagBody } = handleHTMLContent(currentChunk, isSelfClosing);
 
       if (openingTag in handlers) {
         bodyTypes.push(handlers[openingTag](tagBody, tagAttributes));
       }
     } else {
       bodyTypes.push({
-        type: "text",
-        body: extractPageBreaks(currentChunk).reduce(
-          (
-            accumulator: Array<InlineItem>,
-            currentItem: InlineText | PageBreakItem
-          ) => {
-            if (currentItem.type === "pagebreak") {
-              return accumulator.concat(currentItem);
-            } else {
-              return accumulator.concat(...extractRefs(currentItem.body));
-            }
-          },
-          [] as Array<InlineItem>
-        ),
+        type: 'text',
+        body: extractPageBreaks(currentChunk).reduce((accumulator: Array<InlineItem>, currentItem: InlineText | PageBreakItem) => {
+          if (currentItem.type === 'pagebreak') {
+            return accumulator.concat(currentItem);
+          } else {
+            return accumulator.concat(...extractRefs(currentItem.body));
+          }
+        }, [] as Array<InlineItem>),
       });
     }
   }
@@ -433,56 +387,53 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
 
-    if (token.type === "heading_open") {
+    if (token.type === 'heading_open') {
       const level = token.tag.substring(1);
       const content = tokens[i + 1].content;
 
-      if (level === "1") {
+      if (level === '1') {
         currentChapter = {
-          id: content.split(": ")[0],
-          name: content.split(": ")[1],
+          id: content.split(': ')[0],
+          name: content.split(': ')[1],
           body: [],
           sections: [],
         };
         jsonOutput.push(currentChapter);
         currentSection = null;
         currentSubsection = null;
-      } else if (level === "2") {
+      } else if (level === '2') {
         currentSection = {
-          type: "section",
-          id: content.split(": ")[0],
-          name: content.split(": ")[1],
+          type: 'section',
+          id: content.split(': ')[0],
+          name: content.split(': ')[1],
           body: [],
           sections: [],
         };
         if (!currentChapter) {
           // Basically panic, we don't really care
-          throw new Error("No current chapter");
+          throw new Error('No current chapter');
         }
         currentChapter.sections.push(currentSection);
         currentSubsection = null;
-      } else if (level === "3") {
+      } else if (level === '3') {
         currentSubsection = {
-          type: "subsection",
-          id: content.split(": ")[0],
-          name: content.split(": ")[1],
+          type: 'subsection',
+          id: content.split(': ')[0],
+          name: content.split(': ')[1],
           body: [],
         };
         if (!currentSection) {
-          throw new Error("No current section");
+          throw new Error('No current section');
         }
         currentSection.sections.push(currentSubsection);
       }
-    } else if (token.type === "fence" && token.info === "toml") {
-      const metadata = toml.parse(token.content) as Record<
-        string,
-        unknown
-      > | null;
+    } else if (token.type === 'fence' && token.info === 'toml') {
+      const metadata = toml.parse(token.content) as Record<string, unknown> | null;
       if (!metadata) {
-        throw new Error("No metadata");
+        throw new Error('No metadata');
       }
       if (metadata?.page === undefined) {
-        throw new Error("No page property in metadata");
+        throw new Error('No page property in metadata');
       }
       const page = metadata.page as number | undefined;
       // Check that metadata has a page property
@@ -493,28 +444,26 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
       } else if (currentSubsection) {
         currentSubsection.page = page;
       }
-    } else if (token.type === "html_block") {
+    } else if (token.type === 'html_block') {
       let htmlContent = token.content;
 
       // Check for an opening tag
-      const openingTagMatch = /<([a-zA-Z0-9_-]+)[^>/]*(\/)?>/i.exec(
-        htmlContent
-      );
+      const openingTagMatch = /<([a-zA-Z0-9_-]+)[^>/]*(\/)?>/i.exec(htmlContent);
       if (!openingTagMatch) {
         continue;
       }
 
       const tagName = openingTagMatch[1];
-      const selfClosing = openingTagMatch[2] === "/";
+      const selfClosing = openingTagMatch[2] === '/';
 
       if (!selfClosing) {
         const closingTag = `</${tagName}>`;
         // Search for the closing tag while iterating through tokens and concatenate content
         let j = i;
-        htmlContent = "";
+        htmlContent = '';
         while (j < tokens.length && !tokens[j].content.includes(closingTag)) {
           if (htmlContent.length > 0) {
-            htmlContent += "\n\n";
+            htmlContent += '\n\n';
           }
           htmlContent += tokens[j].content;
           j++;
@@ -523,63 +472,57 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
         // Include the closing tag and update the main loop counter
         if (j < tokens.length && tokens[j].content.includes(closingTag)) {
           if (i !== j) {
-            htmlContent += "\n\n";
+            htmlContent += '\n\n';
           }
           htmlContent += tokens[j].content;
           i = j;
         }
       }
       // const oldHtmlContent = htmlContent;
-      const { attrs: tagAttributes, body } = handleHTMLContent(
-        htmlContent,
-        selfClosing
-      );
+      const { attrs: tagAttributes, body } = handleHTMLContent(htmlContent, selfClosing);
 
       // body = body.replaceAll("<", "YAY").replaceAll(">", "YAY");
 
       htmlContent = body;
 
       let newBodyItems: Array<BodyItem> | null = null;
-      if (tagName === "result") {
+      if (tagName === 'result') {
         const bodyItem = handleResultTag(htmlContent, tagAttributes);
         newBodyItems = [bodyItem];
         // currentResult = bodyItem;
-      } else if (tagName === "proof") {
+      } else if (tagName === 'proof') {
         newBodyItems = [handleProofTag(htmlContent, tagAttributes)];
-      } else if (tagName === "exercise") {
+      } else if (tagName === 'exercise') {
         newBodyItems = [handleExerciseTag(htmlContent, tagAttributes)];
-      } else if (tagName === "figure") {
+      } else if (tagName === 'figure') {
         newBodyItems = [handleFigureTag(htmlContent, tagAttributes)];
-      } else if (tagName === "ol") {
+      } else if (tagName === 'ol') {
         const bodyItem = handleOlTag(htmlContent, tagAttributes);
         newBodyItems = [bodyItem];
         // currentList = bodyItem;
-      } else if (tagName === "pagebreak") {
+      } else if (tagName === 'pagebreak') {
         newBodyItems = [handlePageBreak(htmlContent, tagAttributes)];
-      } else if (tagName === "context-optional") {
+      } else if (tagName === 'context-optional') {
         newBodyItems = handleHtmlInnards(htmlContent);
         newBodyItems.forEach((bodyItem) => {
-          if (bodyItem.type === "text") {
+          if (bodyItem.type === 'text') {
             bodyItem.context_optional = true;
           }
         });
       }
 
       if (newBodyItems) {
-        (currentSubsection || currentSection || currentChapter)?.body.push(
-          ...newBodyItems
-        );
+        (currentSubsection || currentSection || currentChapter)?.body.push(...newBodyItems);
       }
-    } else if (token.type === "inline" && token.content.startsWith("```")) {
-      const codeBlock = token.content.replace(/`/g, "");
-      const page = parseInt(codeBlock.split("page = ")[1]);
+    } else if (token.type === 'inline' && token.content.startsWith('```')) {
+      const codeBlock = token.content.replace(/`/g, '');
+      const page = parseInt(codeBlock.split('page = ')[1]);
 
-      const _currentSection =
-        currentSubsection ?? currentSection ?? currentChapter;
+      const _currentSection = currentSubsection ?? currentSection ?? currentChapter;
       if (_currentSection) {
         _currentSection.page = page;
       }
-    } else if (token.type === "paragraph_open") {
+    } else if (token.type === 'paragraph_open') {
       const content = tokens[i + 1].content;
       const bodyItems = handleHtmlInnards(content);
       // const bodyContent: TextBodyItem = {
@@ -596,22 +539,21 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
       //   }),
       // };
 
-      (currentSubsection || currentSection || currentChapter)?.body.push(
-        ...bodyItems
-      );
+      (currentSubsection || currentSection || currentChapter)?.body.push(...bodyItems);
     }
   }
 
   return jsonOutput;
 }
 
-export const parseTextbook = async <T extends BaseChapter>(
-  text: string
-): Promise<Record<string, T>> => {
+export const parseTextbook = async <T extends BaseChapter>(text: string): Promise<Record<string, T>> => {
   const chapters = parseTextbookMarkdown(text) as T[];
-  const chapterObject = chapters.reduce((acc, chapter) => {
-    acc[chapter.id] = chapter;
-    return acc;
-  }, {} as Record<string, T>);
+  const chapterObject = chapters.reduce(
+    (acc, chapter) => {
+      acc[chapter.id] = chapter;
+      return acc;
+    },
+    {} as Record<string, T>,
+  );
   return chapterObject;
 };

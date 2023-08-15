@@ -12,7 +12,7 @@ export default async function Exercises({
   const { chapter: chapterId } = params;
   const chapter = (await getTextbookChapterExercises(
     "v1",
-    chapterId
+    chapterId,
   )) as ExercisesChapter;
   return (
     <div className="p-8 sm:p-10">

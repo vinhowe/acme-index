@@ -1,5 +1,5 @@
 export interface InlineReference {
-  type: "reference";
+  type: 'reference';
   reference_type: string;
   id: string;
   roman?: string;
@@ -8,66 +8,56 @@ export interface InlineReference {
   body: string;
 }
 export interface InlineText {
-  type: "inline";
+  type: 'inline';
   body: string;
 }
 export type InlineItem = InlineText | InlineReference | PageBreakItem;
 
 export interface BaseBodyItem<T> {
-  type:
-    | "text"
-    | "result"
-    | "list"
-    | "list_item"
-    | "proof"
-    | "equation"
-    | "figure"
-    | "pagebreak"
-    | "exercise";
+  type: 'text' | 'result' | 'list' | 'list_item' | 'proof' | 'equation' | 'figure' | 'pagebreak' | 'exercise';
   page?: number;
   body: T;
 }
 export interface TextBodyItem extends BaseBodyItem<Array<InlineItem>> {
-  type: "text";
+  type: 'text';
   context_optional?: boolean;
 }
 export interface ResultBodyItem extends BaseBodyItem<Array<BodyItem>> {
-  type: "result";
+  type: 'result';
   result_type: string;
   id: string;
   name?: string;
 }
 export interface ProofBodyItem extends BaseBodyItem<Array<BodyItem>> {
-  type: "proof";
+  type: 'proof';
   of: string;
 }
 export interface EquationBodyItem extends BaseBodyItem<Array<BodyItem>> {
-  type: "equation";
+  type: 'equation';
   id: string;
 }
 export interface FigureBodyItem extends BaseBodyItem<Array<BodyItem>> {
-  type: "figure";
+  type: 'figure';
   id: string;
   name: string;
 }
 export interface ListItemBodyItem extends BaseBodyItem<Array<BodyItem>> {
-  type: "list_item";
+  type: 'list_item';
   number: number;
   roman?: string;
   letter?: string;
 }
-export interface ListBodyItem
-  extends BaseBodyItem<Array<ListItemBodyItem | PageBreakItem>> {
-  type: "list";
-  list_type: "roman" | "letter";
+export interface ListBodyItem extends BaseBodyItem<Array<ListItemBodyItem | PageBreakItem>> {
+  type: 'list';
+  list_type: 'roman' | 'letter';
 }
 export interface ExerciseBodyItem extends BaseBodyItem<Array<BodyItem>> {
-  type: "exercise";
+  type: 'exercise';
   id: string;
   name: string;
 }
 export interface PageBreakItem {
-  type: "pagebreak";
+  type: 'pagebreak';
   page: number;
 }
 
@@ -82,28 +72,24 @@ export type BodyItem =
   | PageBreakItem;
 
 export interface BaseSectionItem<T = BodyItem> {
-  type: "chapter" | "section" | "subsection";
+  type: 'chapter' | 'section' | 'subsection';
   id: string;
   name: string;
   page?: number;
   body: Array<T>;
 }
 export interface ChapterSectionItem<T = BodyItem> extends BaseSectionItem<T> {
-  type: "chapter";
+  type: 'chapter';
   sections: Array<SectionSectionItem>;
 }
 export interface SectionSectionItem<T = BodyItem> extends BaseSectionItem<T> {
-  type: "section";
+  type: 'section';
   sections: Array<SubsectionSectionItem>;
 }
-export interface SubsectionSectionItem<T = BodyItem>
-  extends BaseSectionItem<T> {
-  type: "subsection";
+export interface SubsectionSectionItem<T = BodyItem> extends BaseSectionItem<T> {
+  type: 'subsection';
 }
-export type SectionItem<T = BodyItem> =
-  | ChapterSectionItem<T>
-  | SectionSectionItem<T>
-  | SubsectionSectionItem<T>;
+export type SectionItem<T = BodyItem> = ChapterSectionItem<T> | SectionSectionItem<T> | SubsectionSectionItem<T>;
 
 export interface BaseChapter<T = BodyItem> {
   id: string;

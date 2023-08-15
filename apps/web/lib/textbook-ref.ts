@@ -1,7 +1,7 @@
 import { ExactReferenceMatch } from "textref";
 
 export const buildDisplayReference = (
-  reference: ExactReferenceMatch
+  reference: ExactReferenceMatch,
 ): string => {
   let referenceType = reference.type;
   if (referenceType === "exercise") {

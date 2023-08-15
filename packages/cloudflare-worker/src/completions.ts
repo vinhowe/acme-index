@@ -136,7 +136,7 @@ export class CompletionManager {
     private completionSources: CompletionSourceMap,
     private chats: ChatAccess,
     private chatTurns: ChatTurnAccess,
-    private getTextbookFn: <T extends BaseChapter>(textbook: string) => Promise<Record<string, T>>
+    private getTextbookFn: <T extends BaseChapter>(textbook: string) => Promise<Record<string, T>>,
   ) {
     this.broadcasts = new Map();
   }

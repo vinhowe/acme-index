@@ -16,7 +16,7 @@ import {
   SectionSectionItem,
   InlineItem,
   InlineReference,
-} from "./types";
+} from './types';
 
 class TextbookContextRenderer {
   private pinnedReferences?: Set<string>;
@@ -28,12 +28,9 @@ class TextbookContextRenderer {
     this.filterContextItem = this.filterContextItem.bind(this);
   }
 
-  renderSingleSectionChapterContext(
-    sectionId: string,
-    chapter: TextChapter
-  ): string {
+  renderSingleSectionChapterContext(sectionId: string, chapter: TextChapter): string {
     let chapterWithSingleSection = {
-      type: "chapter",
+      type: 'chapter',
       ...chapter,
     } as ChapterSectionItem;
 
@@ -48,37 +45,36 @@ class TextbookContextRenderer {
 
   renderTextbookBodyItem(item: Exclude<BodyItem, PageBreakItem>): string {
     switch (item.type) {
-      case "text":
+      case 'text':
         return this.renderTextbookText(item);
-      case "result":
+      case 'result':
         return this.renderTextbookResult(item);
-      case "proof":
+      case 'proof':
         return this.renderTextbookProof(item);
-      case "equation":
+      case 'equation':
         return this.renderTextbookEquation(item);
-      case "figure":
+      case 'figure':
         return this.renderTextbookFigure(item);
-      case "list":
+      case 'list':
         return this.renderTextbookList(item);
-      case "exercise":
+      case 'exercise':
         return this.renderTextbookExercise(item);
     }
   }
 
   filterContextItem(bodyItem: BodyItem): boolean {
     switch (bodyItem.type) {
-      case "pagebreak":
+      case 'pagebreak':
         return false;
-      case "text":
+      case 'text':
         return !bodyItem.context_optional;
-      case "result":
+      case 'result':
         // TODO: Add check that result is not referenced in exercise
         // —one way to do this is to add a list of references to keep
         // track of—we can pull it from the exercise or the target
         return (
-          !["example", "application", "vista"].includes(bodyItem.result_type) ||
-          (this.pinnedReferences !== undefined &&
-            this.pinnedReferences.has(`acme:v1/result/${bodyItem.id}`))
+          !['example', 'application', 'vista'].includes(bodyItem.result_type) ||
+          (this.pinnedReferences !== undefined && this.pinnedReferences.has(`acme:v1/result/${bodyItem.id}`))
         );
       default:
         return true;
@@ -88,17 +84,15 @@ class TextbookContextRenderer {
   renderTextbookBodyItems(bodyItems: BodyItem[]): string {
     return bodyItems
       .filter(this.filterContextItem)
-      .map((item) =>
-        this.renderTextbookBodyItem(item as Exclude<BodyItem, PageBreakItem>)
-      )
-      .join("\n\n");
+      .map((item) => this.renderTextbookBodyItem(item as Exclude<BodyItem, PageBreakItem>))
+      .join('\n\n');
   }
 
   renderInlineItem(item: InlineText | InlineReference): string {
     switch (item.type) {
-      case "inline":
+      case 'inline':
         return item.body;
-      case "reference":
+      case 'reference':
         return `[[acme:v1/${item.reference_type}/${item.id}]]`;
     }
   }
@@ -107,13 +101,11 @@ class TextbookContextRenderer {
     return bodyItems
       .map((item) =>
         item.body
-          .filter((item) => ["inline", "reference"].includes(item.type))
-          .map((item) =>
-            this.renderInlineItem(item as InlineText | InlineReference)
-          )
-          .join("")
+          .filter((item) => ['inline', 'reference'].includes(item.type))
+          .map((item) => this.renderInlineItem(item as InlineText | InlineReference))
+          .join(''),
       )
-      .join("\n\n");
+      .join('\n\n');
   }
 
   renderTextbookExercise(exercise: ExerciseBodyItem): string {
@@ -126,9 +118,9 @@ end exercise [[acme:v1/exercise/${exercise.id}]]`;
     // Compute result type from result_type: "nota_bene" -> "Nota Bene"
     const getResultType = (resultType: string) => {
       return resultType
-        .split("_")
+        .split('_')
         .map((word) => word[0].toUpperCase() + word.slice(1))
-        .join(" ");
+        .join(' ');
     };
 
     const resultType = getResultType(result.result_type);
@@ -161,31 +153,29 @@ end figure [[acme:v1/figure/${figure.id}]]`;
   }
 
   renderTextbookListItem(item: ListItemBodyItem): string {
-    return `${item.roman || item.letter}. ${this.renderTextbookBodyItems(
-      item.body
-    )}`;
+    return `${item.roman || item.letter}. ${this.renderTextbookBodyItems(item.body)}`;
   }
 
   renderTextbookList(list: ListBodyItem): string {
     return list.body
-      .filter((item) => item.type === "list_item")
+      .filter((item) => item.type === 'list_item')
       .map((item) => this.renderTextbookListItem(item as ListItemBodyItem))
-      .join("\n");
+      .join('\n');
   }
 
   renderTextbookSection(section: SectionItem): string {
     const sectionDisplayType = section.type.toLowerCase();
     let sectionText = `begin ${sectionDisplayType} [[acme:v1/text/${section.id}]]\n\n`;
     const sectionBody = this.renderTextbookBodyItems(section.body).trim();
-    if (sectionBody !== "") {
+    if (sectionBody !== '') {
       sectionText += `${sectionBody}\n`;
     }
-    if ("sections" in section) {
+    if ('sections' in section) {
       const sectionsText = this.renderTextbookSections(section.sections).trim();
-      if (sectionsText !== "") {
-        if (sectionBody !== "") {
+      if (sectionsText !== '') {
+        if (sectionBody !== '') {
           // This is horrible but I don't want to think about it
-          sectionText += "\n";
+          sectionText += '\n';
         }
         sectionText += `${sectionsText}\n`;
       }
@@ -195,24 +185,24 @@ end figure [[acme:v1/figure/${figure.id}]]`;
   }
 
   renderTextbookSections(sections: SectionItem[]): string {
-    return sections.map(this.renderTextbookSection).join("\n\n");
+    return sections.map(this.renderTextbookSection).join('\n\n');
   }
 }
 
 const getReferencesRecursive = (
   bodyItem: BodyItem | ListItemBodyItem | InlineItem,
-  references: InlineReference[] = []
+  references: InlineReference[] = [],
 ): InlineReference[] => {
-  if ("body" in bodyItem) {
-    if (bodyItem.type === "reference") {
+  if ('body' in bodyItem) {
+    if (bodyItem.type === 'reference') {
       references.push(bodyItem);
       return references;
     }
-    if (typeof bodyItem.body === "string") {
+    if (typeof bodyItem.body === 'string') {
       return references;
     }
     bodyItem.body.forEach((item) => {
-      if ("body" in item) {
+      if ('body' in item) {
         getReferencesRecursive(item, references);
       }
     });
@@ -220,28 +210,19 @@ const getReferencesRecursive = (
   return references;
 };
 
-const buildPinnedReferencesSet = (
-  references: InlineReference[]
-): Set<string> => {
+const buildPinnedReferencesSet = (references: InlineReference[]): Set<string> => {
   return references.reduce((acc, reference) => {
     acc.add(`acme:v1/${reference.reference_type}/${reference.id}`);
     return acc;
   }, new Set<string>());
 };
 
-export const renderExerciseChapterContext = (
-  sectionId: string,
-  exercise: ExerciseBodyItem,
-  chapter: TextChapter
-): string => {
-  const exerciseReferences = buildPinnedReferencesSet(
-    getReferencesRecursive(exercise)
-  );
+export const renderExerciseChapterContext = (sectionId: string, exercise: ExerciseBodyItem, chapter: TextChapter): string => {
+  const exerciseReferences = buildPinnedReferencesSet(getReferencesRecursive(exercise));
 
   const contextRenderer = new TextbookContextRenderer(exerciseReferences);
 
-  const singleSectionContext =
-    contextRenderer.renderSingleSectionChapterContext(sectionId, chapter);
+  const singleSectionContext = contextRenderer.renderSingleSectionChapterContext(sectionId, chapter);
 
   return `begin textbook material
 

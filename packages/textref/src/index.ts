@@ -52,7 +52,7 @@ const EXACT_REFERENCE_RANGE_REGEX = `${EXACT_REFERENCE_NUMBER_REGEX([
 const TYPE_REGEX = `(?<type>[a-z\-]+)/(?:${EXACT_REFERENCE_RANGE_REGEX})`;
 const EXACT_REFERENCE_REGEX = new RegExp(
   `^(?<namespace>[a-z0-9\-]+):(?<book>[a-z0-9\-]+)/${TYPE_REGEX}$`,
-  "i"
+  "i",
 );
 
 const PARTIAL_REFERENCE_NUMBER_REGEX = ([
@@ -61,7 +61,7 @@ const PARTIAL_REFERENCE_NUMBER_REGEX = ([
   subsectionName,
 ]: [string, string, string]) =>
   makeRegexGroupLevelPartial(
-    `(?<${chapterName}>\\d+|[A-Z])\\.(?<${sectionName}>\\d+)\\.(?<${subsectionName}>\\d+)`
+    `(?<${chapterName}>\\d+|[A-Z])\\.(?<${sectionName}>\\d+)\\.(?<${subsectionName}>\\d+)`,
   );
 const PARTIAL_REFERENCE_RANGE_REGEX = makeRegexGroupLevelPartial(
   `${PARTIAL_REFERENCE_NUMBER_REGEX([
@@ -72,19 +72,19 @@ const PARTIAL_REFERENCE_RANGE_REGEX = makeRegexGroupLevelPartial(
     "chapterEnd",
     "sectionEnd",
     "subsectionEnd",
-  ])}`
+  ])}`,
 );
 const PARTIAL_TYPE_REGEX = makeRegexGroupLevelPartial(
-  `(?<type>[a-z\-]+)/(?:${PARTIAL_REFERENCE_RANGE_REGEX})`
+  `(?<type>[a-z\-]+)/(?:${PARTIAL_REFERENCE_RANGE_REGEX})`,
 );
 const REFERENCE_SPECIFIER_OR_FUZZY_SEARCH_REGEX = `(?:${PARTIAL_TYPE_REGEX}|(?<fuzzyQuery>.*))`;
 const PARTIAL_REFERENCE_REGEX = new RegExp(
   // We do this replacing here because the top level groups regex is too naive to handle groups in
   // disjunctions correctly and I don't want to write a full parser for this
   makeRegexGroupLevelPartial(
-    `^(?<namespace>[a-z0-9\-]+):(?<book>[a-z0-9\-]+)/{reference_specifier}$`
+    `^(?<namespace>[a-z0-9\-]+):(?<book>[a-z0-9\-]+)/{reference_specifier}$`,
   ).replace("{reference_specifier}", REFERENCE_SPECIFIER_OR_FUZZY_SEARCH_REGEX),
-  "i"
+  "i",
 );
 
 export interface ExactReferenceMatch {
@@ -104,7 +104,8 @@ export type BasePartialReferenceMatch = {
   book?: string;
 };
 
-export interface SpecifiedPartialReferenceMatch extends BasePartialReferenceMatch {
+export interface SpecifiedPartialReferenceMatch
+  extends BasePartialReferenceMatch {
   type?: string;
   chapter?: string;
   section?: string;
@@ -125,18 +126,18 @@ export type PartialReferenceMatch =
 
 export function parseRef(
   exactRef: string,
-  options?: { partial: false }
+  options?: { partial: false },
 ): ExactReferenceMatch | null;
 export function parseRef(
   partialRef: string,
-  options?: { partial: true }
+  options?: { partial: true },
 ): PartialReferenceMatch | null;
 export function parseRef(
   exactRef: string,
-  { partial } = { partial: false }
+  { partial } = { partial: false },
 ): ExactReferenceMatch | PartialReferenceMatch | null {
   const match = exactRef.match(
-    partial ? PARTIAL_REFERENCE_REGEX : EXACT_REFERENCE_REGEX
+    partial ? PARTIAL_REFERENCE_REGEX : EXACT_REFERENCE_REGEX,
   );
 
   if (!match?.groups) {

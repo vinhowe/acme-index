@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid";
+import { v4 as uuid } from 'uuid';
 
 export type UniqueID = string;
 
@@ -6,7 +6,7 @@ interface UniqueObject {
   id: UniqueID;
 }
 
-export type ChatProvider = "openai" | "anthropic";
+export type ChatProvider = 'openai' | 'anthropic';
 
 export type Chat = UniqueObject & {
   reference: string;
@@ -26,7 +26,7 @@ export type ChatTurn = UniqueObject & {
   root?: UniqueID;
   additionalContextReferences?: string[];
   query: string;
-  status: "pending" | "finished" | "error";
+  status: 'pending' | 'finished' | 'error';
   response?: string;
   error?: string;
   createdAt: string;
@@ -40,15 +40,7 @@ export type History = UniqueObject & {
   chats: UniqueID[];
 };
 
-export type CreateChatTurnBody = Pick<
-  ChatTurn,
-  | "chatId"
-  | "parent"
-  | "additionalContextReferences"
-  | "query"
-  | "response"
-  | "error"
->;
+export type CreateChatTurnBody = Pick<ChatTurn, 'chatId' | 'parent' | 'additionalContextReferences' | 'query' | 'response' | 'error'>;
 
 export interface ObjectTable<T extends UniqueObject> {
   get(id: string): Promise<T | null>;
@@ -78,10 +70,7 @@ export class HistoryAccess implements ObjectTable<History> {
     return this.table.getAll();
   }
 
-  async set(
-    id: string,
-    value: Omit<History, keyof UniqueObject>
-  ): Promise<History> {
+  async set(id: string, value: Omit<History, keyof UniqueObject>): Promise<History> {
     return this.table.set(id, value);
   }
 
@@ -91,9 +80,7 @@ export class HistoryAccess implements ObjectTable<History> {
 }
 
 export class ChatAccess implements ObjectTable<Chat> {
-  constructor(
-    private table: MutableObjectTable<Chat>,
-  ) {
+  constructor(private table: MutableObjectTable<Chat>) {
     this.table = table;
   }
 
@@ -105,15 +92,13 @@ export class ChatAccess implements ObjectTable<Chat> {
     return this.table.getAll();
   }
 
-  async createChat(
-    body: Pick<Chat, "reference" | "provider" | "model">
-  ): Promise<Chat> {
+  async createChat(body: Pick<Chat, 'reference' | 'provider' | 'model'>): Promise<Chat> {
     if (!body.reference) {
-      throw new Error("Chat must have reference");
+      throw new Error('Chat must have reference');
     }
 
     if (!body.model) {
-      throw new Error("Chat must have model");
+      throw new Error('Chat must have model');
     }
 
     const createdAt = new Date().toISOString();
@@ -132,7 +117,7 @@ export class ChatAccess implements ObjectTable<Chat> {
   async addRootTurn(chatId: string, turnId: string): Promise<void> {
     const chat = await this.get(chatId);
     if (!chat) {
-      throw new Error("Chat not found");
+      throw new Error('Chat not found');
     }
     chat.rootTurns.push(turnId);
     await this.table.set(chatId, chat);
@@ -141,7 +126,7 @@ export class ChatAccess implements ObjectTable<Chat> {
   async updateCurrentTurn(chatId: string, turnId: string): Promise<void> {
     const chat = await this.get(chatId);
     if (!chat) {
-      throw new Error("Chat not found");
+      throw new Error('Chat not found');
     }
     chat.currentTurn = turnId;
     chat.updatedAt = new Date().toISOString();
@@ -152,7 +137,7 @@ export class ChatAccess implements ObjectTable<Chat> {
 export class ChatTurnAccess implements ObjectTable<ChatTurn> {
   constructor(
     private table: MutableObjectTable<ChatTurn>,
-    private chats: ChatAccess
+    private chats: ChatAccess,
   ) {
     this.table = table;
     this.chats = chats;
@@ -169,14 +154,14 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
   async getTurnsTo(id: string) {
     const turn = await this.get(id);
     if (!turn) {
-      throw new Error("Turn not found");
+      throw new Error('Turn not found');
     }
     let currentTurn = turn;
     const turns: ChatTurn[] = [currentTurn];
     while (currentTurn.parent) {
       const parent = await this.get(currentTurn.parent);
       if (!parent) {
-        throw new Error("Parent not found");
+        throw new Error('Parent not found');
       }
       turns.unshift(parent);
       currentTurn = parent;
@@ -187,13 +172,13 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
   async addTurn(body: CreateChatTurnBody): Promise<ChatTurn> {
     const chat = await this.chats.get(body.chatId);
     if (!chat) {
-      throw new Error("Chat not found");
+      throw new Error('Chat not found');
     }
 
-    const turn = body as Omit<ChatTurn, keyof UniqueID | "createdAt">;
+    const turn = body as Omit<ChatTurn, keyof UniqueID | 'createdAt'>;
 
     if (!turn.query) {
-      throw new Error("Turn must have query");
+      throw new Error('Turn must have query');
     }
 
     let parent;
@@ -201,7 +186,7 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
     if (turn.parent) {
       parent = await this.get(turn.parent);
       if (!parent) {
-        throw new Error("Turn parent not found");
+        throw new Error('Turn parent not found');
       }
       if (parent.error) {
         throw new Error("Can't add turn to parent with error");
@@ -212,7 +197,7 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
 
     const tableTurn = await this.table.create({
       ...turn,
-      status: "pending",
+      status: 'pending',
       createdAt: new Date().toISOString(),
     });
 
@@ -228,27 +213,27 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
     return tableTurn;
   }
 
-  async finishTurn(id: string, body: Pick<ChatTurn, "response" | "error">) {
+  async finishTurn(id: string, body: Pick<ChatTurn, 'response' | 'error'>) {
     const turn = await this.get(id);
     if (!turn) {
-      throw new Error("Turn not found");
+      throw new Error('Turn not found');
     }
-    if (turn.status === "finished") {
-      throw new Error("Turn already finished");
+    if (turn.status === 'finished') {
+      throw new Error('Turn already finished');
     }
     if (!body.response && !body.error) {
-      throw new Error("Must provide response or error");
+      throw new Error('Must provide response or error');
     }
     if (body.response && body.error) {
       throw new Error("Can't provide both response and error");
     }
     if (body.response) {
       turn.response = body.response;
-      turn.status = "finished";
+      turn.status = 'finished';
     }
     if (body.error) {
       turn.error = body.error;
-      turn.status = "error";
+      turn.status = 'error';
     }
     await this.table.set(id, turn);
   }
@@ -256,20 +241,21 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
   async updateStreamingTurn(id: UniqueID, updatedResponse: string) {
     const turn = await this.get(id);
     if (!turn) {
-      throw new Error("Turn not found");
+      throw new Error('Turn not found');
     }
     turn.response = updatedResponse;
     await this.table.set(id, turn);
   }
 }
 
-export class KVObjectTable<T extends UniqueObject = any & UniqueObject>
-  implements MutableObjectTable<T>
-{
-  constructor(private kv: KVNamespace, private prefix: string) {}
+export class KVObjectTable<T extends UniqueObject = any & UniqueObject> implements MutableObjectTable<T> {
+  constructor(
+    private kv: KVNamespace,
+    private prefix: string,
+  ) {}
 
   async get(id: string): Promise<T | null> {
-    const value = await this.kv.get<T>(`${this.prefix}:${id}`, "json");
+    const value = await this.kv.get<T>(`${this.prefix}:${id}`, 'json');
     if (!value) {
       return null;
     }
@@ -278,9 +264,7 @@ export class KVObjectTable<T extends UniqueObject = any & UniqueObject>
 
   async getAll(): Promise<T[]> {
     const keys = await this.kv.list({ prefix: this.prefix });
-    const values = await Promise.all(
-      keys.keys.map((key) => this.kv.get<T>(key.name, "json"))
-    );
+    const values = await Promise.all(keys.keys.map((key) => this.kv.get<T>(key.name, 'json')));
     return values.filter((value) => value !== null) as T[];
   }
 
@@ -298,9 +282,7 @@ export class KVObjectTable<T extends UniqueObject = any & UniqueObject>
   }
 }
 
-export class InMemoryObjectTable<T extends UniqueObject = any & UniqueObject>
-  implements MutableObjectTable<T>
-{
+export class InMemoryObjectTable<T extends UniqueObject = any & UniqueObject> implements MutableObjectTable<T> {
   table: { [key: string]: any } = {};
 
   constructor(data?: { [key: string]: any }) {
@@ -329,9 +311,7 @@ export class InMemoryObjectTable<T extends UniqueObject = any & UniqueObject>
   }
 }
 
-export class CachedObjectTable<T extends UniqueObject = any & UniqueObject>
-  implements MutableObjectTable<T>
-{
+export class CachedObjectTable<T extends UniqueObject = any & UniqueObject> implements MutableObjectTable<T> {
   private cache: { [key: string]: T } = {};
 
   constructor(private table: MutableObjectTable<T>) {}

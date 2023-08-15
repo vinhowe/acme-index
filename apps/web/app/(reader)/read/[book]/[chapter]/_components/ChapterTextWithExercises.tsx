@@ -37,7 +37,7 @@ const ExerciseIntegratedSectionItems: React.FC<
     return {
       section: sectionItem,
       exercises: exercises.sections[index].body.filter(
-        (item) => item.type === "exercise"
+        (item) => item.type === "exercise",
       ),
     };
   });

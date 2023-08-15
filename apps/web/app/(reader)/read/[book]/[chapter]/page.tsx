@@ -15,7 +15,7 @@ export default async function Textbook({
   const text = (await getTextbookChapterText(book, chapterId)) as TextChapter;
   const exercises = (await getTextbookChapterExercises(
     book,
-    chapterId
+    chapterId,
   )) as ExercisesChapter;
   return (
     <ChatProvider>

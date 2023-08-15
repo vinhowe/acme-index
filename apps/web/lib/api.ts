@@ -82,7 +82,7 @@ export async function getChats(): Promise<Chat[]> {
 
 export async function getTurn(
   chatId: string,
-  turnId: string
+  turnId: string,
 ): Promise<ChatTurn> {
   return (
     await fetch(`${API_URL}/chat/${chatId}/turn/${turnId}`, {
@@ -107,7 +107,7 @@ export async function getReference(reference: string): Promise<Reference> {
 
 export async function getTurnsTo(
   chatId: string,
-  turnId: string
+  turnId: string,
 ): Promise<ChatTurn[]> {
   return (
     await fetch(`${API_URL}/chat/${chatId}/turns-to/${turnId}`, {
@@ -126,7 +126,7 @@ export async function generateTurnStreaming(
   }: {
     onopen?: (response: Response) => void;
     onupdate?: (turn: ChatTurn) => void;
-  } = {}
+  } = {},
 ): Promise<ChatTurn | null> {
   let turn: ChatTurn | null = null;
 
@@ -178,14 +178,14 @@ export const getTextbookChapterText = cache(
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     const json = await response.json();
     if (json.error) {
       throw new Error(json.error);
     }
     return json;
-  }
+  },
 );
 
 export const getTextbookChapterExercises = cache(
@@ -199,14 +199,14 @@ export const getTextbookChapterExercises = cache(
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     const json = await response.json();
     if (json.error) {
       throw new Error(json.error);
     }
     return json;
-  }
+  },
 );
 
 export const getTextbookChapters = cache(
@@ -220,12 +220,12 @@ export const getTextbookChapters = cache(
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     const json = await response.json();
     if (json.error) {
       throw new Error(json.error);
     }
     return json;
-  }
+  },
 );

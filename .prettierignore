@@ -1,0 +1,8 @@
+node_modules
+dist
+out
+apps/api/text/
+.next
+.webpack
+pnpm-lock.yaml
+apps/web/public/translations

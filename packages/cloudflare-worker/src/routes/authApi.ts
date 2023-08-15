@@ -56,7 +56,7 @@ const withCompletionManager = async (request: UserDataRequest, env: Env) => {
 
   // TODO: Figure out how to get this for free like everything else
   const completionManager = new CompletionManager(completionSources, request.database.chats, request.database.chatTurns, (name: string) =>
-    getTextbook(name, env, request.botOctokit)
+    getTextbook(name, env, request.botOctokit),
   );
 
   request.completionManager = completionManager;

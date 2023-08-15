@@ -50,24 +50,24 @@ export const getRawTextbookChapters = cache(
   async (textbookFile: string): Promise<RawChapter[]> => {
     const response = await fs.readFile(
       path.join("./text", textbookFile),
-      "utf8"
+      "utf8",
     );
     const chapters = parseRawTextbook(response);
     return chapters as RawChapter[];
-  }
+  },
 );
 
 export const createPartialTextbookChapter = (
   chapter: RawChapter,
-  sectionId: string
+  sectionId: string,
 ): string => {
   const partialSections = chapter.sections.filter(
-    (section) => section.id <= sectionId
+    (section) => section.id <= sectionId,
   );
   const sectionsText = partialSections
     .map(
       (section) =>
-        `## ${chapter.id}.${section.id}: ${section.title}\n${section.content}`
+        `## ${chapter.id}.${section.id}: ${section.title}\n${section.content}`,
     )
     .join("\n");
   return `# ${chapter.id}: ${chapter.title}\n${chapter.intro}\n${sectionsText}`;

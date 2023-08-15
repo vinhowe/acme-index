@@ -45,7 +45,7 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setComposingText(e.target.value);
     },
-    []
+    [],
   );
 
   const submitText = useCallback(() => {
@@ -66,7 +66,7 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
         }
       }
     },
-    [submitText]
+    [submitText],
   );
   return (
     <div className={classNames("relative")}>
@@ -87,7 +87,7 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
           "block",
           "pr-10",
           "min-w-0",
-          "rounded-md"
+          "rounded-md",
         )}
         placeholder="Ask a question..."
         rows={1}
@@ -112,7 +112,7 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
           "aspect-square",
           "flex",
           "justify-center",
-          "items-center"
+          "items-center",
         )}
         disabled={!composingText}
         onClick={(e) => {
@@ -171,7 +171,7 @@ const ChatTurnSection = ({
             "max-w-[90%]",
             "bg-neutral-200",
             "dark:bg-neutral-600",
-            "rounded-xl"
+            "rounded-xl",
           )}
         >
           {turn.query}
@@ -183,7 +183,7 @@ const ChatTurnSection = ({
           "prose",
           "prose-neutral",
           "dark:prose-invert",
-          "w-full"
+          "w-full",
         )}
         remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
         rehypePlugins={[rehypeKatex, rehypeMinifyWhitespace]}
@@ -216,7 +216,7 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
   const [streamingTurn, setStreamingTurn] = useState<ChatTurn | null>(null);
 
   const streamingUpdateRef = useRef<(turn: ChatTurn) => void>(
-    (_turn: ChatTurn) => {}
+    (_turn: ChatTurn) => {},
   );
 
   const displayReference = useMemo(() => {
@@ -260,10 +260,10 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
         chat ?? null,
         referenceId,
         (turn: ChatTurn) => streamingUpdateRef.current(turn),
-        dispatch
+        dispatch,
       );
     },
-    [chat, dispatch, referenceId]
+    [chat, dispatch, referenceId],
   );
 
   return (
@@ -290,7 +290,7 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
                     "dark:text-blue-200",
                     "bg-blue-200",
                     "dark:bg-blue-900",
-                    "rounded"
+                    "rounded",
                   )}
                 >
                   {chat.provider}/{chat.model}
@@ -347,7 +347,7 @@ const ChatTopBar = ({
             "flex items-center align-center px-3 cursor-pointer h-full",
             !activeId
               ? "dark:bg-[#101010] bg-neutral-100"
-              : "dark:bg-neutral-800 bg-neutral-200"
+              : "dark:bg-neutral-800 bg-neutral-200",
           )}
           onClick={() => openHistory(dispatch)}
         >
@@ -360,7 +360,7 @@ const ChatTopBar = ({
               "flex flex-col items-start justify-center px-2 cursor-pointer h-full font-button text-sm w-32",
               item.id === activeId
                 ? "dark:bg-[#101010] bg-neutral-100"
-                : "dark:bg-neutral-800 bg-neutral-200"
+                : "dark:bg-neutral-800 bg-neutral-200",
             )}
             onClick={() => openChat(item.id, dispatch)}
           >

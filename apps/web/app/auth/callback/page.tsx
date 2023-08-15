@@ -42,7 +42,7 @@ const GitHubLogin = () => {
         setError(error);
       }
     },
-    [router]
+    [router],
   );
 
   useEffect(() => {

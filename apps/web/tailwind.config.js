@@ -11,7 +11,7 @@ module.exports = {
   theme: {
     fontFamily: {
       mono: ["Space Mono", ...defaultTheme.fontFamily.mono],
-			button: ["Space Grotesk", ...defaultTheme.fontFamily.sans],
+      button: ["Space Grotesk", ...defaultTheme.fontFamily.sans],
     },
   },
 };
