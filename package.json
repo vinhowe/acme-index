@@ -5,6 +5,9 @@
   "author": "Vin Howe",
   "license": "MIT",
   "packageManager": "pnpm@8.5.1",
+  "scripts": {
+    "build": "turbo build"
+  },
   "devDependencies": {
     "prettier": "^3.0.2",
     "turbo": "^1.9.9"
