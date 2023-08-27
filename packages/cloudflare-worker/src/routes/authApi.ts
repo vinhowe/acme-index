@@ -2,16 +2,9 @@ import { IRequest, Router, json } from 'itty-router';
 import { AuthenticatedRequest, withAuthenticatedRequest } from '../auth';
 import { Env } from '../types';
 import { ChatAccess, ChatTurnAccess, Database, KVObjectTable } from '../data';
-import { BotOctokitRequest, OctokitRequest, withBotOctokit } from '../github';
+import { BotOctokitRequest, withBotOctokit } from '../github';
 import { parseRef } from 'textref';
-import { Octokit } from '@octokit/rest';
-import {
-  AnthropicCompletionSource,
-  CompletionManager,
-  CompletionSourceMap,
-  CompletionUpdate,
-  OpenAICompletionSource,
-} from '../completions';
+import { AnthropicCompletionSource, CompletionManager, CompletionSourceMap, OpenAICompletionSource } from '../completions';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { getTextbook } from '../textbook/util';
