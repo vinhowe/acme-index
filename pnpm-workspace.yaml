@@ -1,5 +1,3 @@
 packages:
   - "apps/*"
   - "packages/*"
-  # exclude packages/cloudflare-worker for now
-  - "!packages/cloudflare-worker"
