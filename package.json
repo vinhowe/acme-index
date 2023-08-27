@@ -6,7 +6,7 @@
   "license": "MIT",
   "packageManager": "pnpm@8.5.1",
   "devDependencies": {
-    "prettier": "^3.0.1",
+    "prettier": "^3.0.2",
     "turbo": "^1.9.9"
   },
   "overrides": {
