@@ -1,5 +1,5 @@
 import React from "react";
-import { SectionItem as SectionItemType } from "@/lib/types";
+import { SectionItem as SectionItemType } from "@/lib/textbook/types";
 import { BodyItems } from "./BodyItem";
 import HeadingAnchor from "./HeadingAnchor";
 

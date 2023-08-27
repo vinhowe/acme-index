@@ -1,4 +1,4 @@
-import { buildDisplayReference, buildHref } from "@/lib/textbook-ref";
+import { buildDisplayReference, buildHref } from "@/lib/textbook/textbook-ref";
 import { CompileContext, Token } from "mdast-util-from-markdown";
 import { parseRef, ExactReferenceMatch } from "textref";
 
@@ -46,7 +46,7 @@ export function fromMarkdown() {
     wikiLink.data.hName = "a";
     wikiLink.data.hProperties = {
       className: "acme-link",
-      href: buildHref(reference),
+      href: reference ? buildHref(reference) : "#",
     };
     wikiLink.data.hChildren = [
       {

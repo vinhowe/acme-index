@@ -1,5 +1,5 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { ExercisesChapter, TextChapter } from "./types";
+import { ExercisesChapter, TextChapter } from "./textbook/types";
 import { cache } from "react";
 
 export interface ChatHistoryItem {

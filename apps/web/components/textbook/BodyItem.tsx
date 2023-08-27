@@ -6,7 +6,7 @@ import InlineBody from "./InlineBody";
 import Figure from "./Figure";
 import Equation from "./Equation";
 import Exercise from "./Exercise";
-import type { BodyItem as BodyItemType } from "@/lib/types";
+import type { BodyItem as BodyItemType } from "@/lib/textbook/types";
 import HeadingAnchor from "./HeadingAnchor";
 
 export interface BodyItemsProps {

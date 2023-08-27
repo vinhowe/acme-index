@@ -1,5 +1,5 @@
 import React from "react";
-import { FigureBodyItem } from "@/lib/types";
+import { FigureBodyItem } from "@/lib/textbook/types";
 import InfoBox from "./InfoBox";
 
 export interface FigureProps {

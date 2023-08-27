@@ -1,5 +1,5 @@
 import React from "react";
-import { InlineType } from "@/lib/types";
+import { InlineType } from "@/lib/textbook/types";
 import MathRender from "./MathRender";
 import PageBreak from "./PageBreak";
 import InlineReference from "./InlineReference";

@@ -2,7 +2,7 @@
 import React from "react";
 import ReferenceChapterText from "@/components/textbook/ReferenceChapterText";
 import { getTextbookChapterText, getTextbookChapters } from "@/lib/api";
-import { TextChapter } from "@/lib/types";
+import { TextChapter } from "@/lib/textbook/types";
 
 export default async function Textbook({
   params,

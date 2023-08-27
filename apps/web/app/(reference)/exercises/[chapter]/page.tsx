@@ -2,7 +2,7 @@
 import React from "react";
 import ReferenceChapterExercises from "@/components/textbook/ReferenceChapterExercises";
 import { getTextbookChapterExercises, getTextbookChapters } from "@/lib/api";
-import { ExercisesChapter } from "@/lib/types";
+import { ExercisesChapter } from "@/lib/textbook/types";
 
 export default async function Exercises({
   params,

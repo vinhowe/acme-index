@@ -1,5 +1,5 @@
 import React from "react";
-import type { ProofBodyItem } from "@/lib/types";
+import type { ProofBodyItem } from "@/lib/textbook/types";
 import InfoBox from "./InfoBox";
 
 export interface ProofProps {

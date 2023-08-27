@@ -1,7 +1,7 @@
 "use client";
 import { ChatContext, newChat, openChat } from "@/components/chat/ChatProvider";
 import { BodyItems } from "@/components/textbook/BodyItem";
-import { ExerciseBodyItem } from "@/lib/types";
+import { ExerciseBodyItem } from "@/lib/textbook/types";
 import classNames from "classnames";
 import { useContext, useEffect, useState } from "react";
 

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import type { ResultBodyItem } from "@/lib/types";
+import type { ResultBodyItem } from "@/lib/textbook/types";
 import InfoBox from "./InfoBox";
 
 export interface ResultProps {

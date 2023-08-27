@@ -1,5 +1,5 @@
 import React from "react";
-import { EquationBodyItem } from "@/lib/types";
+import { EquationBodyItem } from "@/lib/textbook/types";
 
 export interface EquationProps {
   equation: EquationBodyItem;

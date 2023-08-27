@@ -1,5 +1,5 @@
 import React from "react";
-import { InlineReference } from "@/lib/types";
+import { InlineReference } from "@/lib/textbook/types";
 import MathRender from "./MathRender";
 
 export interface InlineBodyProps {
