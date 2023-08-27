@@ -21,7 +21,7 @@
     "itty-router": "^4.0.14",
     "jsonwebtoken": "^9.0.1",
     "markdown-it": "^13.0.1",
-    "openai": "4.0.0-beta.7",
+    "openai": "4.2.0",
     "textref": "workspace:*",
     "toml": "^3.0.0",
     "uuid": "^9.0.0",
