@@ -1,21 +1,25 @@
 "use client";
 
 import {
-  Chat,
   ChatHistoryItem,
-  ChatTurn,
   createChat,
   generateTurnStreaming,
   getChat,
   getChats,
-  getReference,
   getTurn,
   getTurnsTo,
 } from "@/lib/api";
-import { buildDisplayReference } from "@/lib/textbook-ref";
+import { buildDisplayReference } from "@/lib/textbook/textbook-ref";
+import { Chat, ChatTurn } from "@acme-index/common";
 // ChatContext.tsx
 import React, { createContext, useReducer, useEffect, Dispatch } from "react";
 import { parseRef } from "textref";
+
+export interface WaitingTurn {
+  id: "waiting";
+  query: string;
+  status: "pending";
+}
 
 // Define the state shape
 interface ChatState {
@@ -24,7 +28,7 @@ interface ChatState {
   // onCompletionUpdate: (value: string) => void;
   chatData: {
     chat: Chat | null;
-    turns: ChatTurn[];
+    turns: Array<ChatTurn | WaitingTurn>;
   } | null;
   referenceId: string | null;
   referenceInteractions: {

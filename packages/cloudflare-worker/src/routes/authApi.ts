@@ -1,12 +1,10 @@
 import { IRequest, Router, json } from 'itty-router';
 import { AuthenticatedRequest, withAuthenticatedRequest } from '../auth';
 import { Env } from '../types';
-import { Chat, ChatAccess, ChatTurnAccess, Database, KVObjectTable } from '../data';
+import { ChatAccess, ChatTurnAccess, Database, KVObjectTable } from '../data';
 import { BotOctokitRequest, OctokitRequest, withBotOctokit } from '../github';
 import { parseRef } from 'textref';
 import { Octokit } from '@octokit/rest';
-import { parseTextbook } from '../textbook/parse';
-import { BaseChapter, ExercisesChapter, TextChapter } from '../textbook/types';
 import {
   AnthropicCompletionSource,
   CompletionManager,
@@ -17,6 +15,7 @@ import {
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { getTextbook } from '../textbook/util';
+import { Chat, ExercisesChapter, TextChapter } from '@acme-index/common';
 
 type UserDataRequest = IRequest & AuthenticatedRequest & { database: Database };
 type CompletionManagerRequest = UserDataRequest & { completionManager: CompletionManager };

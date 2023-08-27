@@ -1,11 +1,11 @@
 import React from "react";
-import { InlineType } from "@/lib/textbook/types";
+import { InlineItem } from "@acme-index/common";
 import MathRender from "./MathRender";
 import PageBreak from "./PageBreak";
 import InlineReference from "./InlineReference";
 
 export interface InlineBodyProps {
-  items: Array<InlineType>;
+  items: Array<InlineItem>;
 }
 
 const InlineBody: React.FC<InlineBodyProps> = ({ items }) => {

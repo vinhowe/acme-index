@@ -17,6 +17,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@acme-index/common':
+        specifier: workspace:^
+        version: link:../../packages/common
       '@anthropic-ai/sdk':
         specifier: ^0.5.10
         version: 0.5.10
@@ -157,6 +160,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@acme-index/common':
+        specifier: workspace:^
+        version: link:../../packages/common
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
@@ -269,6 +275,34 @@ importers:
       unified:
         specifier: ^10.1.2
         version: 10.1.2
+
+  packages/common:
+    dependencies:
+      markdown-it:
+        specifier: ^13.0.1
+        version: 13.0.1
+      toml:
+        specifier: ^3.0.0
+        version: 3.0.0
+    devDependencies:
+      '@types/markdown-it':
+        specifier: ^13.0.1
+        version: 13.0.1
+      eslint:
+        specifier: ^8.46.0
+        version: 8.46.0
+      prettier:
+        specifier: 3.0.2
+        version: 3.0.2
+      tsconfig:
+        specifier: ^7.0.0
+        version: 7.0.0
+      tsup:
+        specifier: ^7.2.0
+        version: 7.2.0(typescript@5.1.6)
+      typescript:
+        specifier: ^5.1.6
+        version: 5.1.6
 
   packages/textref:
     devDependencies:

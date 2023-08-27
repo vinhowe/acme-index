@@ -1,5 +1,9 @@
 import React, { Children } from "react";
-import { ExerciseBodyItem, ExercisesChapter, TextChapter } from "@/lib/textbook/types";
+import {
+  ExerciseBodyItem,
+  ExercisesChapter,
+  TextChapter,
+} from "@acme-index/common";
 import { BodyItems } from "@/components/textbook/BodyItem";
 import SectionItem, {
   SectionItemsProps,

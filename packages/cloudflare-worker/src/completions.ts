@@ -1,11 +1,10 @@
 import Anthropic, { HUMAN_PROMPT } from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { ChatAccess, ChatTurn, ChatTurnAccess } from './data';
-import { renderExerciseChapterContext } from './textbook/context';
 import { parseRef } from 'textref';
-import { BaseChapter, ExercisesChapter, TextChapter } from './textbook/types';
 // @ts-expect-error
 import { EventEmitter } from 'node:events';
+import { BaseChapter, ChatTurn, ExercisesChapter, TextChapter, renderExerciseChapterContext } from '@acme-index/common';
+import { ChatAccess, ChatTurnAccess } from './data';
 
 export interface CompletionOptions {
   maxTokens?: number;

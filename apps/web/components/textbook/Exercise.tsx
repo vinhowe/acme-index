@@ -1,5 +1,5 @@
 import React from "react";
-import { ExerciseBodyItem } from "@/lib/textbook/types";
+import { ExerciseBodyItem } from "@acme-index/common";
 import InfoBox from "./InfoBox";
 
 export interface ExerciseProps {

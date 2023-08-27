@@ -1,7 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { Env } from '../types';
-import { BaseChapter } from './types';
-import { parseTextbook } from './parse';
+import { BaseChapter, parseTextbook } from '@acme-index/common';
 
 export const getTextbook = async <T extends BaseChapter>(name: string, env: Env, botOctokit: Octokit) => {
   let textbookData: any;

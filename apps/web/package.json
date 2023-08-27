@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@acme-index/common": "workspace:^",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@tailwindcss/typography": "^0.5.9",
     "@tldraw/editor": "2.0.0-canary.a220b2eff1d1",

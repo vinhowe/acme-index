@@ -1,5 +1,5 @@
 import React from "react";
-import { TextChapter } from "@/lib/textbook/types";
+import { TextChapter } from "@acme-index/common";
 import { BodyItems } from "./BodyItem";
 import { SectionItems } from "./SectionItems";
 

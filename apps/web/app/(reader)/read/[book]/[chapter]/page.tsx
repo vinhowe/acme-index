@@ -1,10 +1,10 @@
 // src/routes/Textbook.js
 import React from "react";
 import { getTextbookChapterExercises, getTextbookChapterText } from "@/lib/api";
-import { ExercisesChapter, TextChapter } from "@/lib/textbook/types";
 import ChapterTextWithExercises from "./_components/ChapterTextWithExercises";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import { ChatProvider } from "@/components/chat/ChatProvider";
+import { ExercisesChapter, TextChapter } from "@acme-index/common";
 
 export default async function Textbook({
   params,

@@ -1,6 +1,12 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { ExercisesChapter, TextChapter } from "./textbook/types";
 import { cache } from "react";
+import {
+  Chat,
+  ChatTurn,
+  ExercisesChapter,
+  Reference,
+  TextChapter,
+} from "@acme-index/common";
 
 export interface ChatHistoryItem {
   id: string;
@@ -10,41 +16,6 @@ export interface ChatHistoryItem {
   description: string | null;
   displayReference: string | null;
 }
-
-export interface Chat {
-  id: string;
-  reference: string;
-  rootTurns: string[];
-  currentTurn: string | null;
-  provider: string;
-  model: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChatTurn {
-  id: string;
-  query: string;
-  status: "pending" | "finished" | "error";
-  root?: string;
-  response?: string;
-  error?: string;
-}
-
-export interface Reference {
-  namespace: string;
-  book: string;
-  type: string;
-  chapter: string;
-  section?: string;
-  subsection?: string;
-  chats: string[];
-}
-
-// export interface ReferenceInteractions {
-//   id: string;
-//   chats: string[];
-// }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8787/api";
 

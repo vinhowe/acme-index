@@ -1,5 +1,5 @@
 "use client";
-import { ChatHistoryItem, ChatTurn } from "@/lib/api";
+import { ChatHistoryItem } from "@/lib/api";
 import classNames from "classnames";
 import {
   MutableRefObject,
@@ -17,13 +17,15 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import {
   ChatContext,
+  WaitingTurn,
   openChat,
   openHistory,
   sendMessage,
 } from "./ChatProvider";
-import wikiLinkPlugin from "@/lib/link-parsing/remark-plugin";
+import wikiLinkPlugin from "@/lib/textbook/link-parsing/remark-plugin";
 import { parseRef } from "textref";
-import { buildDisplayReference } from "@/lib/textbook-ref";
+import { buildDisplayReference } from "@/lib/textbook/textbook-ref";
+import { ChatTurn } from "@acme-index/common";
 
 const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
   const [composingText, setComposingText] = useState<string>("");
@@ -212,7 +214,9 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
   const { dispatch, state } = useContext(ChatContext);
   const chat = state.chatData?.chat;
 
-  const [turns, setTurns] = useState<ChatTurn[] | null>(null);
+  const [turns, setTurns] = useState<Array<ChatTurn | WaitingTurn> | null>(
+    null,
+  );
   const [streamingTurn, setStreamingTurn] = useState<ChatTurn | null>(null);
 
   const streamingUpdateRef = useRef<(turn: ChatTurn) => void>(
@@ -249,7 +253,7 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
       setStreamingTurn(null);
     } else {
       setTurns(turns.slice(0, -1));
-      setStreamingTurn(lastTurn);
+      setStreamingTurn(lastTurn as ChatTurn);
     }
   }, [state.chatData?.turns]);
 
