@@ -1,0 +1,25 @@
+{
+  "name": "@acme-index/common",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^13.0.1",
+    "eslint": "^8.46.0",
+    "prettier": "3.0.2",
+    "tsconfig": "^7.0.0",
+    "tsup": "^7.2.0",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "markdown-it": "^13.0.1",
+    "toml": "^3.0.0"
+  }
+}

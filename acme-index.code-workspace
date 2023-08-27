@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "packages/cloudflare-worker"
+		},
+		{
+			"path": "packages/common"
 		}
 	],
 	"settings": {}
