@@ -207,7 +207,6 @@ router
       },
     });
   })
-
   .get<CompletionManagerRequest, [env: Env]>('/chat/:chatId/turn/:turnId', withCompletionManager, async (request, env) => {
     const { chatId, turnId } = request.params;
     const { streaming } = request.query;
