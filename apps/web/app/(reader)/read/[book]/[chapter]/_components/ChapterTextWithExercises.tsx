@@ -27,7 +27,11 @@ const ExerciseIntegratedSectionWrapper: React.FC<React.PropsWithChildren> = ({
     <div className="flex flex-col-reverse md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] md:mx-auto gap-x-8 md:gap-x-12">
       <div className="md:col-span-1 relative">{childrenArray[0]}</div>
       {childrenArray.slice(1).map((child, index) => {
-        return <div className="md:col-span-1" key={index}>{child}</div>;
+        return (
+          <div className="md:col-span-1" key={index}>
+            {child}
+          </div>
+        );
       })}
     </div>
   );

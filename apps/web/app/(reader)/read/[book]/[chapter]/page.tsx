@@ -27,7 +27,9 @@ export default async function Textbook({
         <div className="grid 2xl:grid-cols-[1fr_minmax(0,_32rem)] xl:grid-cols-[1fr_minmax(0,_28rem)] overflow-none h-[100dvh]">
           <SidebarToggleAwareBodyLayout>
             <div className="flex flex-col md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] md:mx-auto gap-x-8 md:gap-x-12 w-fit">
-              <h1 className="text-5xl font-light tracking-tight col-span-1">Volume 1</h1>
+              <h1 className="text-5xl font-light tracking-tight col-span-1">
+                Volume 1
+              </h1>
             </div>
             <ChapterTextWithExercises text={text} exercises={exercises} />
           </SidebarToggleAwareBodyLayout>

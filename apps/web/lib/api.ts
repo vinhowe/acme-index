@@ -289,27 +289,30 @@ export const createDocumentCell = async (
     throw new Error(json.error);
   }
   return json;
-}
+};
 
 export const updateDocumentCell = async (
   documentId: string,
   cellId: string,
   cell: Partial<DocumentCell>,
 ): Promise<DocumentCell> => {
-  const response = await fetch(`${API_URL}/document/${documentId}/cell/${cellId}`, {
-    method: "PATCH",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${API_URL}/document/${documentId}/cell/${cellId}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(cell),
     },
-    body: JSON.stringify(cell),
-  });
+  );
   const json = await response.json();
   if (json.error) {
     throw new Error(json.error);
   }
   return json;
-}
+};
 
 export const getDocumentCells = async (
   documentId: string,
@@ -326,22 +329,25 @@ export const getDocumentCells = async (
     throw new Error(json.error);
   }
   return json;
-}
+};
 
 export const getDocumentCell = async (
   documentId: string,
   cellId: string,
 ): Promise<DocumentCell> => {
-  const response = await fetch(`${API_URL}/document/${documentId}/cell/${cellId}`, {
-    method: "GET",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${API_URL}/document/${documentId}/cell/${cellId}`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
     },
-  });
+  );
   const json = await response.json();
   if (json.error) {
     throw new Error(json.error);
   }
   return json;
-}
+};

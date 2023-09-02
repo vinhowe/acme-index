@@ -88,8 +88,8 @@ export function convertToSVG(json: Drawing, viewBox: Rect): string {
   return svgStart + svgContent + svgEnd;
 }
 
-const D50 = [0.3457 / 0.3585, 1.00000, (1.0 - 0.3457 - 0.3585) / 0.3585];
-const D65 = [0.3127 / 0.3290, 1.00000, (1.0 - 0.3127 - 0.3290) / 0.3290];
+const D50 = [0.3457 / 0.3585, 1.0, (1.0 - 0.3457 - 0.3585) / 0.3585];
+const D65 = [0.3127 / 0.329, 1.0, (1.0 - 0.3127 - 0.329) / 0.329];
 
 type Matrix = number[][];
 type Vector = number[];
@@ -185,7 +185,7 @@ export function gam_P3(RGB: Color3) {
   // convert an array of linear-light display-p3 RGB  in the range 0.0-1.0
   // to gamma corrected form
 
-  return gam_sRGB(RGB) ; // same as sRGB
+  return gam_sRGB(RGB); // same as sRGB
 }
 
 export function lin_P3_to_XYZ(rgb: Color3) {
@@ -202,55 +202,57 @@ export function lin_P3_to_XYZ(rgb: Color3) {
 }
 
 export function XYZ_to_Lab(XYZ: Color3) {
-	// Assuming XYZ is relative to D50, convert to CIE Lab
-	// from CIE standard, which now defines these as a rational fraction
-	var ε = 216/24389;  // 6^3/29^3
-	var κ = 24389/27;   // 29^3/3^3
+  // Assuming XYZ is relative to D50, convert to CIE Lab
+  // from CIE standard, which now defines these as a rational fraction
+  var ε = 216 / 24389; // 6^3/29^3
+  var κ = 24389 / 27; // 29^3/3^3
 
-	// compute xyz, which is XYZ scaled relative to reference white
-	var xyz = XYZ.map((value, i) => value / D50[i]);
+  // compute xyz, which is XYZ scaled relative to reference white
+  var xyz = XYZ.map((value, i) => value / D50[i]);
 
-	// now compute f
-	var f = xyz.map(value => value > ε ? Math.cbrt(value) : (κ * value + 16)/116);
+  // now compute f
+  var f = xyz.map((value) =>
+    value > ε ? Math.cbrt(value) : (κ * value + 16) / 116,
+  );
 
-	return [
-		(116 * f[1]) - 16, 	 // L
-		500 * (f[0] - f[1]), // a
-		200 * (f[1] - f[2])  // b
-	];
-	// L in range [0,100]. For use in CSS, add a percent
+  return [
+    116 * f[1] - 16, // L
+    500 * (f[0] - f[1]), // a
+    200 * (f[1] - f[2]), // b
+  ];
+  // L in range [0,100]. For use in CSS, add a percent
 }
 
 export function Lab_to_XYZ(Lab: Color3) {
-	// Convert Lab to D50-adapted XYZ
-	// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-	var κ = 24389/27;   // 29^3/3^3
-	var ε = 216/24389;  // 6^3/29^3
-	var f = [];
+  // Convert Lab to D50-adapted XYZ
+  // http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+  var κ = 24389 / 27; // 29^3/3^3
+  var ε = 216 / 24389; // 6^3/29^3
+  var f = [];
 
-	// compute f, starting with the luminance-related term
-	f[1] = (Lab[0] + 16)/116;
-	f[0] = Lab[1]/500 + f[1];
-	f[2] = f[1] - Lab[2]/200;
+  // compute f, starting with the luminance-related term
+  f[1] = (Lab[0] + 16) / 116;
+  f[0] = Lab[1] / 500 + f[1];
+  f[2] = f[1] - Lab[2] / 200;
 
-	// compute xyz
-	var xyz = [
-		Math.pow(f[0],3) > ε ?   Math.pow(f[0],3)            : (116*f[0]-16)/κ,
-		Lab[0] > κ * ε ?         Math.pow((Lab[0]+16)/116,3) : Lab[0]/κ,
-		Math.pow(f[2],3)  > ε ?  Math.pow(f[2],3)            : (116*f[2]-16)/κ
-	];
+  // compute xyz
+  var xyz = [
+    Math.pow(f[0], 3) > ε ? Math.pow(f[0], 3) : (116 * f[0] - 16) / κ,
+    Lab[0] > κ * ε ? Math.pow((Lab[0] + 16) / 116, 3) : Lab[0] / κ,
+    Math.pow(f[2], 3) > ε ? Math.pow(f[2], 3) : (116 * f[2] - 16) / κ,
+  ];
 
-	// Compute XYZ by scaling xyz by reference white
-	return xyz.map((value, i) => value * D50[i]) as Color3;
+  // Compute XYZ by scaling xyz by reference white
+  return xyz.map((value, i) => value * D50[i]) as Color3;
 }
 
 export function XYZ_to_lin_P3(XYZ: Color3) {
-	// convert XYZ to linear-light P3
-	var M = [
-		[ 446124 / 178915, -333277 / 357830, -72051 / 178915 ],
-		[ -14852 /  17905,   63121 /  35810,    423 /  17905 ],
-		[  11844 / 330415,  -50337 / 660830, 316169 / 330415 ],
-	];
+  // convert XYZ to linear-light P3
+  var M = [
+    [446124 / 178915, -333277 / 357830, -72051 / 178915],
+    [-14852 / 17905, 63121 / 35810, 423 / 17905],
+    [11844 / 330415, -50337 / 660830, 316169 / 330415],
+  ];
 
-	return multiplyMatrices(M, XYZ) as Color3;
+  return multiplyMatrices(M, XYZ) as Color3;
 }

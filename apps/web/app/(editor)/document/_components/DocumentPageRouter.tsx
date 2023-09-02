@@ -38,7 +38,6 @@ function NewDocumentPage() {
   );
 }
 
-
 export default function DocumentPageRouter() {
   const id = urlId(usePathname());
   const [initialId, setInitialId] = useState<string | null>(id);

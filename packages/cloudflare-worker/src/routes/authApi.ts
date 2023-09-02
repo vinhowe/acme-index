@@ -279,7 +279,7 @@ router
     return json(cell);
   })
   .post<UserDataRequest>('/document/:documentId/cell', withAuthenticatedRequest, async (request, env) => {
-    const cellBody = await request.json<Omit<DocumentCell, "documentId" | "id">>();
+    const cellBody = await request.json<Omit<DocumentCell, 'documentId' | 'id'>>();
 
     const cell = await request.database.documentCells.create({
       ...cellBody,
@@ -290,7 +290,7 @@ router
   })
   .patch<UserDataRequest>('/document/:documentId/cell/:cellId', withAuthenticatedRequest, async (request, env) => {
     const { documentId, cellId } = request.params;
-    const cellBody = await request.json<Omit<DocumentCell, "documentId" | "id">>();
+    const cellBody = await request.json<Omit<DocumentCell, 'documentId' | 'id'>>();
 
     const cell = await request.database.documentCells.update(cellId, {
       ...cellBody,

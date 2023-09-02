@@ -19,7 +19,15 @@ import ResizableReferenceInput from "./ResizableReferenceInput";
 import { EditorView, KeyBinding, ViewUpdate, keymap } from "@codemirror/view";
 import { getCM, vim } from "@replit/codemirror-vim";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { Lab_to_XYZ, XYZ_to_Lab, XYZ_to_lin_P3, gam_P3, lin_P3, lin_P3_to_XYZ, offsetDrawing } from "@/lib/editor/drawing-utils";
+import {
+  Lab_to_XYZ,
+  XYZ_to_Lab,
+  XYZ_to_lin_P3,
+  gam_P3,
+  lin_P3,
+  lin_P3_to_XYZ,
+  offsetDrawing,
+} from "@/lib/editor/drawing-utils";
 import ReactMarkdown from "react-markdown";
 import classNames from "classnames";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
@@ -114,7 +122,7 @@ function SVGDrawing({ drawing, viewBox }: { drawing: Drawing; viewBox: Rect }) {
 
   const generateClassName = (r: number, g: number, b: number, a: number) => {
     const safeString = `${r}_${g}_${b}_${a}`;
-    return `color_${safeString.replace(/\./g, 'p')}`; // replace '.' with 'p'
+    return `color_${safeString.replace(/\./g, "p")}`; // replace '.' with 'p'
   };
 
   // Collect unique colors
@@ -143,9 +151,11 @@ function SVGDrawing({ drawing, viewBox }: { drawing: Drawing; viewBox: Rect }) {
       invertedGreen = 1 - green;
       invertedBlue = 1 - blue;
     } else {
-      const [l, a, b] = XYZ_to_Lab(lin_P3_to_XYZ(lin_P3([red, green, blue])))
+      const [l, a, b] = XYZ_to_Lab(lin_P3_to_XYZ(lin_P3([red, green, blue])));
       const invertedLabColors = [100 - l, a, b] as [number, number, number];
-      [invertedRed, invertedGreen, invertedBlue] = gam_P3(XYZ_to_lin_P3(Lab_to_XYZ(invertedLabColors)))
+      [invertedRed, invertedGreen, invertedBlue] = gam_P3(
+        XYZ_to_lin_P3(Lab_to_XYZ(invertedLabColors)),
+      );
     }
     cssDark += `.${className} { stroke: color(display-p3 ${invertedRed} ${invertedGreen} ${invertedBlue} / ${
       normalizedAlpha * 100
@@ -175,10 +185,10 @@ function SVGDrawing({ drawing, viewBox }: { drawing: Drawing; viewBox: Rect }) {
         // Average instead:
         let strokeWidth = 0;
         for (let i = 0; i < stroke.path.controlPoints.length; i++) {
-          strokeWidth +=
-            stroke.path.controlPoints[i].size[1];
+          strokeWidth += stroke.path.controlPoints[i].size[1];
         }
-        strokeWidth /= stroke.path.controlPoints.length * window.devicePixelRatio;
+        strokeWidth /=
+          stroke.path.controlPoints.length * window.devicePixelRatio;
 
         for (let i = 1; i < controlPoints.length - 2; i += 3) {
           const cp1 = controlPoints[i];

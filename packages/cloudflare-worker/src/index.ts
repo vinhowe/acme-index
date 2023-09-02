@@ -103,7 +103,7 @@ router
       const { code } = await request.json<{ code: string }>();
 
       if (!code) {
-        return json({error: 'Missing code'}, { status: 400 });
+        return json({ error: 'Missing code' }, { status: 400 });
       }
 
       const response = await fetch('https://github.com/login/oauth/access_token', {

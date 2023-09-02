@@ -8,7 +8,7 @@ const slugify = (str: string) => {
     .toLowerCase()
     .replaceAll(" ", "-")
     .replaceAll(/[^\w\.-]+/g, "");
-}
+};
 
 export default function ResizableDocumentTitleInput({
   onSubmit,

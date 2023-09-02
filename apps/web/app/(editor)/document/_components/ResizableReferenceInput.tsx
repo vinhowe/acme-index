@@ -71,7 +71,11 @@ export default function ResizableReferenceInput({
         role="button"
         onClick={() => setSelected(true)}
         dangerouslySetInnerHTML={{
-          __html: value ? selected ? (value.replaceAll(" ", "&nbsp;") || PLACEHOLDER) : `Reference: ${value}` : PLACEHOLDER,
+          __html: value
+            ? selected
+              ? value.replaceAll(" ", "&nbsp;") || PLACEHOLDER
+              : `Reference: ${value}`
+            : PLACEHOLDER,
         }}
       ></span>
     </div>
