@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 const LOGIN_URL =
   `${process.env.NEXT_PUBLIC_WORKER_URL}/auth/login` ||
-  "http://localhost:8787/auth/login";
+  "http://127.0.0.1:8787/auth/login";
 
 const RedirectComponent = () => {
   useEffect(() => {
