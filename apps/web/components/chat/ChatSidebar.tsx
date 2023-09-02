@@ -128,7 +128,7 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
           submitText();
         }}
       >
-        <span className="select-none material-icons leading-[0] text-xl">
+        <span className="select-none material-symbols-rounded leading-[0] text-xl">
           send
         </span>
       </button>
@@ -355,7 +355,9 @@ const ChatTopBar = ({
           )}
           onClick={() => openHistory(dispatch)}
         >
-          <span className="material-icons select-none text-lg">history</span>
+          <span className="material-symbols-rounded select-none text-lg">
+            history
+          </span>
         </div>
         {history.map((item) => (
           <div

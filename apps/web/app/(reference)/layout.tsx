@@ -11,7 +11,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://use.typekit.net/ixr7lrv.css" />
       </head>
-      <body>{children}</body>
+      <body className="overscroll-x-none">{children}</body>
     </html>
   );
 }

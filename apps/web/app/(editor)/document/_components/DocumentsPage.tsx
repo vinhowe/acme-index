@@ -26,7 +26,7 @@ export default function DocumentsPage() {
               window.location.href = "/auth/login";
             }}
           >
-            <span className="material-icons select-none text-xl -mb-[0.1rem]">
+            <span className="material-symbols-rounded select-none text-xl -mb-[0.1rem]">
               login
             </span>
             Sign in
@@ -39,7 +39,7 @@ export default function DocumentsPage() {
               window.location.href = "/document/new";
             }}
           >
-            <span className="material-icons select-none text-xl -mb-[0.05rem]">
+            <span className="material-symbols-rounded select-none text-xl -mb-[0.05rem]">
               add
             </span>
             Create a document
