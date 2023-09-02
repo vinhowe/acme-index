@@ -32,8 +32,9 @@ jobs:
       - name: Build
         run: pnpm run build
       - name: Deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          workingDirectory: "./packages/cloudflare-worker"
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-        
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN}}
+        working-directory: ./packages/cloudflare-worker
+        run: |
+          pnpm install --save-dev wrangler
+          pnpm exec wrangler deploy
