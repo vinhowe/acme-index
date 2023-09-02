@@ -24,7 +24,7 @@ export const BodyItems: React.FC<BodyItemsProps> = ({
   nearestId,
 }) => {
   return (
-    <div>
+    <div className="overflow-x-clip">
       {bodyItems.map((item, itemIndex) => {
         return (
           <BodyItem bodyItem={item} nearestId={nearestId} key={itemIndex} />
