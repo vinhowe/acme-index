@@ -1,3 +1,5 @@
+import { Drawing } from "./drawing-types";
+
 export type UniqueID = string;
 
 export interface UniqueObject {
@@ -36,4 +38,27 @@ export type Reference = UniqueObject & {
 
 export type History = UniqueObject & {
   chats: UniqueID[];
+};
+
+type BaseCell<T> = UniqueObject & {
+  type: string;
+  documentId: UniqueID;
+  content: T;
+};
+
+export interface DocumentTextCell extends BaseCell<string> {
+  type: "text";
+}
+
+export interface DocumentDrawingCell extends BaseCell<Drawing> {
+  type: "drawing";
+}
+
+export type DocumentCell = DocumentTextCell | DocumentDrawingCell;
+
+export type Document = UniqueObject & {
+  title?: string;
+  reference?: string;
+  // We allow null values because individual cells can be empty
+  cells: Array<UniqueID | null>;
 };

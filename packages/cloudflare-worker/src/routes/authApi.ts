@@ -1,14 +1,14 @@
 import { IRequest, Router, json } from 'itty-router';
 import { AuthenticatedRequest, withAuthenticatedRequest } from '../auth';
 import { Env } from '../types';
-import { ChatAccess, ChatTurnAccess, Database, KVObjectTable } from '../data';
+import { DocumentCellAccess, ChatAccess, ChatTurnAccess, Database, DocumentAccess, KVObjectTable } from '../data';
 import { BotOctokitRequest, withBotOctokit } from '../github';
 import { parseRef } from 'textref';
 import { AnthropicCompletionSource, CompletionManager, CompletionSourceMap, OpenAICompletionSource } from '../completions';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { getTextbook } from '../textbook/util';
-import { Chat, ExercisesChapter, TextChapter } from '@acme-index/common';
+import { Chat, DocumentCell, ExercisesChapter, TextChapter, UniqueID } from '@acme-index/common';
 
 type UserDataRequest = IRequest & AuthenticatedRequest & { database: Database };
 type CompletionManagerRequest = UserDataRequest & { completionManager: CompletionManager };
@@ -25,6 +25,8 @@ const withUserData = async (request: IRequest & Partial<AuthenticatedRequest> & 
   request.database = {
     chats: chatAccess,
     chatTurns: new ChatTurnAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:chat-turns`), chatAccess),
+    documents: new DocumentAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:documents`)),
+    documentCells: new DocumentCellAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:document-cells`)),
   };
 };
 
@@ -115,7 +117,7 @@ router
       return json({ error: 'Exercise not found' }, { status: 400 });
     }
 
-    const chat = await request.database.chats.createChat({
+    const chat = await request.database.chats.create({
       reference: reference,
       provider: 'openai',
       model: 'gpt-4',
@@ -123,7 +125,7 @@ router
 
     return json(chat);
   })
-  .get('/chat/:chatId/turns-to/:turnId', async (request) => {
+  .get<UserDataRequest>('/chat/:chatId/turns-to/:turnId', async (request) => {
     // We just ignore the chat id for now because we expect turn ids to be unique
     const { turnId } = request.params;
     const turns = await request.database.chatTurns.getTurnsTo(turnId);
@@ -224,11 +226,87 @@ router
 
     return json(turn);
   })
-  .get<AuthenticatedRequest>('/user', withAuthenticatedRequest, async (request, env: Env) => {
+  .get<UserDataRequest>('/document', async (req, env) => {
+    const documents = await req.database.documents.getAll();
+    return json(documents);
+  })
+  .get<UserDataRequest>('/document/:id', withAuthenticatedRequest, async (request, env) => {
+    const { id } = request.params;
+    const document = await request.database.documents.get(id);
+
+    if (!document) {
+      return json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    return json(document);
+  })
+  .post<UserDataRequest>('/document/:id', withAuthenticatedRequest, async (request, env) => {
+    // Note that we do specify the ID here and cells is always empty
+    const { id } = request.params;
+    const { title } = await request.json<{ title?: string }>();
+
+    const document = await request.database.documents.create({
+      id,
+      title,
+    });
+
+    return json(document);
+  })
+  .patch<UserDataRequest>('/document/:id', withAuthenticatedRequest, async (request, env) => {
+    const { id } = request.params;
+    const { title, reference, cells } = await request.json<{ title?: string; reference?: string; cells: Array<UniqueID | null> }>();
+
+    const document = await request.database.documents.update(id, {
+      title,
+      reference,
+      cells,
+    });
+
+    return json(document);
+  })
+  .get<UserDataRequest>('/document/:documentId/cell/:cellId', withAuthenticatedRequest, async (request, env) => {
+    const { documentId, cellId } = request.params;
+    const cell = await request.database.documentCells.get(cellId);
+
+    if (!cell) {
+      return json({ error: 'Cell not found' }, { status: 404 });
+    }
+
+    if (cell.documentId !== documentId) {
+      return json({ error: "Cell doesn't belong to specified document" }, { status: 400 });
+    }
+
+    return json(cell);
+  })
+  .post<UserDataRequest>('/document/:documentId/cell', withAuthenticatedRequest, async (request, env) => {
+    const cellBody = await request.json<Omit<DocumentCell, "documentId" | "id">>();
+
+    const cell = await request.database.documentCells.create({
+      ...cellBody,
+      documentId: request.params.documentId,
+    });
+
+    return json(cell);
+  })
+  .patch<UserDataRequest>('/document/:documentId/cell/:cellId', withAuthenticatedRequest, async (request, env) => {
+    const { documentId, cellId } = request.params;
+    const cellBody = await request.json<Omit<DocumentCell, "documentId" | "id">>();
+
+    const cell = await request.database.documentCells.update(cellId, {
+      ...cellBody,
+      documentId,
+    });
+
+    return json(cell);
+  })
+  .get<UserDataRequest>('/user', withAuthenticatedRequest, async (request, env: Env) => {
     if (!request.session.githubToken) {
-      return new Response('Unauthorized', {
-        status: 401,
-      });
+      return json(
+        { error: 'Unauthorized' },
+        {
+          status: 401,
+        },
+      );
     }
 
     const response = await fetch('https://api.github.com/user', {

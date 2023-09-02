@@ -6,8 +6,8 @@ import { OctokitRequest, withBotOctokit, withOctokit } from './github';
 import { router as apiRouter } from './routes/authApi';
 import { Octokit } from '@octokit/rest';
 import { parseRef } from 'textref';
-import { TextChapter } from './textbook/types';
 import { getTextbook } from './textbook/util';
+import { TextChapter } from '@acme-index/common';
 
 export type Handler = RouteHandler<Request, [Env, ExecutionContext, { session: string }]>;
 
@@ -103,7 +103,7 @@ router
       const { code } = await request.json<{ code: string }>();
 
       if (!code) {
-        return new Response('Missing code', { status: 400 });
+        return json({error: 'Missing code'}, { status: 400 });
       }
 
       const response = await fetch('https://github.com/login/oauth/access_token', {

@@ -1,4 +1,4 @@
-import { IRequest } from 'itty-router';
+import { IRequest, json } from 'itty-router';
 import { z } from 'zod';
 import { WebCryptSession, createWebCryptSession } from 'webcrypt-session';
 import { Env } from './types';
@@ -18,9 +18,13 @@ export const withWebCryptSession = async (request: IRequest, env: Env) => {
 export const withAuthenticatedRequest = async (request: IRequest, env: Env) => {
   await withWebCryptSession(request, env);
   if (!request.session.githubToken) {
-    return new Response('Unauthorized', {
-      status: 401,
-    });
+    if (env.ENVIRONMENT !== "development") {
+      return json({ error: "Unauthorized" }, {
+        status: 401,
+      });
+    }
+    request.session.githubToken = env.GITHUB_BOT_ACCESS_TOKEN;
+    request.session.githubId = "development";
   }
 };
 

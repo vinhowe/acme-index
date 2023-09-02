@@ -1,4 +1,4 @@
-import { Chat, ChatTurn, History, UniqueID, UniqueObject } from '@acme-index/common';
+import { Chat, ChatTurn, Document, DocumentCell, History, UniqueID, UniqueObject } from '@acme-index/common';
 import { v4 as uuid } from 'uuid';
 
 export type CreateChatTurnBody = Pick<ChatTurn, 'chatId' | 'parent' | 'additionalContextReferences' | 'query' | 'response' | 'error'>;
@@ -16,9 +16,11 @@ export type MutableObjectTable<T extends UniqueObject> = ObjectTable<T> & {
 export interface Database {
   chats: ChatAccess;
   chatTurns: ChatTurnAccess;
+  documents: DocumentAccess;
+  documentCells: DocumentCellAccess;
 }
 
-export class HistoryAccess implements ObjectTable<History> {
+export class HistoryAccess implements MutableObjectTable<History> {
   constructor(private table: MutableObjectTable<History>) {
     this.table = table;
   }
@@ -40,6 +42,77 @@ export class HistoryAccess implements ObjectTable<History> {
   }
 }
 
+export class DocumentCellAccess implements ObjectTable<DocumentCell> {
+  constructor(private table: MutableObjectTable<DocumentCell>) {
+    this.table = table;
+  }
+
+  async get(id: string): Promise<DocumentCell | null> {
+    return this.table.get(id);
+  }
+
+  async getAll(): Promise<DocumentCell[]> {
+    return this.table.getAll();
+  }
+
+  async set(id: string, value: Omit<DocumentCell, keyof UniqueObject>): Promise<DocumentCell> {
+    return this.table.set(id, value);
+  }
+
+  async create(value: Omit<DocumentCell, keyof UniqueObject>): Promise<DocumentCell> {
+    return this.table.create(value);
+  }
+
+  async update(id: string, value: Omit<DocumentCell, keyof UniqueObject>): Promise<DocumentCell> {
+    const cell = await this.get(id);
+    if (!cell) {
+      throw new Error('Cell not found');
+    }
+    const filteredValue: Partial<DocumentCell> = Object.fromEntries(Object.entries(value).filter(([_, v]) => v !== undefined));
+    return this.table.set(id, {
+      ...cell,
+      ...filteredValue,
+    });
+  }
+}
+
+export class DocumentAccess implements ObjectTable<Document> {
+  constructor(private table: MutableObjectTable<Document>) {
+    this.table = table;
+  }
+
+  async get(id: string): Promise<Document | null> {
+    return this.table.get(id);
+  }
+
+  async getAll(): Promise<Document[]> {
+    return this.table.getAll();
+  }
+
+  async set(id: string, value: Omit<Document, keyof UniqueObject>): Promise<Document> {
+    return this.table.set(id, value);
+  }
+
+  async create(value: Pick<Document, 'id' | 'title' | 'reference'>): Promise<Document> {
+    return this.table.set(value.id, {
+      ...value,
+      cells: [],
+    });
+  }
+
+  async update(id: string, value: Omit<Document, keyof UniqueObject>): Promise<Document> {
+    const document = await this.get(id);
+    if (!document) {
+      throw new Error('Document not found');
+    }
+    const filteredValue: Partial<Document> = Object.fromEntries(Object.entries(value).filter(([_, v]) => v !== undefined));
+    return this.table.set(id, {
+      ...document,
+      ...filteredValue,
+    });
+  }
+}
+
 export class ChatAccess implements ObjectTable<Chat> {
   constructor(private table: MutableObjectTable<Chat>) {
     this.table = table;
@@ -53,7 +126,7 @@ export class ChatAccess implements ObjectTable<Chat> {
     return this.table.getAll();
   }
 
-  async createChat(body: Pick<Chat, 'reference' | 'provider' | 'model'>): Promise<Chat> {
+  async create(body: Pick<Chat, 'reference' | 'provider' | 'model'>): Promise<Chat> {
     if (!body.reference) {
       throw new Error('Chat must have reference');
     }

@@ -22,4 +22,5 @@ export interface Env {
   TEXT_REPOSITORY: string;
   JWT_SECRET: string;
   WEBCRYPT_SESSION_SECRET: string;
+  ENVIRONMENT: "development" | "production";
 }
