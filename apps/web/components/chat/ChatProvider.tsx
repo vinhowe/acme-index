@@ -366,6 +366,7 @@ export const newChat = async (
   referenceId: string,
   dispatch: Dispatch<ChatAction>,
 ) => {
+  dispatch({ type: "set sidebar open state", payload: { isOpen: true } });
   dispatch({ type: "new chat", payload: { referenceId } });
 };
 
