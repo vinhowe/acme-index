@@ -24,10 +24,10 @@ const ExerciseIntegratedSectionWrapper: React.FC<React.PropsWithChildren> = ({
 }) => {
   const childrenArray = Children.toArray(children);
   return (
-    <div className="flex flex-col-reverse md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] w-full gap-x-8 md:gap-x-12">
+    <div className="flex flex-col-reverse md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] md:mx-auto gap-x-8 md:gap-x-12">
       <div className="md:col-span-1 relative">{childrenArray[0]}</div>
       {childrenArray.slice(1).map((child, index) => {
-        return <div key={index}>{child}</div>;
+        return <div className="md:col-span-1" key={index}>{child}</div>;
       })}
     </div>
   );
@@ -69,10 +69,12 @@ const ChapterTextWithExercises: React.FC<
   ChapterWithIntegratedExercisesProps
 > = ({ text, exercises }) => {
   return (
-    <article className="relative">
-      <h2 className="text-3xl font-normal tracking-tight">
-        {text.id}&ensp;{text.name}
-      </h2>
+    <article className="relative flex flex-col">
+      <div className="md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] md:mx-auto gap-x-8 md:gap-x-12">
+        <h2 className="text-3xl font-normal tracking-tight">
+          {text.id}&ensp;{text.name}
+        </h2>
+      </div>
       {text.body && (
         <ExerciseIntegratedSectionWrapper>
           <section>
