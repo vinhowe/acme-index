@@ -24,8 +24,8 @@ const ExerciseIntegratedSectionWrapper: React.FC<React.PropsWithChildren> = ({
 }) => {
   const childrenArray = Children.toArray(children);
   return (
-    <div className="md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] w-full gap-x-8 md:gap-x-12">
-      <div className="col-span-1 relative">{childrenArray[0]}</div>
+    <div className="flex flex-col-reverse md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] w-full gap-x-8 md:gap-x-12">
+      <div className="md:col-span-1 relative">{childrenArray[0]}</div>
       {childrenArray.slice(1).map((child, index) => {
         return <div key={index}>{child}</div>;
       })}

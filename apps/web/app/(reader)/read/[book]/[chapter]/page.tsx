@@ -1,10 +1,13 @@
 // src/routes/Textbook.js
-import React from "react";
+import React, { useContext } from "react";
 import { getTextbookChapterExercises, getTextbookChapterText } from "@/lib/api";
 import ChapterTextWithExercises from "./_components/ChapterTextWithExercises";
 import ChatSidebar from "@/components/chat/ChatSidebar";
-import { ChatProvider } from "@/components/chat/ChatProvider";
+import { ChatContext, ChatProvider } from "@/components/chat/ChatProvider";
 import { ExercisesChapter, TextChapter } from "@acme-index/common";
+import classNames from "classnames";
+import { SidebarToggleAwareBodyLayout, SidebarToggleAwareSidebarLayout } from "./_components/SidebarAwareLayouts";
+
 
 export default async function Textbook({
   params,
@@ -19,17 +22,15 @@ export default async function Textbook({
   )) as ExercisesChapter;
   return (
     <ChatProvider>
-      <div className="grid 2xl:grid-cols-[1fr_minmax(0,_32rem)] xl:grid-cols-[1fr_minmax(0,_28rem)] overflow-none h-[100dvh]">
-        <div className="col-span-1 overflow-scroll">
-          <main className="p-8 lg:p-12 prose prose-neutral mx-auto mt-8 dark:prose-invert max-w-none">
+      <div className="relative">
+        <div className="grid 2xl:grid-cols-[1fr_minmax(0,_32rem)] xl:grid-cols-[1fr_minmax(0,_28rem)] overflow-none h-[100dvh]">
+          <SidebarToggleAwareBodyLayout>
             <h1 className="text-5xl font-light tracking-tight">Volume 1</h1>
             <ChapterTextWithExercises text={text} exercises={exercises} />
-          </main>
-        </div>
-        <div className="hidden xl:block fixed 2xl:w-[32rem] xl:w-[28rem] left-auto right-0">
-          <div className="relative top-0 right-0 w-full h-[100dvh] overflow-hidden">
+          </SidebarToggleAwareBodyLayout>
+          <SidebarToggleAwareSidebarLayout>
             <ChatSidebar />
-          </div>
+          </SidebarToggleAwareSidebarLayout>
         </div>
       </div>
     </ChatProvider>

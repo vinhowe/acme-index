@@ -332,6 +332,27 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
   );
 };
 
+const ChatToggleButton = ({
+  isOpen = false,
+  onClick,
+}: {
+  isOpen?: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <button
+      type="button"
+      className="font-mono px-3 h-full bg-green-300 text-green-900 dark:bg-green-900 dark:text-green-100 flex items-center select-none gap-2"
+      onClick={onClick}
+    >
+      Chat
+      <span className="material-symbols-rounded text-lg">
+        {isOpen ? "right_panel_close" : "right_panel_open"}
+      </span>
+    </button>
+  );
+};
+
 const ChatTopBar = ({
   history,
   activeId,
@@ -342,9 +363,17 @@ const ChatTopBar = ({
   const { dispatch } = useContext(ChatContext);
   return (
     <div className="w-full flex justify-start items-center h-12 shrink-0 dark:bg-neutral-800 bg-neutral-200">
-      <div className="font-mono px-3 h-full bg-green-300 text-green-900 dark:bg-green-900 dark:text-green-100 flex items-center select-none">
-        Chat
-      </div>
+      <ChatToggleButton
+        isOpen
+        onClick={() =>
+          dispatch({
+            type: "set sidebar open state",
+            payload: {
+              isOpen: false,
+            },
+          })
+        }
+      />
       <div className="flex items-start h-full gap-px overflow-x-scroll bg-neutral-300 dark:bg-neutral-700 gap-x-px pr-px">
         <div
           className={classNames(
@@ -407,17 +436,41 @@ const ChatHistoryPanel: React.FC = () => {
 };
 
 const ChatSidebar: React.FC = () => {
-  const { state } = useContext(ChatContext);
+  const { state, dispatch } = useContext(ChatContext);
   return (
-    <div className="w-full h-full bg-neutral-100 dark:bg-[#101010] flex flex-col">
-      <ChatTopBar
-        history={state.chatHistory}
-        activeId={state?.chatData?.chat?.id || state?.referenceId || null}
-      />
-      {state.referenceId ? (
-        <ChatSession referenceId={state.referenceId} />
+    <div
+      className={classNames(
+        "flex",
+        state.isSidebarOpen
+          ? "flex-col w-full h-full bg-neutral-100 dark:bg-[#101010]"
+          : "",
+      )}
+    >
+      {state.isSidebarOpen ? (
+        <>
+          <ChatTopBar
+            history={state.chatHistory}
+            activeId={state?.chatData?.chat?.id || state?.referenceId || null}
+          />
+          {state.referenceId ? (
+            <ChatSession referenceId={state.referenceId} />
+          ) : (
+            <ChatHistoryPanel />
+          )}
+        </>
       ) : (
-        <ChatHistoryPanel />
+        <div className="h-12 p-2">
+          <ChatToggleButton
+            onClick={() =>
+              dispatch({
+                type: "set sidebar open state",
+                payload: {
+                  isOpen: true,
+                },
+              })
+            }
+          />
+        </div>
       )}
     </div>
   );

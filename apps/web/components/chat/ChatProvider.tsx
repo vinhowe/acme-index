@@ -23,7 +23,7 @@ export interface WaitingTurn {
 
 // Define the state shape
 interface ChatState {
-  isOpen: boolean;
+  isSidebarOpen: boolean;
   chatHistory: ChatHistoryItem[];
   // onCompletionUpdate: (value: string) => void;
   chatData: {
@@ -38,6 +38,12 @@ interface ChatState {
 
 // Define the action shape
 type ChatAction =
+  | {
+      type: "set sidebar open state";
+      payload: {
+        isOpen: boolean;
+      };
+    }
   | {
       type: "load chat history";
       payload: {
@@ -97,7 +103,7 @@ interface ChatContextProps {
 
 // Initial state
 const initialState: ChatState = {
-  isOpen: false,
+  isSidebarOpen: false,
   chatHistory: [],
   // onCompletionUpdate: (_value: string) => {},
   // Following two:
@@ -113,6 +119,11 @@ const initialState: ChatState = {
 // Reducer function
 const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   switch (action.type) {
+    case "set sidebar open state":
+      return {
+        ...state,
+        isSidebarOpen: action.payload.isOpen,
+      };
     case "load chat history":
       return {
         ...state,
