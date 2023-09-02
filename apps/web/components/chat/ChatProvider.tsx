@@ -103,7 +103,7 @@ interface ChatContextProps {
 
 // Initial state
 const initialState: ChatState = {
-  isSidebarOpen: false,
+  isSidebarOpen: true,
   chatHistory: [],
   // onCompletionUpdate: (_value: string) => {},
   // Following two:
@@ -262,16 +262,22 @@ export const ChatProvider: React.FC<React.PropsWithChildren> = ({
 }) => {
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
-  // Download chat history from local storage
-  // useEffect(() => {
-  //   const chatHistory = localStorage.getItem("chatHistory");
-  //   if (chatHistory) {
-  //     dispatch({
-  //       type: "load chat history",
-  //       payload: JSON.parse(chatHistory),
-  //     });
-  //   }
-  // }, []);
+  useEffect(() => {
+    const isSidebarOpen = localStorage.getItem("isSidebarOpen");
+    if (isSidebarOpen !== null) {
+      dispatch({
+        type: "set sidebar open state",
+        payload: {
+          isOpen: JSON.parse(isSidebarOpen),
+        },
+      });
+    }
+  }, []);
+
+  // Save isSidebarOpen to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("isSidebarOpen", JSON.stringify(state.isSidebarOpen));
+  }, [state.isSidebarOpen]);
 
   // Download chat history from server
   useEffect(() => {
