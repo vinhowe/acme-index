@@ -768,7 +768,7 @@ export default function DocumentPage({ id }: { id: string }) {
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (editingCellIndex) return;
+      if (editingCellIndex !== null) return;
 
       let keyString: string = "";
 
