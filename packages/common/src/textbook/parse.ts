@@ -248,7 +248,7 @@ function handleExerciseTag(
   return exercise;
 }
 
-function handleEquation(
+function handleEquationTag(
   htmlContent: string,
   tagAttributes: { [key: string]: string },
 ): EquationBodyItem {
@@ -352,7 +352,7 @@ const handlers: { [tagName: string]: HandlerFunction } = {
   ol: handleOlTag,
   proof: handleProofTag,
   pagebreak: handlePageBreak,
-  equation: handleEquation,
+  equation: handleEquationTag,
 };
 
 function handleHtmlInnards(htmlContent: string): Array<BodyItem> {
@@ -549,6 +549,8 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
         newBodyItems = [handleExerciseTag(htmlContent, tagAttributes)];
       } else if (tagName === "figure") {
         newBodyItems = [handleFigureTag(htmlContent, tagAttributes)];
+      } else if (tagName === "equation") {
+        newBodyItems = [handleEquationTag(htmlContent, tagAttributes)];
       } else if (tagName === "ol") {
         const bodyItem = handleOlTag(htmlContent, tagAttributes);
         newBodyItems = [bodyItem];
