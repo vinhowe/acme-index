@@ -225,17 +225,6 @@ function DrawingViewer({
   drawing?: Drawing;
 }) {
   const [width, setWidth] = useState<number>(0);
-  // const [svgContent, setSvgContent] = useState<string | null>(null);
-
-  // useEffect(() => {
-  //   if (!drawing) return;
-
-  //   const svgContent = convertToSVG(drawing, [
-  //     [0, drawing.bounds[0][1]],
-  //     [width, drawing.bounds[1][1]],
-  //   ]);
-  //   setSvgContent(svgContent);
-  // }, [drawing, width]);
 
   const setupPatternRef = useCallback((node: SVGElement | null) => {
     if (node) {
@@ -945,10 +934,6 @@ export default function DocumentPage({ id }: { id: string }) {
           </button>
         </div>
       </div>
-      {/* <div
-        className="w-full h-full absolute top-0 pointer-events-none"
-        dangerouslySetInnerHTML={{ __html: tempSvg }}
-      ></div> */}
     </div>
   );
 }
