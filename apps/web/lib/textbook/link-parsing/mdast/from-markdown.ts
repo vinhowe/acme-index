@@ -11,6 +11,7 @@ export function fromMarkdown() {
         // @ts-expect-error
         value: null,
         data: {
+          // @ts-expect-error
           alias: null,
           permalink: null,
           exists: null,

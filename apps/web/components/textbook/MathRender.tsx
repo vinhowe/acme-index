@@ -38,7 +38,7 @@ const MathRender: React.FC<MathRenderProps> = ({ body }) => {
                 rehypePlugins={[rehypeRaw]}
                 components={{
                   p: ({ children }) => {
-                    return children;
+                    return <>{children}</>;
                   },
                 }}
               >

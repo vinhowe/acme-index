@@ -125,7 +125,7 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
               );
             },
             pre: ({ children }) => {
-              return children;
+              return <>{children}</>;
             },
           }}
         >
