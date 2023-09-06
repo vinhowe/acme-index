@@ -19,9 +19,6 @@ export default async function Textbook({
       <main className="prose prose-neutral mx-auto mt-8 dark:prose-invert">
         <h1 className="text-5xl font-light tracking-tight">Textbook</h1>
         <ReferenceChapterText chapter={chapter} />
-        {/* {textbook.map((chapter) => (
-        <Chapter key={chapter.id} chapter={chapter} />
-      ))} */}
       </main>
     </div>
   );
