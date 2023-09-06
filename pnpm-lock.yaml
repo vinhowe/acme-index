@@ -314,6 +314,9 @@ importers:
       client-only:
         specifier: ^0.0.1
         version: 0.0.1
+      github-dark.css:
+        specifier: link:highlight.js/styles/github-dark.css
+        version: link:highlight.js/styles/github-dark.css
       mdast-util-from-markdown:
         specifier: ^2.0.0
         version: 2.0.0
