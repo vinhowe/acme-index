@@ -1,4 +1,4 @@
-import { RouteHandler, Router, createCors, error, json } from 'itty-router';
+import { RouteHandler, Router, createCors, error, json, text } from 'itty-router';
 import { ExecutionContext } from '@cloudflare/workers-types';
 import { Env } from './types';
 import { AuthenticatedRequest, withWebCryptSession } from './auth';
@@ -7,7 +7,7 @@ import { router as apiRouter } from './routes/authApi';
 import { Octokit } from '@octokit/rest';
 import { parseRef } from 'textref';
 import { getTextbook } from './textbook/util';
-import { TextChapter } from '@acme-index/common';
+import { TextChapter, renderExerciseChapterContext } from '@acme-index/common';
 
 export type Handler = RouteHandler<Request, [Env, ExecutionContext, { session: string }]>;
 
@@ -39,14 +39,20 @@ router
       return json({ error: 'Invalid reference' }, { status: 400 });
     }
 
-    // For now, we ignore the namespace and book
-    // const { namespace, book } = parsedReference;
+    const { namespace, book } = parsedReference;
 
-    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>('v1', env, req.botOctokit);
+    if (namespace !== 'acme') {
+      return json({ error: 'Invalid namespace' }, { status: 400 });
+    }
+
+    if (!book) {
+      return json({ error: 'Invalid book' }, { status: 400 });
+    }
+
+    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, env, req.botOctokit);
 
     if ('chapter' in parsedReference && parsedReference.chapter !== undefined) {
       const { chapter } = parsedReference;
-      // @ts-expect-error
       textbookData = textbookData[chapter];
     }
 
@@ -60,10 +66,17 @@ router
       return json({ error: 'Invalid reference' }, { status: 400 });
     }
 
-    // For now, we ignore the namespace and book
-    // const { namespace, book } = parsedReference;
+    const { namespace, book } = parsedReference;
 
-    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>('v1', env, req.botOctokit);
+    if (namespace !== 'acme') {
+      return json({ error: 'Invalid namespace' }, { status: 400 });
+    }
+
+    if (!book) {
+      return json({ error: 'Invalid book' }, { status: 400 });
+    }
+
+    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, env, req.botOctokit);
 
     return json(Object.keys(textbookData));
   })
@@ -75,16 +88,83 @@ router
       return json({ error: 'Invalid reference' }, { status: 400 });
     }
 
+    const { namespace, book } = parsedReference;
+
+    if (namespace !== 'acme') {
+      return json({ error: 'Invalid namespace' }, { status: 400 });
+    }
+
+    if (!book) {
+      return json({ error: 'Invalid book' }, { status: 400 });
+    }
+
     // For now, we ignore the namespace and book
     // const { namespace, book } = parsedReference;
-    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>('v1-exercises', env, req.botOctokit);
+    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(`${book}-exercises`, env, req.botOctokit);
     if ('chapter' in parsedReference && parsedReference.chapter !== undefined) {
       const { chapter } = parsedReference;
-      // @ts-expect-error
       textbookData = textbookData[chapter];
     }
 
     return json(textbookData);
+  })
+  .get('/api/textbook/context/:reference+', withBotOctokit, async (req, env) => {
+    const { reference } = req.params;
+    // Check ACCEPT header to see if we should return text or JSON
+    const parsedReference = parseRef(reference);
+    if (!parsedReference) {
+      return json({ error: 'Invalid reference' }, { status: 400 });
+    }
+    // For now, we ignore the namespace and book
+    const { type, chapter, section } = parsedReference;
+    if (type !== 'exercise') {
+      return json({ error: 'Reference must be an exercise' }, { status: 400 });
+    }
+    if (typeof chapter !== 'string' || typeof section !== 'string') {
+      return json({ error: 'Reference must have a chapter and a section' }, { status: 400 });
+    }
+
+    const { namespace, book } = parsedReference;
+
+    if (namespace !== 'acme') {
+      return json({ error: 'Invalid namespace' }, { status: 400 });
+    }
+
+    if (!book) {
+      return json({ error: 'Invalid book' }, { status: 400 });
+    }
+
+    let textbookTextData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, env, req.botOctokit);
+    let textbookExercisesData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(
+      `${book}-exercises`,
+      env,
+      req.botOctokit,
+    );
+    const chapterTextData = textbookTextData[chapter];
+    const chapterExercisesData = textbookExercisesData[chapter];
+    if (!chapterTextData || !chapterExercisesData) {
+      return json({ error: 'Invalid chapter' }, { status: 400 });
+    }
+    // Find exercise in chapter (section doesn't mean chapter section)
+    let exercise;
+    let sectionId;
+    for (let exercisesSection of chapterExercisesData.sections) {
+      for (let sectionExercise of exercisesSection.body) {
+        if (sectionExercise.type === 'exercise' && sectionExercise.id === `${chapter}.${section}`) {
+          exercise = sectionExercise;
+          sectionId = exercisesSection.id;
+          break;
+        }
+      }
+      if (exercise) {
+        break;
+      }
+    }
+    if (!exercise || !sectionId) {
+      return json({ error: 'Invalid exercise' }, { status: 400 });
+    }
+    const context = renderExerciseChapterContext(sectionId, exercise, chapterTextData);
+    return text(context);
   });
 
 router.all('/api/*', apiRouter.handle);

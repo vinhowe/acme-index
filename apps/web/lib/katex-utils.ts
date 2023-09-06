@@ -108,10 +108,15 @@ function splitAtDelimiters(text: string, delimiters: Delimiter[]): DataItem[] {
   return data;
 }
 
+export interface KatexRenderItem {
+  type: "text" | "math";
+  data: string;
+}
+
 export function renderMathInString(
   text: string,
   options?: KatexOptions & Options,
-): string {
+): KatexRenderItem[] {
   const defaultOptions: Options = {
     delimiters: [
       { left: "$$", right: "$$", display: true },
@@ -133,31 +138,41 @@ export function renderMathInString(
   const { delimiters } = options;
   const data = splitAtDelimiters(text, delimiters);
 
-  return data
-    .map((item) => {
-      if (item.type === "text") {
-        return item.data;
-      } else {
-        try {
-          const katexHtml = katex.renderToString(item.data, {
-            displayMode: item.display,
-            ...options,
-          });
-          if (item.display) {
-            return `<span class="katex-display-wrapper">${katexHtml}</span>`;
-          }
-          return katexHtml;
-        } catch (e) {
-          if (e instanceof katex.ParseError && options?.errorCallback) {
-            options.errorCallback(
-              "KaTeX auto-render: Failed to parse `" + item.data + "` with ",
-              e,
-            );
-            return item.rawData;
-          }
-          throw e;
+  return data.map((item) => {
+    if (item.type === "text") {
+      return {
+        type: "text",
+        data: item.data,
+      };
+    } else {
+      try {
+        const katexHtml = katex.renderToString(item.data, {
+          displayMode: item.display,
+          ...options,
+        });
+        if (item.display) {
+          return {
+            type: "math",
+            data: `<span class="katex-display-wrapper">${katexHtml}</span>`,
+          };
         }
+        return {
+          type: "math",
+          data: katexHtml || "katex error",
+        };
+      } catch (e) {
+        if (e instanceof katex.ParseError && options?.errorCallback) {
+          options.errorCallback(
+            "KaTeX auto-render: Failed to parse `" + item.data + "` with ",
+            e,
+          );
+          return {
+            type: "text",
+            data: item.rawData || "katex error",
+          };
+        }
+        throw e;
       }
-    })
-    .join("");
+    }
+  });
 }

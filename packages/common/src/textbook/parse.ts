@@ -16,6 +16,8 @@ import {
   BaseChapter,
   InlineReference,
   InlineText,
+  AlgorithmBodyItem,
+  TextBodyItem,
 } from "./types";
 
 type Attributes = { [key: string]: string };
@@ -39,7 +41,7 @@ function extractRefs(input: string): Array<InlineText | InlineReference> {
   }
 
   const tagRegex =
-    /<(text|result|proof|exercise|figure|equation)ref([^>]*)>(.*?)<\/\1ref>/g;
+    /<(text|result|proof|exercise|figure|equation|algorithm)ref([^>]*)>(.*?)<\/\1ref>/g;
 
   const segments: Array<InlineText | InlineReference> = [];
 
@@ -137,6 +139,107 @@ function handleHTMLContent(
   }
 
   return { attrs, body: content };
+}
+
+type HandlerFunction = (
+  body: string,
+  attrs: { [key: string]: string },
+) => BodyItem;
+
+const handlers: { [tagName: string]: HandlerFunction } = {
+  ol: handleOlTag,
+  proof: handleProofTag,
+  pagebreak: handlePageBreak,
+  equation: handleEquationTag,
+  algorithm: handleAlgorithmTag,
+};
+
+function handleHtmlInnards(htmlContent: string): Array<BodyItem> {
+  const bodyTypes: Array<BodyItem> = [];
+  const chunks = htmlContent.split(/\n\n/).filter((p) => p.length > 0);
+
+  for (let i = 0; i < chunks.length; i++) {
+    let currentChunk = chunks[i];
+    const currentChunkTrimmed = currentChunk.trimStart();
+    const openingTagMatch = /^<([a-zA-Z0-9_-]+)[^>/]*(\/)?>/i.exec(
+      currentChunkTrimmed,
+    );
+    // Includes language
+    const codeBlockMatch = /^```/.exec(currentChunkTrimmed);
+
+    // Handle opening tag
+    if (openingTagMatch) {
+      currentChunk = currentChunkTrimmed;
+      const openingTag = openingTagMatch[1];
+      const isSelfClosing = openingTagMatch[2] === "/";
+
+      if (!isSelfClosing) {
+        const closingTag = `</${openingTag}>`;
+
+        if (!currentChunk.includes(closingTag)) {
+          while (i < chunks.length - 1 && !chunks[i + 1].includes(closingTag)) {
+            currentChunk += "\n\n" + chunks[++i];
+          }
+          currentChunk += "\n\n" + chunks[++i];
+        }
+      }
+
+      const { attrs: tagAttributes, body: tagBody } = handleHTMLContent(
+        currentChunk,
+        isSelfClosing,
+      );
+
+      if (openingTag in handlers) {
+        bodyTypes.push(handlers[openingTag](tagBody, tagAttributes));
+        continue;
+      }
+    }
+
+    if (codeBlockMatch) {
+      // Iterate through chunks until we find the closing tag
+      const closingTag = "```";
+      if (!currentChunk.replace("```", "").includes(closingTag)) {
+        while (i < chunks.length - 1 && !chunks[i + 1].includes(closingTag)) {
+          currentChunk += "\n\n" + chunks[++i];
+        }
+        currentChunk += "\n\n" + chunks[++i];
+      }
+      // Parse out language and content with regex
+      const codeBlockRegex = /^```(\w+)?\n([\s\S]*)\n```$/;
+      currentChunk = currentChunk.trim();
+      const codeBlockMatch = codeBlockRegex.exec(currentChunk.trim());
+      if (!codeBlockMatch) {
+        continue;
+      }
+      const [, language, codeBlockContent] = codeBlockMatch;
+
+      bodyTypes.push({
+        type: "fence",
+        info: language,
+        body: codeBlockContent,
+      });
+      continue;
+    }
+
+    bodyTypes.push({
+      type: "text",
+      body: extractPageBreaks(currentChunk).reduce(
+        (
+          accumulator: Array<InlineItem>,
+          currentItem: InlineText | PageBreakItem,
+        ) => {
+          if (currentItem.type === "pagebreak") {
+            return accumulator.concat(currentItem);
+          } else {
+            return accumulator.concat(...extractRefs(currentItem.body));
+          }
+        },
+        [] as Array<InlineItem>,
+      ),
+    });
+  }
+
+  return bodyTypes;
 }
 
 function handleOlTag(
@@ -271,6 +374,32 @@ function handleEquationTag(
   return equation;
 }
 
+function handleAlgorithmTag(
+  htmlContent: string,
+  tagAttributes: { [key: string]: string },
+): AlgorithmBodyItem {
+  const algorithm = {
+    type: "algorithm",
+    body: handleHtmlInnards(htmlContent),
+  } as Partial<AlgorithmBodyItem>;
+
+  Object.entries(tagAttributes).forEach(([key, value]) => {
+    switch (key) {
+      case "id":
+        algorithm[key] = value;
+        break;
+      case "name":
+        algorithm[key] = value;
+        break;
+      case "page":
+        algorithm[key] = parseInt(value, 10);
+        break;
+    }
+  });
+
+  return algorithm as AlgorithmBodyItem;
+}
+
 function handleFigureTag(
   htmlContent: string,
   tagAttributes: { [key: string]: string },
@@ -343,78 +472,6 @@ function handlePageBreak(
   return pageBreak;
 }
 
-type HandlerFunction = (
-  body: string,
-  attrs: { [key: string]: string },
-) => BodyItem;
-
-const handlers: { [tagName: string]: HandlerFunction } = {
-  ol: handleOlTag,
-  proof: handleProofTag,
-  pagebreak: handlePageBreak,
-  equation: handleEquationTag,
-};
-
-function handleHtmlInnards(htmlContent: string): Array<BodyItem> {
-  const bodyTypes: Array<BodyItem> = [];
-  const chunks = htmlContent
-    .split(/\n\n/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
-
-  for (let i = 0; i < chunks.length; i++) {
-    let currentChunk = chunks[i];
-    const openingTagMatch = /^<([a-zA-Z0-9_-]+)[^>/]*(\/)?>/i.exec(
-      currentChunk,
-    );
-
-    // Handle opening tag
-    if (openingTagMatch) {
-      const openingTag = openingTagMatch[1];
-      const isSelfClosing = openingTagMatch[2] === "/";
-
-      if (!isSelfClosing) {
-        const closingTag = `</${openingTag}>`;
-
-        if (!currentChunk.includes(closingTag)) {
-          while (i < chunks.length - 1 && !chunks[i + 1].includes(closingTag)) {
-            currentChunk += "\n\n" + chunks[++i];
-          }
-          currentChunk += "\n\n" + chunks[++i];
-        }
-      }
-
-      const { attrs: tagAttributes, body: tagBody } = handleHTMLContent(
-        currentChunk,
-        isSelfClosing,
-      );
-
-      if (openingTag in handlers) {
-        bodyTypes.push(handlers[openingTag](tagBody, tagAttributes));
-      }
-    } else {
-      bodyTypes.push({
-        type: "text",
-        body: extractPageBreaks(currentChunk).reduce(
-          (
-            accumulator: Array<InlineItem>,
-            currentItem: InlineText | PageBreakItem,
-          ) => {
-            if (currentItem.type === "pagebreak") {
-              return accumulator.concat(currentItem);
-            } else {
-              return accumulator.concat(...extractRefs(currentItem.body));
-            }
-          },
-          [] as Array<InlineItem>,
-        ),
-      });
-    }
-  }
-
-  return bodyTypes;
-}
-
 function parseTextbookMarkdown(markdown: string): Array<object> {
   const md = new MarkdownIt({
     html: true,
@@ -439,7 +496,7 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
       if (level === "1") {
         currentChapter = {
           id: content.split(": ")[0],
-          name: content.split(": ")[1],
+          name: content.split(": ").slice(1).join(": "),
           body: [],
           sections: [],
         };
@@ -449,8 +506,8 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
       } else if (level === "2") {
         currentSection = {
           type: "section",
-          id: content.split(": ")[0],
-          name: content.split(": ")[1],
+          id: content.split(": ", 2)[0],
+          name: content.split(": ").slice(1).join(": "),
           body: [],
           sections: [],
         };
@@ -463,14 +520,20 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
       } else if (level === "3") {
         currentSubsection = {
           type: "subsection",
-          id: content.split(": ")[0],
-          name: content.split(": ")[1],
+          id: content.split(": ", 2)[0],
+          name: content.split(": ").slice(1).join(": "),
           body: [],
         };
         if (!currentSection) {
           throw new Error("No current section");
         }
         currentSection.sections.push(currentSubsection);
+      } else if (level >= "4") {
+        (currentSubsection || currentSection || currentChapter)?.body.push({
+          type: "standalone_heading",
+          level: parseInt(level),
+          body: content,
+        });
       }
     } else if (token.type === "fence" && token.info === "toml") {
       const metadata = toml.parse(token.content) as Record<
@@ -515,7 +578,14 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
           if (htmlContent.length > 0) {
             htmlContent += "\n\n";
           }
+          // Extremely hacky but I have no time
+          if (tokens[j].type === "fence") {
+            htmlContent += tokens[j].markup + tokens[j].info + "\n";
+          }
           htmlContent += tokens[j].content;
+          if (tokens[j].type === "fence") {
+            htmlContent += tokens[j].markup;
+          }
           j++;
         }
 
@@ -551,6 +621,8 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
         newBodyItems = [handleFigureTag(htmlContent, tagAttributes)];
       } else if (tagName === "equation") {
         newBodyItems = [handleEquationTag(htmlContent, tagAttributes)];
+      } else if (tagName === "algorithm") {
+        newBodyItems = [handleAlgorithmTag(htmlContent, tagAttributes)];
       } else if (tagName === "ol") {
         const bodyItem = handleOlTag(htmlContent, tagAttributes);
         newBodyItems = [bodyItem];

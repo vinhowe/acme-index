@@ -1,8 +1,10 @@
 import {
+  AlgorithmBodyItem,
   BodyItem,
   ChapterSectionItem,
   EquationBodyItem,
   ExerciseBodyItem,
+  FenceBodyItem,
   FigureBodyItem,
   InlineItem,
   InlineReference,
@@ -14,6 +16,7 @@ import {
   ResultBodyItem,
   SectionItem,
   SectionSectionItem,
+  StandaloneHeadingBodyItem,
   TextBodyItem,
   TextChapter,
 } from "./types";
@@ -50,14 +53,20 @@ class TextbookContextRenderer {
     switch (item.type) {
       case "text":
         return this.renderTextbookText(item);
+      case "standalone_heading":
+        return this.renderTextbookStandaloneHeading(item);
       case "result":
         return this.renderTextbookResult(item);
       case "proof":
         return this.renderTextbookProof(item);
       case "equation":
         return this.renderTextbookEquation(item);
+      case "algorithm":
+        return this.renderTextbookAlgorithm(item);
       case "figure":
         return this.renderTextbookFigure(item);
+      case "fence":
+        return this.renderTextbookFence(item);
       case "list":
         return this.renderTextbookList(item);
       case "exercise":
@@ -101,6 +110,12 @@ class TextbookContextRenderer {
       case "reference":
         return `[[acme:v1/${item.reference_type}/${item.id}]]`;
     }
+  }
+
+  renderTextbookStandaloneHeading(item: StandaloneHeadingBodyItem): string {
+    // TODO: This is kind of awful but I don't want to take the time to do this
+    // properly right now
+    return `<h${item.level}>"${item.body}"</h${item.level}>`;
   }
 
   renderTextbookText(...bodyItems: TextBodyItem[]): string {
@@ -154,10 +169,22 @@ ${this.renderTextbookBodyItems(equation.body)}\n\
 end equation [[acme:v1/equation/${equation.id}]]`;
   }
 
+  renderTextbookAlgorithm(algorithm: AlgorithmBodyItem): string {
+    return `begin algorithm [[acme:v1/algorithm/${algorithm.id}]]\n\
+${this.renderTextbookBodyItems(algorithm.body)}\n\
+end algorithm [[acme:v1/algorithm/${algorithm.id}]]`;
+  }
+
   renderTextbookFigure(figure: FigureBodyItem): string {
     return `begin figure [[acme:v1/figure/${figure.id}]]\n\
 ${this.renderTextbookBodyItems(figure.body)}\n\
 end figure [[acme:v1/figure/${figure.id}]]`;
+  }
+
+  renderTextbookFence(item: FenceBodyItem): string {
+    return `\`\`\`${item.info ?? ""}\n\
+${item.body}\n\
+\`\`\``;
   }
 
   renderTextbookListItem(item: ListItemBodyItem): string {

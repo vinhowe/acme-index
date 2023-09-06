@@ -8,6 +8,11 @@ import Equation from "./Equation";
 import Exercise from "./Exercise";
 import type { BodyItem as BodyItemType } from "@acme-index/common";
 import HeadingAnchor from "./HeadingAnchor";
+import classNames from "classnames";
+import Algorithm from "./Algorithm";
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import "@/lib/highlightjs/github-theme-switching.css";
 
 export interface BodyItemsProps {
   bodyItems: BodyItemType[];
@@ -43,6 +48,20 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
         <p className="text-justify">
           <InlineBody items={bodyItem.body} />
         </p>
+      );
+    case "standalone_heading":
+      const HeadingTag = `h${bodyItem.level}` as keyof JSX.IntrinsicElements;
+      return (
+        <HeadingTag
+          className={classNames(
+            "text-justify",
+            HeadingTag == "h4" && "text-xl font-normal",
+            HeadingTag == "h5" && "text-lg font-medium",
+            HeadingTag == "h6" && "text-base font-bold",
+          )}
+        >
+          {bodyItem.body}
+        </HeadingTag>
       );
     case "exercise":
       return (
@@ -84,6 +103,35 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
           })}
         </ol>
       );
+    case "fence":
+      return (
+        <ReactMarkdown
+          rehypePlugins={[rehypeHighlight]}
+          components={{
+            code: ({ node, inline, className, children, ...props }) => {
+              const match = /language-(\w+)/.exec(className || "");
+              return !inline && match ? (
+                <div>
+                  <pre className={classNames(className, "mb-4")}>
+                    <code className={match[1]} {...props}>
+                      {children}
+                    </code>
+                  </pre>
+                </div>
+              ) : (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            },
+            pre: ({ children }) => {
+              return children;
+            },
+          }}
+        >
+          {`\`\`\`${bodyItem.info ?? ""}\n${bodyItem.body}\n\`\`\``}
+        </ReactMarkdown>
+      );
     case "equation":
       return (
         <Equation equation={bodyItem}>
@@ -92,6 +140,15 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
             nearestId={`equation-${bodyItem.id}`}
           />
         </Equation>
+      );
+    case "algorithm":
+      return (
+        <Algorithm algorithm={bodyItem}>
+          <BodyItems
+            bodyItems={bodyItem.body}
+            nearestId={`algorithm-${bodyItem.id}`}
+          />
+        </Algorithm>
       );
     case "result":
       return (
@@ -119,8 +176,6 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
       );
     case "pagebreak":
       return <PageBreak page={bodyItem.page} />;
-    default:
-      return null;
   }
 };
 

@@ -7,11 +7,11 @@ import { TextChapter } from "@acme-index/common";
 export default async function Textbook({
   params,
 }: {
-  params: { chapter: string };
+  params: { book: string; chapter: string };
 }) {
-  const { chapter: chapterId } = params;
+  const { book, chapter: chapterId } = params;
   const chapter = (await getTextbookChapterText(
-    "v1",
+    book,
     chapterId,
   )) as TextChapter;
   return (
@@ -28,9 +28,13 @@ export default async function Textbook({
 }
 
 export async function generateStaticParams() {
-  // const chapters = await getTextbookChapters("v1");
-  const chapters = ["1"];
-  return chapters.map((id) => ({ chapter: id }));
+  const chapters = {
+    v1: ["1"],
+    v2: ["1"],
+  };
+  return Object.entries(chapters).flatMap(([book, chapters]) =>
+    chapters.map((id) => ({ book, chapter: id })),
+  );
 }
 
 export const dynamic = "force-static";

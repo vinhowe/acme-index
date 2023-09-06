@@ -16,11 +16,14 @@ export type InlineItem = InlineText | InlineReference | PageBreakItem;
 export interface BaseBodyItem<T> {
   type:
     | "text"
+    | "standalone_heading"
     | "result"
+    | "fence"
     | "list"
     | "list_item"
     | "proof"
     | "equation"
+    | "algorithm"
     | "figure"
     | "pagebreak"
     | "exercise";
@@ -30,6 +33,10 @@ export interface BaseBodyItem<T> {
 export interface TextBodyItem extends BaseBodyItem<Array<InlineItem>> {
   type: "text";
   context_optional?: boolean;
+}
+export interface StandaloneHeadingBodyItem extends BaseBodyItem<string> {
+  type: "standalone_heading";
+  level: number;
 }
 export interface ResultBodyItem extends BaseBodyItem<Array<BodyItem>> {
   type: "result";
@@ -45,10 +52,20 @@ export interface EquationBodyItem extends BaseBodyItem<Array<BodyItem>> {
   type: "equation";
   id: string;
 }
+export interface AlgorithmBodyItem extends BaseBodyItem<Array<BodyItem>> {
+  type: "algorithm";
+  id: string;
+  name?: string;
+}
 export interface FigureBodyItem extends BaseBodyItem<Array<BodyItem>> {
   type: "figure";
   id: string;
   name: string;
+}
+export interface FenceBodyItem extends BaseBodyItem<string> {
+  type: "fence";
+  info?: string;
+  lang?: string;
 }
 export interface ListItemBodyItem extends BaseBodyItem<Array<BodyItem>> {
   type: "list_item";
@@ -73,12 +90,15 @@ export interface PageBreakItem {
 
 export type BodyItem =
   | TextBodyItem
+  | StandaloneHeadingBodyItem
   | ResultBodyItem
   | ProofBodyItem
   | EquationBodyItem
+  | AlgorithmBodyItem
   | ExerciseBodyItem
   | FigureBodyItem
   | ListBodyItem
+  | FenceBodyItem
   | PageBreakItem;
 
 export interface BaseSectionItem<T = BodyItem> {
