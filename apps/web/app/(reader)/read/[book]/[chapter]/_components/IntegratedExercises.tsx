@@ -6,11 +6,13 @@ import classNames from "classnames";
 import { useContext, useEffect, useState } from "react";
 
 export type IntegratedExercisesProps = {
+  book: string;
   sectionId: string;
   exercises: ExerciseBodyItem[];
 };
 
 export default function IntegratedExercises({
+  book,
   sectionId,
   exercises,
 }: IntegratedExercisesProps) {
@@ -49,7 +51,10 @@ export default function IntegratedExercises({
           })}
         </div>
       </div>
-      <ExerciseInteractionSection exercise={exercises[selectedExercise]} />
+      <ExerciseInteractionSection
+        book={book}
+        exercise={exercises[selectedExercise]}
+      />
       <div>
         {exercises[selectedExercise].body && (
           <BodyItems bodyItems={exercises[selectedExercise].body} />
@@ -60,12 +65,14 @@ export default function IntegratedExercises({
 }
 
 const ExerciseInteractionSection = ({
+  book,
   exercise,
 }: {
+  book: string;
   exercise: ExerciseBodyItem;
 }) => {
   const { state, dispatch } = useContext(ChatContext);
-  const referenceId = `acme:v1/exercise/${exercise.id}`;
+  const referenceId = `acme:${book}/exercise/${exercise.id}`;
   const interactions = state.referenceInteractions[referenceId];
   return (
     <div className="flex flex-col items-start gap-4">

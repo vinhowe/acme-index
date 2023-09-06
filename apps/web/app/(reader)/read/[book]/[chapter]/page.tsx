@@ -28,10 +28,14 @@ export default async function Textbook({
           <SidebarToggleAwareBodyLayout>
             <div className="flex flex-col md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] md:mx-auto gap-x-8 md:gap-x-12 w-fit">
               <h1 className="text-5xl font-light tracking-tight col-span-1">
-                Volume 1
+                Volume {book.match(/\d+/)![0]}
               </h1>
             </div>
-            <ChapterTextWithExercises text={text} exercises={exercises} />
+            <ChapterTextWithExercises
+              book={book}
+              text={text}
+              exercises={exercises}
+            />
           </SidebarToggleAwareBodyLayout>
           <SidebarToggleAwareSidebarLayout>
             <ChatSidebar />

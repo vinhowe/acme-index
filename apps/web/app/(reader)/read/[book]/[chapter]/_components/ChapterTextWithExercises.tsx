@@ -11,11 +11,13 @@ import SectionItem, {
 import IntegratedExercises from "./IntegratedExercises";
 
 export interface ChapterWithIntegratedExercisesProps {
+  book: string;
   text: TextChapter;
   exercises: ExercisesChapter;
 }
 
 type ExerciseIntegratedSectionItemsProps = SectionItemsProps & {
+  book: string;
   exercises: ExercisesChapter;
 };
 
@@ -39,7 +41,7 @@ const ExerciseIntegratedSectionWrapper: React.FC<React.PropsWithChildren> = ({
 
 const ExerciseIntegratedSectionItems: React.FC<
   ExerciseIntegratedSectionItemsProps
-> = ({ sectionItems, exercises }) => {
+> = ({ book, sectionItems, exercises }) => {
   // zip sectionItems and exercises.sections
   const zippedSectionItems = sectionItems.map((sectionItem, index) => {
     return {
@@ -58,6 +60,7 @@ const ExerciseIntegratedSectionItems: React.FC<
             <SectionItem sectionItem={section} />
             <div className="md:sticky top-0 mb-4 md:mb-10">
               <IntegratedExercises
+                book={book}
                 sectionId={section.id}
                 exercises={exercises as ExerciseBodyItem[]}
               />
@@ -71,7 +74,7 @@ const ExerciseIntegratedSectionItems: React.FC<
 
 const ChapterTextWithExercises: React.FC<
   ChapterWithIntegratedExercisesProps
-> = ({ text, exercises }) => {
+> = ({ book, text, exercises }) => {
   return (
     <article className="relative flex flex-col">
       <div className="md:grid md:grid-cols-[minmax(0,_65ch)_minmax(0,_55ch)] md:mx-auto gap-x-8 md:gap-x-12">
@@ -88,6 +91,7 @@ const ChapterTextWithExercises: React.FC<
       )}
       {text.sections && (
         <ExerciseIntegratedSectionItems
+          book={book}
           sectionItems={text.sections}
           exercises={exercises}
         />

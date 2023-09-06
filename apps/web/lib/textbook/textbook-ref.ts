@@ -3,6 +3,7 @@ import { ExactReferenceMatch } from "textref";
 export const buildDisplayReference = (
   reference: ExactReferenceMatch,
 ): string => {
+  let referenceBook = reference.book;
   let referenceType = reference.type;
   if (referenceType === "exercise") {
     // This just saves some space
@@ -10,7 +11,7 @@ export const buildDisplayReference = (
   }
   const capitalizedReferenceType =
     referenceType.charAt(0).toUpperCase() + referenceType.slice(1);
-  let displayReference = capitalizedReferenceType;
+  let displayReference = `${referenceBook.toUpperCase()} ${capitalizedReferenceType}`;
   if (reference.chapter) {
     displayReference += ` ${reference.chapter}`;
     if (reference.section) {
