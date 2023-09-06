@@ -198,6 +198,7 @@ function handleHtmlInnards(htmlContent: string): Array<BodyItem> {
     if (codeBlockMatch) {
       // Iterate through chunks until we find the closing tag
       const closingTag = "```";
+      // This is a way to create the opening tag
       if (!currentChunk.replace("```", "").includes(closingTag)) {
         while (i < chunks.length - 1 && !chunks[i + 1].includes(closingTag)) {
           currentChunk += "\n\n" + chunks[++i];
