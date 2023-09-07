@@ -83,7 +83,7 @@ export default function ResizableDocumentTitleInput({
           }}
         ></span>
       </div>
-      <span className="font-mono text-xs text-neutral-600 dark:text-neutral-400">
+      <span className="font-mono text-xs text-neutral-600 dark:text-neutral-400 print:hidden">
         {slugify(value)}
       </span>
     </div>

@@ -865,17 +865,19 @@ export default function DocumentPage({ id }: { id: string }) {
   return (
     <div
       ref={setupContainerRef}
-      className="w-[210mm] bg-[#fafafa] dark:bg-[#0a0a0a] relative"
+      className="w-[210mm] print:w-full bg-[#fafafa] dark:bg-[#0a0a0a] relative print:bg-inherit"
     >
       <div className="pt-6 px-6 flex flex-col items-start gap-6">
         <ResizableDocumentTitleInput
           initialValue={document.title}
           onSubmit={handleUpdateTitle}
         />
-        <ResizableReferenceInput
-          initialValue={document.reference}
-          onSubmit={handleUpdateReference}
-        />
+        <div className="print:hidden">
+          <ResizableReferenceInput
+            initialValue={document.reference}
+            onSubmit={handleUpdateReference}
+          />
+        </div>
       </div>
       <div className="py-6 flex flex-col gap-6">
         {cells.length > 0 && (
@@ -894,7 +896,7 @@ export default function DocumentPage({ id }: { id: string }) {
                 <div
                   className={`border border-solid ${
                     selectedCellIndex === index
-                      ? "dark:bg-neutral-900 bg-neutral-100 border-neutral-400"
+                      ? "dark:bg-neutral-900 bg-neutral-100 border-neutral-400 print:bg-inherit print:border-transparent"
                       : "border-transparent"
                   }`}
                   onClick={() => handleSelectCell(index)}
@@ -939,6 +941,7 @@ export default function DocumentPage({ id }: { id: string }) {
                           "prose",
                           "prose-neutral",
                           "dark:prose-invert",
+                          "print:prose",
                           "prose-h1:font-light",
                           "prose-headings:font-normal",
                           "max-w-none",
@@ -966,7 +969,7 @@ export default function DocumentPage({ id }: { id: string }) {
             ))}
           </div>
         )}
-        <div className="mx-6 flex justify-center gap-4">
+        <div className="mx-6 flex justify-center gap-4 print:hidden">
           <button
             className="py-2 px-4 bg-blue-500 dark:bg-blue-800 text-white"
             onClick={() => handleAppendCell("text")}
