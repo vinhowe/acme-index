@@ -321,8 +321,8 @@ export default function DocumentPage({ id }: { id: string }) {
     null,
   );
   const [minHeight, setMinHeight] = useState<number>(0);
-  const [editingTops, setEditingTops] = useState<Record<number, number>>({});
 
+  const editingTopRefs = useRef<Map<number, number>>(new Map());
   const editorRefs = useRef<Map<number, ReactCodeMirrorRef>>(new Map());
   const editorValueRefs = useRef<Map<number, string>>(new Map());
   const commandBufferRef = useRef<string>("");
@@ -449,7 +449,7 @@ export default function DocumentPage({ id }: { id: string }) {
 
   useEffect(() => {
     if (editingCellIndex === null) return;
-    const editingTop = editingTops[editingCellIndex];
+    const editingTop = editingTopRefs.current.get(editingCellIndex);
     if (!editingTop) return;
 
     // Check if editing cell is a drawing cell
@@ -480,7 +480,7 @@ export default function DocumentPage({ id }: { id: string }) {
       );
       isDrawingRef.current = false;
     }
-  }, [editingCellIndex, editingTops, cells]);
+  }, [editingCellIndex, cells]);
 
   const handleAppendCell = useCallback(
     async (type: DocumentCell["type"]) => {
@@ -550,7 +550,7 @@ export default function DocumentPage({ id }: { id: string }) {
   useEffect(() => {
     (window as any).handleDrawingUpdate = (message: DrawingMessage) => {
       if (!document?.id || editingCellIndex === null) return;
-      const editingTop = editingTops[editingCellIndex];
+      const editingTop = editingTopRefs.current.get(editingCellIndex);
       if (!editingTop) return;
 
       const cell = cells[editingCellIndex];
@@ -598,7 +598,7 @@ export default function DocumentPage({ id }: { id: string }) {
     return () => {
       (window as any).handleDrawingUpdate = undefined;
     };
-  }, [editingTops, cells, editingCellIndex, handleCommitCell, document?.id]);
+  }, [cells, editingCellIndex, handleCommitCell, document?.id]);
 
   const setupContainerRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
@@ -665,29 +665,28 @@ export default function DocumentPage({ id }: { id: string }) {
     };
   };
 
-  const editingTopRefCallback = (
-    node: HTMLDivElement | null,
-    index: number,
-  ) => {
-    if (!node) {
-      return;
-    }
+  const editingTopRefCallback = useCallback(
+    (node: HTMLDivElement | null, index: number) => {
+      if (!node) {
+        return;
+      }
 
-    const observer = new ResizeObserver(() => {
-      if (isDrawingRef.current) return;
-      setEditingTops((editingTops) => ({
-        ...editingTops,
-        [index]:
+      const observer = new ResizeObserver(() => {
+        if (isDrawingRef.current) return;
+        editingTopRefs.current.set(
+          index,
           node.getBoundingClientRect().top - documentBoundsRef.current[0][1],
-      }));
-    });
+        );
+      });
 
-    observer.observe(node);
-    // Cleanup logic:
-    return () => {
-      observer.unobserve(node);
-    };
-  };
+      observer.observe(node);
+      // Cleanup logic:
+      return () => {
+        observer.unobserve(node);
+      };
+    },
+    [],
+  );
 
   const handleEditorChange = useCallback(
     async (value: string, _viewUpdate: ViewUpdate, index: number) => {
