@@ -40,6 +40,7 @@ import rehypeMinifyWhitespace from "rehype-minify-whitespace";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import wikiLinkPlugin from "@/lib/textbook/link-parsing/remark-plugin";
+import rehypeRaw from "rehype-raw";
 
 const SPECIAL_KEY_MAP = {
   ArrowUp: "↑",
@@ -912,7 +913,8 @@ export default function DocumentPage({ id }: { id: string }) {
                             "italic dark:text-neutral-600",
                         )}
                         remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
-                        rehypePlugins={[rehypeKatex, rehypeMinifyWhitespace]}
+                        // @ts-expect-error
+                        rehypePlugins={[rehypeRaw, rehypeKatex, rehypeMinifyWhitespace]}
                       >
                         {cell?.content?.trim() ||
                           "Empty cell. Click to add content."}
