@@ -202,14 +202,14 @@ export class CompletionManager {
       throw new Error('Invalid reference');
     }
 
-    const { type, chapter, section } = parsedReference;
+    const { namespace, book, type, chapter, section } = parsedReference;
 
-    if (type !== 'exercise') {
+    if (type !== 'exercise' || !namespace || !book) {
       throw new Error('Invalid reference type');
     }
 
-    const textbookTextData = await this.getTextbookFn<TextChapter>('v1');
-    const textbookExercisesData = await this.getTextbookFn<ExercisesChapter>('v1-exercises');
+    const textbookTextData = await this.getTextbookFn<TextChapter>(book);
+    const textbookExercisesData = await this.getTextbookFn<ExercisesChapter>(`${book}-exercises`);
     const chapterTextData = textbookTextData[chapter];
     const chapterExercisesData = textbookExercisesData[chapter];
     if (!chapterTextData || !chapterExercisesData) {
@@ -233,7 +233,7 @@ export class CompletionManager {
     if (!exercise || !sectionId) {
       throw new Error('Exercise not found');
     }
-    const context = renderExerciseChapterContext(sectionId, exercise, chapterTextData);
+    const context = renderExerciseChapterContext(namespace, book, sectionId, exercise, chapterTextData);
 
     let turnHistory: ChatTurn[] = [];
     if (turnId) {

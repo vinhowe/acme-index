@@ -24,11 +24,19 @@ import {
 class TextbookContextRenderer {
   private pinnedReferences?: Set<string>;
 
-  constructor(pinnedReferences?: Set<string>) {
+  constructor(
+    private namespace: string,
+    private book: string,
+    pinnedReferences?: Set<string>,
+  ) {
     this.pinnedReferences = pinnedReferences;
     this.renderTextbookBodyItem = this.renderTextbookBodyItem.bind(this);
     this.renderTextbookSection = this.renderTextbookSection.bind(this);
     this.filterContextItem = this.filterContextItem.bind(this);
+  }
+
+  private buildReference(type: string, id: string): string {
+    return `${this.namespace}:${this.book}/${type}/${id}`;
   }
 
   renderSingleSectionChapterContext(
@@ -87,7 +95,9 @@ class TextbookContextRenderer {
         return (
           !["example", "application", "vista"].includes(bodyItem.result_type) ||
           (this.pinnedReferences !== undefined &&
-            this.pinnedReferences.has(`acme:v1/result/${bodyItem.id}`))
+            this.pinnedReferences.has(
+              this.buildReference("result", bodyItem.id),
+            ))
         );
       default:
         return true;
@@ -108,7 +118,7 @@ class TextbookContextRenderer {
       case "inline":
         return item.body;
       case "reference":
-        return `[[acme:v1/${item.reference_type}/${item.id}]]`;
+        return `[[${this.buildReference(item.reference_type, item.id)}]]`;
     }
   }
 
@@ -132,9 +142,10 @@ class TextbookContextRenderer {
   }
 
   renderTextbookExercise(exercise: ExerciseBodyItem): string {
-    return `begin exercise [[acme:v1/exercise/${exercise.id}]]\n\
+    const reference = this.buildReference("exercise", exercise.id);
+    return `begin exercise [[${reference}]]\n\
 ${this.renderTextbookBodyItems(exercise.body)}\n\
-end exercise [[acme:v1/exercise/${exercise.id}]]`;
+end exercise [[${reference}]]`;
   }
 
   renderTextbookResult(result: ResultBodyItem): string {
@@ -152,33 +163,40 @@ end exercise [[acme:v1/exercise/${exercise.id}]]`;
     if (result.name) {
       title += ` (${result.name})`;
     }
-    return `begin result [[acme:v1/result/${result.id}]]: ${title}\n\
+
+    const reference = this.buildReference("result", result.id);
+
+    return `begin result [[${reference}]]: ${title}\n\
 ${this.renderTextbookBodyItems(result.body)}\n\
-end result [[acme:v1/result/${result.id}]]`;
+end result [[${reference}]]`;
   }
 
   renderTextbookProof(proof: ProofBodyItem): string {
-    return `begin proof [[acme:v1/proof/${proof.of}]]\n\
+    const reference = this.buildReference("proof", proof.of);
+    return `begin proof [[${reference}]]\n\
 ${this.renderTextbookBodyItems(proof.body)}\n\
-end proof [[acme:v1/proof/${proof.of}]]`;
+end proof [[${reference}]]`;
   }
 
   renderTextbookEquation(equation: EquationBodyItem): string {
-    return `begin equation [[acme:v1/equation/${equation.id}]]\n\
+    const reference = this.buildReference("equation", equation.id);
+    return `begin equation [[${reference}]]\n\
 ${this.renderTextbookBodyItems(equation.body)}\n\
-end equation [[acme:v1/equation/${equation.id}]]`;
+end equation [[${reference}]]`;
   }
 
   renderTextbookAlgorithm(algorithm: AlgorithmBodyItem): string {
-    return `begin algorithm [[acme:v1/algorithm/${algorithm.id}]]\n\
+    const reference = this.buildReference("algorithm", algorithm.id);
+    return `begin algorithm [[${reference}]]\n\
 ${this.renderTextbookBodyItems(algorithm.body)}\n\
-end algorithm [[acme:v1/algorithm/${algorithm.id}]]`;
+end algorithm [[${reference}]]`;
   }
 
   renderTextbookFigure(figure: FigureBodyItem): string {
-    return `begin figure [[acme:v1/figure/${figure.id}]]\n\
+    const reference = this.buildReference("figure", figure.id);
+    return `begin figure [[${reference}]]\n\
 ${this.renderTextbookBodyItems(figure.body)}\n\
-end figure [[acme:v1/figure/${figure.id}]]`;
+end figure [[${reference}]]`;
   }
 
   renderTextbookFence(item: FenceBodyItem): string {
@@ -202,7 +220,8 @@ ${item.body}\n\
 
   renderTextbookSection(section: SectionItem): string {
     const sectionDisplayType = section.type.toLowerCase();
-    let sectionText = `begin ${sectionDisplayType} [[acme:v1/text/${section.id}]]\n\n`;
+    const reference = this.buildReference("text", section.id);
+    let sectionText = `begin ${sectionDisplayType} [[${reference}]]\n\n`;
     const sectionBody = this.renderTextbookBodyItems(section.body).trim();
     if (sectionBody !== "") {
       sectionText += `${sectionBody}\n`;
@@ -217,7 +236,7 @@ ${item.body}\n\
         sectionText += `${sectionsText}\n`;
       }
     }
-    sectionText += `\nend ${sectionDisplayType} [[acme:v1/text/${section.id}]]`;
+    sectionText += `\nend ${sectionDisplayType} [[${reference}]]`;
     return sectionText;
   }
 
@@ -248,27 +267,39 @@ const getReferencesRecursive = (
 };
 
 const buildPinnedReferencesSet = (
+  namespace: string,
+  book: string,
   references: InlineReference[],
 ): Set<string> => {
   return references.reduce((acc, reference) => {
-    acc.add(`acme:v1/${reference.reference_type}/${reference.id}`);
+    acc.add(`${namespace}:${book}/${reference.reference_type}/${reference.id}`);
     return acc;
   }, new Set<string>());
 };
 
 export const renderExerciseChapterContext = (
+  namespace: string,
+  book: string,
   sectionId: string,
   exercise: ExerciseBodyItem,
   chapter: TextChapter,
 ): string => {
   const exerciseReferences = buildPinnedReferencesSet(
+    namespace,
+    book,
     getReferencesRecursive(exercise),
   );
 
-  const contextRenderer = new TextbookContextRenderer(exerciseReferences);
+  const contextRenderer = new TextbookContextRenderer(
+    namespace,
+    book,
+    exerciseReferences,
+  );
 
   const singleSectionContext =
     contextRenderer.renderSingleSectionChapterContext(sectionId, chapter);
+
+  const exampleReferencePrefix = `${namespace}:${book}`;
 
   return `begin textbook material
 
@@ -291,7 +322,7 @@ You are helping a student UNDERSTAND this exercise—not solve it. You must\
  formatting.
 - Write references as follows:
   - Results (Theorems, Statements, Lemmas, Corollaries, Examples, etc.):\
- [[acme:v1/result/1.2.34]]
-  - Sections: [[acme:v1/text/1.2.3]]
-  - Proofs, Figures, Equations: [[acme:v1/{proof,figure,equation}/1.4]]`;
+ [[${exampleReferencePrefix}/result/1.2.34]]
+  - Sections: [[${exampleReferencePrefix}/text/1.2.3]]
+  - Proofs, Figures, Equations: [[${exampleReferencePrefix}/{proof,figure,equation}/1.4]]`;
 };

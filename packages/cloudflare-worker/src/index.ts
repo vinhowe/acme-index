@@ -163,7 +163,7 @@ router
     if (!exercise || !sectionId) {
       return json({ error: 'Invalid exercise' }, { status: 400 });
     }
-    const context = renderExerciseChapterContext(sectionId, exercise, chapterTextData);
+    const context = renderExerciseChapterContext(namespace, book, sectionId, exercise, chapterTextData);
     return text(context);
   });
 

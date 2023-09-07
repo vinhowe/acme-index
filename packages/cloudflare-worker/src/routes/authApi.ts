@@ -84,15 +84,15 @@ router
       return json({ error: 'Invalid reference' }, { status: 400 });
     }
 
-    const { type, chapter, section } = parsedReference;
+    const { namespace, book, type, chapter, section } = parsedReference;
 
-    if (type !== 'exercise') {
+    if (type !== 'exercise' || !namespace || !book) {
       // For now...
       return json({ error: 'Reference type must be exercise' }, { status: 400 });
     }
 
-    const textbookTextData = await getTextbook<TextChapter>('v1', env, request.botOctokit);
-    const textbookExercisesData = await getTextbook<ExercisesChapter>('v1-exercises', env, request.botOctokit);
+    const textbookTextData = await getTextbook<TextChapter>(book, env, request.botOctokit);
+    const textbookExercisesData = await getTextbook<ExercisesChapter>(`${book}-exercises`, env, request.botOctokit);
     const chapterTextData = textbookTextData[chapter];
     const chapterExercisesData = textbookExercisesData[chapter];
     if (!chapterTextData || !chapterExercisesData) {
