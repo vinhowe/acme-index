@@ -625,7 +625,6 @@ export default function DocumentPage({ id }: { id: string }) {
   const setupEditorRef = useCallback(
     (newRefs: ReactCodeMirrorRef | null) => {
       if (editingCellIndex === null) return;
-      console.log("test", newRefs);
       if (
         // !editorRefs.current.get(editingCellIndex) &&
         newRefs?.editor &&
