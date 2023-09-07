@@ -906,6 +906,7 @@ export default function DocumentPage({ id }: { id: string }) {
                           "dark:prose-invert",
                           "prose-h1:font-light",
                           "prose-headings:font-normal",
+                          "max-w-none",
                           "w-full",
                           !cell?.content?.trim() &&
                             "italic dark:text-neutral-600",
