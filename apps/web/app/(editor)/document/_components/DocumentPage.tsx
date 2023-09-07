@@ -376,7 +376,7 @@ export default function DocumentPage({ id }: { id: string }) {
     [setError, document],
   );
 
-  const handleUpdateCells = useCallback(
+  const handleUpdateDocumentCells = useCallback(
     async (
       updateCells:
         | ((cells: Array<DocumentCell | null>) => Array<DocumentCell | null>)
@@ -491,30 +491,40 @@ export default function DocumentPage({ id }: { id: string }) {
         setSelectedCellIndex(0);
       }
 
-      handleUpdateCells((prevCells) => [...prevCells, newCell]);
+      handleUpdateDocumentCells((prevCells) => [...prevCells, newCell]);
     },
-    [cells.length, createNewCell, handleUpdateCells],
+    [cells.length, createNewCell, handleUpdateDocumentCells],
   );
 
-  const updateTextCellFromValueRef = useCallback(
+  const handleUpdateDocumentCell = useCallback(
     (index: number) => {
       if (!document?.id) return;
-      const editorValueRef = editorValueRefs.current.get(index);
-      if (editorValueRef) {
-        setCells((cells) => {
-          const updatedCells = [...cells];
-          const cell = updatedCells[index];
-          if (cell?.type === "text") {
-            const updatedCell: DocumentTextCell = {
+      setCells((cells) => {
+        const updatedCells = [...cells];
+        const cell = updatedCells[index];
+        let valueChanged = false;
+        let updatedCell: DocumentCell | null;
+        if (cell?.type === "text") {
+          const editorValueRef = editorValueRefs.current.get(index);
+          if (editorValueRef) {
+            updatedCell = {
               ...cell,
               content: editorValueRef,
             };
             updatedCells[index] = updatedCell;
-            updateDocumentCell(document.id, updatedCell.id, updatedCell);
+            valueChanged = true;
+          } else {
+            updatedCell = cell;
           }
-          return updatedCells;
-        });
-      }
+        } else {
+          // Drawing just uses content from cell
+          updatedCell = cell;
+        }
+        if (updatedCell) {
+          updateDocumentCell(document.id, updatedCell.id, updatedCell);
+        }
+        return updatedCells;
+      });
     },
     [document?.id, editorValueRefs],
   );
@@ -522,7 +532,7 @@ export default function DocumentPage({ id }: { id: string }) {
   const handleCommitAndMoveToNextCell = useCallback(() => {
     if (!document?.id || selectedCellIndex === null) return;
 
-    updateTextCellFromValueRef(selectedCellIndex);
+    handleUpdateDocumentCell(selectedCellIndex);
 
     const nextIndex = selectedCellIndex + 1;
 
@@ -534,7 +544,7 @@ export default function DocumentPage({ id }: { id: string }) {
   }, [
     document?.id,
     selectedCellIndex,
-    updateTextCellFromValueRef,
+    handleUpdateDocumentCell,
     cells.length,
     handleAppendCell,
   ]);
@@ -542,10 +552,10 @@ export default function DocumentPage({ id }: { id: string }) {
   const handleCommitCell = useCallback(() => {
     if (!document?.id || selectedCellIndex === null) return;
 
-    updateTextCellFromValueRef(selectedCellIndex);
+    handleUpdateDocumentCell(selectedCellIndex);
 
     setEditingCellIndex(null);
-  }, [document?.id, selectedCellIndex, updateTextCellFromValueRef]);
+  }, [document?.id, selectedCellIndex, handleUpdateDocumentCell]);
 
   useEffect(() => {
     (window as any).handleDrawingUpdate = (message: DrawingMessage) => {
@@ -698,6 +708,9 @@ export default function DocumentPage({ id }: { id: string }) {
 
   const handleSelectCell = (index: number) => {
     if (editingCellIndex !== index) {
+      if (editingCellIndex !== null) {
+        handleUpdateDocumentCell(editingCellIndex);
+      }
       setEditingCellIndex(null);
     }
     setSelectedCellIndex(index);
@@ -766,7 +779,7 @@ export default function DocumentPage({ id }: { id: string }) {
       if (!newCell) return;
       updatedCells.splice(newIndex, 0, newCell);
 
-      handleUpdateCells(updatedCells);
+      handleUpdateDocumentCells(updatedCells);
       setSelectedCellIndex(newIndex);
     }
 
@@ -776,7 +789,7 @@ export default function DocumentPage({ id }: { id: string }) {
       // Remove the cell from the array by splice
       const updatedCells = [...cells];
       const [currentCell] = updatedCells.splice(selectedCellIndex, 1);
-      handleUpdateCells(updatedCells);
+      handleUpdateDocumentCells(updatedCells);
       if (updatedCells.length) {
         // Select next cell if it exists, otherwise select previous cell
         const nextIndex =
@@ -837,7 +850,7 @@ export default function DocumentPage({ id }: { id: string }) {
     cells,
     commandBufferRef,
     handleCommitAndMoveToNextCell,
-    handleUpdateCells,
+    handleUpdateDocumentCells,
     createNewCell,
   ]);
 
