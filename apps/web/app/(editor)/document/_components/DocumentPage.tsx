@@ -894,7 +894,7 @@ export default function DocumentPage({ id }: { id: string }) {
                 }
               >
                 <div
-                  className={`border border-solid ${
+                  className={`border border-solid break-before-page ${
                     selectedCellIndex === index
                       ? "dark:bg-neutral-900 bg-neutral-100 border-neutral-400 print:bg-inherit print:border-transparent"
                       : "border-transparent"
