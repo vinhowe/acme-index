@@ -324,6 +324,7 @@ export default function DocumentPage({ id }: { id: string }) {
   const [editingTops, setEditingTops] = useState<Record<number, number>>({});
 
   const editorRefs = useRef<Map<number, ReactCodeMirrorRef>>(new Map());
+  const editorValueRefs = useRef<Map<number, string>>(new Map());
   const commandBufferRef = useRef<string>("");
   const isDrawingRef = useRef<boolean>(false);
   const documentBoundsRef = useRef<Rect>([
@@ -495,13 +496,33 @@ export default function DocumentPage({ id }: { id: string }) {
     [cells.length, createNewCell, handleUpdateCells],
   );
 
+  const updateTextCellFromValueRef = useCallback(
+    (index: number) => {
+      if (!document?.id) return;
+      const editorValueRef = editorValueRefs.current.get(index);
+      if (editorValueRef) {
+        setCells((cells) => {
+          const updatedCells = [...cells];
+          const cell = updatedCells[index];
+          if (cell?.type === "text") {
+            const updatedCell: DocumentTextCell = {
+              ...cell,
+              content: editorValueRef,
+            };
+            updatedCells[index] = updatedCell;
+            updateDocumentCell(document.id, updatedCell.id, updatedCell);
+          }
+          return updatedCells;
+        });
+      }
+    },
+    [document?.id, editorValueRefs],
+  );
+
   const handleCommitAndMoveToNextCell = useCallback(() => {
     if (!document?.id || selectedCellIndex === null) return;
 
-    const currentCell = cells[selectedCellIndex];
-    if (currentCell) {
-      updateDocumentCell(document.id, currentCell.id, currentCell);
-    }
+    updateTextCellFromValueRef(selectedCellIndex);
 
     const nextIndex = selectedCellIndex + 1;
 
@@ -510,18 +531,21 @@ export default function DocumentPage({ id }: { id: string }) {
     }
     setSelectedCellIndex(nextIndex);
     setEditingCellIndex(null); // Commit the current cell
-  }, [document?.id, selectedCellIndex, cells, handleAppendCell]);
+  }, [
+    document?.id,
+    selectedCellIndex,
+    updateTextCellFromValueRef,
+    cells.length,
+    handleAppendCell,
+  ]);
 
   const handleCommitCell = useCallback(() => {
     if (!document?.id || selectedCellIndex === null) return;
 
-    const currentCell = cells[selectedCellIndex];
-    if (currentCell) {
-      updateDocumentCell(document.id, currentCell.id, currentCell);
-    }
+    updateTextCellFromValueRef(selectedCellIndex);
 
     setEditingCellIndex(null);
-  }, [cells, document?.id, selectedCellIndex]);
+  }, [document?.id, selectedCellIndex, updateTextCellFromValueRef]);
 
   useEffect(() => {
     (window as any).handleDrawingUpdate = (message: DrawingMessage) => {
@@ -599,9 +623,11 @@ export default function DocumentPage({ id }: { id: string }) {
   }, []);
 
   const setupEditorRef = useCallback(
-    (newRefs: ReactCodeMirrorRef | null, index: number) => {
+    (newRefs: ReactCodeMirrorRef | null) => {
+      if (editingCellIndex === null) return;
+      console.log("test", newRefs);
       if (
-        !editorRefs.current.get(index) &&
+        // !editorRefs.current.get(editingCellIndex) &&
         newRefs?.editor &&
         newRefs?.state &&
         newRefs?.view
@@ -611,12 +637,12 @@ export default function DocumentPage({ id }: { id: string }) {
           "commitCellAndContinue",
           handleCommitAndMoveToNextCell,
         );
-        editorRefs.current.set(index, newRefs);
-      } else if (editorRefs.current.get(index) && !newRefs) {
-        editorRefs.current.delete(index);
+        editorRefs.current.set(editingCellIndex, newRefs);
+      } else if (editorRefs.current.get(editingCellIndex) && !newRefs) {
+        editorRefs.current.delete(editingCellIndex);
       }
     },
-    [handleCommitAndMoveToNextCell, handleCommitCell],
+    [editingCellIndex, handleCommitAndMoveToNextCell, handleCommitCell],
   );
 
   const markdownContainerRefCallback = (
@@ -664,16 +690,13 @@ export default function DocumentPage({ id }: { id: string }) {
     };
   };
 
-  const handleEditorChange = async (
-    value: string,
-    _viewUpdate: ViewUpdate,
-    index: number,
-  ) => {
-    if (!document) return;
-    const cell = cells[index];
-    if (!cell) return;
-    (cell as DocumentTextCell).content = value;
-  };
+  const handleEditorChange = useCallback(
+    async (value: string, _viewUpdate: ViewUpdate, index: number) => {
+      if (!document) return;
+      editorValueRefs.current.set(index, value);
+    },
+    [document],
+  );
 
   const handleSelectCell = (index: number) => {
     if (editingCellIndex !== index) {
@@ -848,7 +871,7 @@ export default function DocumentPage({ id }: { id: string }) {
           <div>
             {cells.map((cell, index) => (
               <div
-                key={cell?.id || index}
+                key={index}
                 style={
                   editingCellIndex === index
                     ? {
@@ -887,7 +910,7 @@ export default function DocumentPage({ id }: { id: string }) {
                               : "light"
                           }
                           extensions={EXTENSIONS}
-                          ref={(ref) => setupEditorRef(ref, index)}
+                          ref={setupEditorRef}
                         />
                       ) : (
                         <div className="-m-px">
@@ -913,8 +936,12 @@ export default function DocumentPage({ id }: { id: string }) {
                             "italic dark:text-neutral-600",
                         )}
                         remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
-                        // @ts-expect-error
-                        rehypePlugins={[rehypeRaw, rehypeKatex, rehypeMinifyWhitespace]}
+                        rehypePlugins={[
+                          // @ts-expect-error
+                          rehypeRaw,
+                          rehypeKatex,
+                          rehypeMinifyWhitespace,
+                        ]}
                       >
                         {cell?.content?.trim() ||
                           "Empty cell. Click to add content."}
