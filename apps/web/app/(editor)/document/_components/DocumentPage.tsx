@@ -449,40 +449,48 @@ export default function DocumentPage({ id }: { id: string }) {
     [document],
   );
 
+  const updateDeviceDrawingState = useCallback(
+    (cellIndex: number, currentCell: DocumentCell | null) => {
+      if (cellIndex === null) return;
+      const editingTop = editingTopRefs.current.get(cellIndex);
+      if (!editingTop) return;
+
+      if (!isDrawingRef.current && currentCell?.type === "drawing") {
+        // Tell iPad to start drawing
+        const drawing = currentCell.content;
+        const correctedDrawing = offsetDrawing(drawing, [
+          0,
+          editingTop,
+        ]) as Drawing;
+        // @ts-expect-error
+        window.webkit?.messageHandlers?.drawingMode?.postMessage(
+          JSON.stringify({
+            status: "start",
+            offset: [0, editingTop],
+            content: correctedDrawing,
+          }),
+        );
+        isDrawingRef.current = true;
+      } else if (
+        (isDrawingRef.current && !currentCell) ||
+        currentCell?.type !== "drawing"
+      ) {
+        // @ts-expect-error
+        window.webkit?.messageHandlers?.drawingMode?.postMessage(
+          JSON.stringify({
+            status: "stop",
+          }),
+        );
+        isDrawingRef.current = false;
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (editingCellIndex === null) return;
-    const editingTop = editingTopRefs.current.get(editingCellIndex);
-    if (!editingTop) return;
-
-    // Check if editing cell is a drawing cell
-    const cell = cells[editingCellIndex];
-
-    if (!isDrawingRef.current && cell?.type === "drawing") {
-      // Tell iPad to start drawing
-      const drawing = cell.content;
-      const correctedDrawing = offsetDrawing(drawing, [
-        0,
-        editingTop,
-      ]) as Drawing;
-      // @ts-expect-error
-      window.webkit?.messageHandlers?.drawingMode?.postMessage(
-        JSON.stringify({
-          status: "start",
-          offset: [0, editingTop],
-          content: correctedDrawing,
-        }),
-      );
-      isDrawingRef.current = true;
-    } else if ((isDrawingRef.current && !cell) || cell?.type !== "drawing") {
-      // @ts-expect-error
-      window.webkit?.messageHandlers?.drawingMode?.postMessage(
-        JSON.stringify({
-          status: "stop",
-        }),
-      );
-      isDrawingRef.current = false;
-    }
-  }, [editingCellIndex, cells]);
+    updateDeviceDrawingState(editingCellIndex, cells[editingCellIndex]);
+  }, [editingCellIndex, cells, updateDeviceDrawingState]);
 
   const handleAppendCell = useCallback(
     async (type: DocumentCell["type"]) => {
@@ -689,6 +697,9 @@ export default function DocumentPage({ id }: { id: string }) {
           index,
           node.getBoundingClientRect().top - documentBoundsRef.current[0][1],
         );
+        if (editingCellIndex !== null) {
+          updateDeviceDrawingState(editingCellIndex, cells[editingCellIndex]);
+        }
       });
 
       observer.observe(node);
@@ -697,7 +708,7 @@ export default function DocumentPage({ id }: { id: string }) {
         observer.unobserve(node);
       };
     },
-    [],
+    [editingCellIndex, cells, updateDeviceDrawingState],
   );
 
   const handleEditorChange = useCallback(
