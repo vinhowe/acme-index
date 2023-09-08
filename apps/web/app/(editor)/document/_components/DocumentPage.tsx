@@ -41,6 +41,8 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import wikiLinkPlugin from "@/lib/textbook/link-parsing/remark-plugin";
 import rehypeRaw from "rehype-raw";
+import rehypeHighlight from "rehype-highlight";
+import "@/lib/highlightjs/github-theme-switching.css";
 
 const SPECIAL_KEY_MAP = {
   ArrowUp: "↑",
@@ -951,11 +953,41 @@ export default function DocumentPage({ id }: { id: string }) {
                         )}
                         remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
                         rehypePlugins={[
+                          rehypeHighlight,
                           // @ts-expect-error
                           rehypeRaw,
                           rehypeKatex,
                           rehypeMinifyWhitespace,
                         ]}
+                        components={{
+                          code: ({
+                            node,
+                            inline,
+                            className,
+                            children,
+                            ...props
+                          }) => {
+                            const match = /language-(\w+)/.exec(
+                              className || "",
+                            );
+                            return !inline && match ? (
+                              <div>
+                                <pre className={classNames(className, "mb-4")}>
+                                  <code className={match[1]} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              </div>
+                            ) : (
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre: ({ children }) => {
+                            return <>{children}</>;
+                          },
+                        }}
                       >
                         {cell?.content?.trim() ||
                           "Empty cell. Click to add content."}
