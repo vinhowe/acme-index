@@ -69,11 +69,11 @@ body {
 }
 
 .katex-display {
-  width: max-content;
   @apply px-4;
 }
 
 .katex-display-wrapper > .katex-display {
+  width: max-content;
   @apply mx-auto;
 }
 
