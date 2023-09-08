@@ -878,7 +878,7 @@ export default function DocumentPage({ id }: { id: string }) {
   return (
     <div
       ref={setupContainerRef}
-      className="w-[210mm] print:w-full bg-[#fafafa] dark:bg-[#0a0a0a] relative print:bg-inherit"
+      className="w-[min(210mm,_100%)] print:w-full bg-[#fafafa] dark:bg-[#0a0a0a] relative print:bg-inherit"
     >
       <div className="pt-6 px-6 flex flex-col items-start gap-6">
         <ResizableDocumentTitleInput
