@@ -954,7 +954,6 @@ export default function DocumentPage({ id }: { id: string }) {
                           "prose",
                           "prose-neutral",
                           "dark:prose-invert",
-                          "print:prose",
                           "prose-h1:font-light",
                           "prose-headings:font-normal",
                           "max-w-none",
