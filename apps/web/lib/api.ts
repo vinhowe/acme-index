@@ -19,7 +19,8 @@ export interface ChatHistoryItem {
   displayReference: string | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8787/api";
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8787/api";
 
 export async function createChat(reference?: string) {
   return (
@@ -345,6 +346,21 @@ export const getDocumentCell = async (
       },
     },
   );
+  const json = await response.json();
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json;
+};
+
+export const uploadFile = async (file: File): Promise<{ id: string }> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(`${API_URL}/file`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
   const json = await response.json();
   if (json.error) {
     throw new Error(json.error);

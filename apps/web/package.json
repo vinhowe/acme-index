@@ -35,6 +35,7 @@
     "eslint-config-next": "13.4.1",
     "katex": "^0.16.7",
     "micromark-util-symbol": "^2.0.0",
+    "mime-types": "^2.1.35",
     "next": "13.4.13",
     "postcss": "8.4.23",
     "react": "18.2.0",
@@ -58,6 +59,7 @@
   "devDependencies": {
     "@lezer/markdown": "^1.1.0",
     "@types/katex": "^0.16.2",
+    "@types/mime-types": "^2.1.1",
     "@types/react": "^18.2.13",
     "@types/react-dom": "^18.2.4",
     "@types/react-syntax-highlighter": "^15.5.7",

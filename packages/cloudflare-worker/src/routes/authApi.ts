@@ -9,6 +9,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { getTextbook } from '../textbook/util';
 import { Chat, DocumentCell, ExercisesChapter, TextChapter, UniqueID } from '@acme-index/common';
+import { v4 as uuid } from 'uuid';
+import { extension } from 'mime-types';
 
 type UserDataRequest = IRequest & AuthenticatedRequest & { database: Database };
 type CompletionManagerRequest = UserDataRequest & { completionManager: CompletionManager };
@@ -320,5 +322,51 @@ router
     const result = await response.json();
     return new Response(JSON.stringify(result), {
       status: 200,
+    });
+  })
+  .post<UserDataRequest>('/file', withAuthenticatedRequest, async (request, env: Env) => {
+    // Get image from form data
+    const formData = await request.formData();
+    const file = formData.get('file') as unknown as File;
+    const imageBuffer = await file.arrayBuffer();
+
+    // Generate uuid for image
+    const fileId = uuid();
+
+    try {
+      // Upload image to cloudflare r2
+      await env.DOCUMENT_MEDIA.put(fileId, imageBuffer, {
+        httpMetadata: {
+          contentType: file.type,
+          cacheControl: 'public, max-age=604800, immutable',
+        },
+      });
+    } catch (e) {
+      return json({ error: 'Error uploading file' }, { status: 500 });
+    }
+
+    // Return image url
+    return json({ id: fileId });
+  })
+  .get<UserDataRequest>('/file/:filename+', withAuthenticatedRequest, async (request, env: Env) => {
+    const { filename } = request.params;
+
+    // Split filename into id and extension, and then just ignore the extension
+    const [id] = filename.split('.');
+
+    // Get image from cloudflare r2
+    const file = await env.DOCUMENT_MEDIA.get(id);
+
+    if (file === null) {
+      return new Response('File not found', { status: 404 });
+    }
+
+    const headers = new Headers();
+    file.writeHttpMetadata(headers);
+    headers.set('etag', file.httpEtag);
+    headers.set('cache-control', 'public, max-age=604800, immutable');
+
+    return new Response(file.body, {
+      headers,
     });
   });

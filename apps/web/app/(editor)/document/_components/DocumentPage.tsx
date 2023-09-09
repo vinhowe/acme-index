@@ -1,9 +1,11 @@
 import {
+  API_URL,
   createDocumentCell,
   getDocument,
   getDocumentCell,
   updateDocument,
   updateDocumentCell,
+  uploadFile,
 } from "@/lib/api";
 import {
   Document,
@@ -43,6 +45,7 @@ import wikiLinkPlugin from "@/lib/textbook/link-parsing/remark-plugin";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
+import { extension } from "mime-types";
 
 const SPECIAL_KEY_MAP = {
   ArrowUp: "↑",
@@ -615,10 +618,84 @@ export default function DocumentPage({ id }: { id: string }) {
       }
     };
 
+    // Paste event handler
+    const handlePaste = (event: ClipboardEvent) => {
+      if (!document?.id) return;
+
+      let items = event?.clipboardData?.items;
+      if (!items) return;
+
+      // We only handle images in this handler, allow other handlers to handle
+      // text
+
+      let file: File | null = null;
+
+      for (let index in items) {
+        let item = items[index];
+        if (item.kind === "file") {
+          const itemFile = item.getAsFile();
+          if (!itemFile?.type?.startsWith("image/")) continue;
+          file = itemFile;
+          break;
+        }
+      }
+
+      if (file === null) return;
+
+      uploadFile(file)
+        .then(async ({ id }) => {
+          if (!id) return;
+          const imageExtension = extension((file as File).type);
+          const imageMarkdown = `![${id}.${imageExtension}](${API_URL}/file/${id}.${imageExtension})`;
+          const editingCell =
+            editingCellIndex !== null ? cells[editingCellIndex] : null;
+          if (editingCellIndex !== null && editingCell?.type === "text") {
+            const editorRef = editorRefs.current.get(editingCellIndex);
+            if (!editorRef) return;
+            const editorView = editorRef.view;
+            if (!editorView) return;
+            const cursor = editorView.state.selection.main.head;
+            const transaction = editorView.state.update({
+              changes: {
+                from: cursor,
+                to: cursor,
+                insert: imageMarkdown,
+              },
+            });
+            editorView.dispatch(transaction);
+            editorView.focus();
+          } else {
+            // Create new cell below selected cell and insert image
+            const newCell = await createDocumentCell(document.id, {
+              type: "text",
+              content: imageMarkdown,
+            });
+            if (!newCell) return;
+            handleUpdateDocumentCells((prevCells) => {
+              const updatedCells = [...prevCells];
+              updatedCells.splice(selectedCellIndex ?? 0 + 1, 0, newCell);
+              return updatedCells;
+            });
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    };
+
+    window.addEventListener("paste", handlePaste);
+
     return () => {
       (window as any).handleDrawingUpdate = undefined;
+      window.removeEventListener("paste", handlePaste);
     };
-  }, [cells, editingCellIndex, handleCommitCell, document?.id]);
+  }, [
+    cells,
+    selectedCellIndex,
+    editingCellIndex,
+    handleCommitCell,
+    document?.id,
+  ]);
 
   const setupContainerRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
