@@ -40,7 +40,7 @@ export type History = UniqueObject & {
   chats: UniqueID[];
 };
 
-type BaseCell<T> = UniqueObject & {
+type BaseDocumentCell<T> = UniqueObject & {
   type: string;
   documentId: UniqueID;
   createdAt: string;
@@ -48,11 +48,11 @@ type BaseCell<T> = UniqueObject & {
   content: T;
 };
 
-export interface DocumentTextCell extends BaseCell<string> {
+export interface DocumentTextCell extends BaseDocumentCell<string> {
   type: "text";
 }
 
-export interface DocumentDrawingCell extends BaseCell<Drawing> {
+export interface DocumentDrawingCell extends BaseDocumentCell<Drawing> {
   type: "drawing";
 }
 
