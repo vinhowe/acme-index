@@ -1088,6 +1088,18 @@ export default function DocumentPage({ id }: { id: string }) {
                           pre: ({ children }) => {
                             return <>{children}</>;
                           },
+                          img: ({ node, src, alt, title, ...props }) => {
+                            return (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={src}
+                                alt={alt}
+                                title={title}
+                                {...props}
+                                className="mx-auto max-h-72"
+                              />
+                            );
+                          },
                         }}
                       >
                         {cell?.content?.trim() ||
