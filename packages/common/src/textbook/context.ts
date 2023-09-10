@@ -57,7 +57,11 @@ class TextbookContextRenderer {
     return this.renderTextbookSection(chapterWithSingleSection);
   }
 
-  renderTextbookBodyItem(item: Exclude<BodyItem, PageBreakItem>): string {
+  renderTextbookBodyItem(
+    item: Exclude<BodyItem, PageBreakItem>,
+    parentType: string,
+    parentId: string,
+  ): string {
     switch (item.type) {
       case "text":
         return this.renderTextbookText(item);
@@ -76,7 +80,7 @@ class TextbookContextRenderer {
       case "fence":
         return this.renderTextbookFence(item);
       case "list":
-        return this.renderTextbookList(item);
+        return this.renderTextbookList(item, parentType, parentId);
       case "exercise":
         return this.renderTextbookExercise(item);
     }
@@ -104,11 +108,19 @@ class TextbookContextRenderer {
     }
   }
 
-  renderTextbookBodyItems(bodyItems: BodyItem[]): string {
+  renderTextbookBodyItems(
+    bodyItems: BodyItem[],
+    parentType: string,
+    parentId: string,
+  ): string {
     return bodyItems
       .filter(this.filterContextItem)
       .map((item) =>
-        this.renderTextbookBodyItem(item as Exclude<BodyItem, PageBreakItem>),
+        this.renderTextbookBodyItem(
+          item as Exclude<BodyItem, PageBreakItem>,
+          parentType,
+          parentId,
+        ),
       )
       .join("\n\n");
   }
@@ -118,7 +130,11 @@ class TextbookContextRenderer {
       case "inline":
         return item.body;
       case "reference":
-        return `[[${this.buildReference(item.reference_type, item.id)}]]`;
+        const listItemNumber = item.roman || item.letter;
+        return `[[${this.buildReference(
+          item.reference_type,
+          `${item.id}${listItemNumber ? `(${listItemNumber})` : ""}`,
+        )}]]`;
     }
   }
 
@@ -144,7 +160,7 @@ class TextbookContextRenderer {
   renderTextbookExercise(exercise: ExerciseBodyItem): string {
     const reference = this.buildReference("exercise", exercise.id);
     return `begin exercise [[${reference}]]\n\
-${this.renderTextbookBodyItems(exercise.body)}\n\
+${this.renderTextbookBodyItems(exercise.body, "exercise", exercise.id)}\n\
 end exercise [[${reference}]]`;
   }
 
@@ -167,35 +183,35 @@ end exercise [[${reference}]]`;
     const reference = this.buildReference("result", result.id);
 
     return `begin result [[${reference}]]: ${title}\n\
-${this.renderTextbookBodyItems(result.body)}\n\
+${this.renderTextbookBodyItems(result.body, "result", result.id)}\n\
 end result [[${reference}]]`;
   }
 
   renderTextbookProof(proof: ProofBodyItem): string {
     const reference = this.buildReference("proof", proof.of);
     return `begin proof [[${reference}]]\n\
-${this.renderTextbookBodyItems(proof.body)}\n\
+${this.renderTextbookBodyItems(proof.body, "proof", proof.of)}\n\
 end proof [[${reference}]]`;
   }
 
   renderTextbookEquation(equation: EquationBodyItem): string {
     const reference = this.buildReference("equation", equation.id);
     return `begin equation [[${reference}]]\n\
-${this.renderTextbookBodyItems(equation.body)}\n\
+${this.renderTextbookBodyItems(equation.body, "equation", equation.id)}\n\
 end equation [[${reference}]]`;
   }
 
   renderTextbookAlgorithm(algorithm: AlgorithmBodyItem): string {
     const reference = this.buildReference("algorithm", algorithm.id);
     return `begin algorithm [[${reference}]]\n\
-${this.renderTextbookBodyItems(algorithm.body)}\n\
+${this.renderTextbookBodyItems(algorithm.body, "algorithm", algorithm.id)}\n\
 end algorithm [[${reference}]]`;
   }
 
   renderTextbookFigure(figure: FigureBodyItem): string {
     const reference = this.buildReference("figure", figure.id);
     return `begin figure [[${reference}]]\n\
-${this.renderTextbookBodyItems(figure.body)}\n\
+${this.renderTextbookBodyItems(figure.body, "figure", figure.id)}\n\
 end figure [[${reference}]]`;
   }
 
@@ -205,16 +221,34 @@ ${item.body}\n\
 \`\`\``;
   }
 
-  renderTextbookListItem(item: ListItemBodyItem): string {
-    return `${item.roman || item.letter}. ${this.renderTextbookBodyItems(
-      item.body,
-    )}`;
+  renderTextbookListItem(
+    item: ListItemBodyItem,
+    parentType: string,
+    parentId: string,
+  ): string {
+    const reference = this.buildReference(
+      parentType,
+      `${parentId}(${item.roman || item.letter})`,
+    );
+    return `begin item [[${reference}]]\n\
+${this.renderTextbookBodyItems(item.body, parentType, parentId)}\n\
+end item [[${reference}]]`;
   }
 
-  renderTextbookList(list: ListBodyItem): string {
+  renderTextbookList(
+    list: ListBodyItem,
+    parentType: string,
+    parentId: string,
+  ): string {
     return list.body
       .filter((item) => item.type === "list_item")
-      .map((item) => this.renderTextbookListItem(item as ListItemBodyItem))
+      .map((item) =>
+        this.renderTextbookListItem(
+          item as ListItemBodyItem,
+          parentType,
+          parentId,
+        ),
+      )
       .join("\n");
   }
 
@@ -222,7 +256,11 @@ ${item.body}\n\
     const sectionDisplayType = section.type.toLowerCase();
     const reference = this.buildReference("text", section.id);
     let sectionText = `begin ${sectionDisplayType} [[${reference}]]\n\n`;
-    const sectionBody = this.renderTextbookBodyItems(section.body).trim();
+    const sectionBody = this.renderTextbookBodyItems(
+      section.body,
+      "text",
+      "section.id",
+    ).trim();
     if (sectionBody !== "") {
       sectionText += `${sectionBody}\n`;
     }
@@ -324,5 +362,8 @@ You are helping a student UNDERSTAND this exercise—not solve it. You must\
   - Results (Theorems, Statements, Lemmas, Corollaries, Examples, etc.):\
  [[${exampleReferencePrefix}/result/1.2.34]]
   - Sections: [[${exampleReferencePrefix}/text/1.2.3]]
-  - Proofs, Figures, Equations: [[${exampleReferencePrefix}/{proof,figure,equation}/1.4]]`;
+  - Proofs, Figures, Equations, Algorithms:\
+ [[${exampleReferencePrefix}/{proof,figure,equation,algorithm}/1.4]]
+  - If the item of interest is a numbered list item, include the number in\
+ parentheses: [[${exampleReferencePrefix}/result/1.2.3(iv)]]`;
 };
