@@ -965,7 +965,7 @@ export default function DocumentPage({ id }: { id: string }) {
       <div className="pt-6 px-6 flex flex-col items-start gap-6">
         <Link
           href="/document"
-          className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2"
+          className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2 print:hidden"
         >
           <span className="material-symbols-rounded select-none text-sm -mb-[0.1em]">
             arrow_back
