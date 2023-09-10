@@ -21,6 +21,9 @@ export const buildDisplayReference = (
       }
     }
   }
+  if (reference.listItem) {
+    displayReference += `(${reference.listItem})`;
+  }
   return displayReference;
 };
 
@@ -31,6 +34,9 @@ export const buildHref = (reference: ExactReferenceMatch): string => {
     if (reference.subsection) {
       href += `.${reference.subsection}`;
     }
+  }
+  if (reference.listItem) {
+    href += `-${reference.listItem}`;
   }
   return href;
 };
