@@ -83,34 +83,32 @@ const PARTIAL_LIST_ITEM_RANGE_REGEX = (
     endListItemName,
   )})?)?`;
 const PARTIAL_REFERENCE_RANGE_REGEX = makeRegexListPartial([
-  makeRegexNonCapturingGroup([
-    PARTIAL_REFERENCE_NUMBER_REGEX("chapter", "section", "subsection"),
-    makeRegexItemOptional(
-      makeRegexListPartial([
-        "\\(",
-        PARTIAL_LIST_ITEM_RANGE_REGEX(
-          "listItemStartRangeStart",
-          "listItemStartRangeEnd",
-          "listItemStartRangeOp",
-        ),
-        "\\)",
-      ]),
-    ),
-    "(?:(?<!\\.)\\.)",
-    "(?<rangeOp>\\.)",
-    PARTIAL_REFERENCE_NUMBER_REGEX("chapterEnd", "sectionEnd", "subsectionEnd"),
-    makeRegexItemOptional(
-      makeRegexListPartial([
-        "\\(",
-        PARTIAL_LIST_ITEM_RANGE_REGEX(
-          "listItemEndRangeStart",
-          "listItemEndRangeEnd",
-          "listItemEndRangeOp",
-        ),
-        "\\)",
-      ]),
-    ),
-  ]),
+  PARTIAL_REFERENCE_NUMBER_REGEX("chapter", "section", "subsection"),
+  makeRegexItemOptional(
+    makeRegexListPartial([
+      "\\(",
+      PARTIAL_LIST_ITEM_RANGE_REGEX(
+        "listItemStartRangeStart",
+        "listItemStartRangeEnd",
+        "listItemStartRangeOp",
+      ),
+      "\\)",
+    ]),
+  ),
+  "(?:(?<!\\.)\\.)",
+  "(?<rangeOp>\\.)",
+  PARTIAL_REFERENCE_NUMBER_REGEX("chapterEnd", "sectionEnd", "subsectionEnd"),
+  makeRegexItemOptional(
+    makeRegexListPartial([
+      "\\(",
+      PARTIAL_LIST_ITEM_RANGE_REGEX(
+        "listItemEndRangeStart",
+        "listItemEndRangeEnd",
+        "listItemEndRangeOp",
+      ),
+      "\\)",
+    ]),
+  ),
 ]);
 
 const PARTIAL_REFERENCE_REGEX = new RegExp(
@@ -128,7 +126,7 @@ const PARTIAL_REFERENCE_REGEX = new RegExp(
       ]),
       "(?<fuzzyQuery>.*)",
     ]),
-  ]) + "$",
+  ]),
   "i",
 );
 
@@ -159,10 +157,14 @@ export interface SpecifiedPartialReferenceMatch
   chapter?: string;
   section?: string;
   subsection?: string;
+  listItemStartRangeStart?: string;
+  listItemStartRangeEnd?: string;
   rangeOp?: string;
   chapterEnd?: string;
   sectionEnd?: string;
   subsectionEnd?: string;
+  listItemEndRangeStart?: string;
+  listItemEndRangeEnd?: string;
 }
 
 export interface FuzzyPartialReferenceMatch extends BasePartialReferenceMatch {
