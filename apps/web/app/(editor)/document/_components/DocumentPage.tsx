@@ -46,6 +46,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
 import { extension } from "mime-types";
+import Link from "next/link";
 
 const SPECIAL_KEY_MAP = {
   ArrowUp: "↑",
@@ -962,6 +963,15 @@ export default function DocumentPage({ id }: { id: string }) {
       className="w-[min(210mm,_100%)] print:w-full bg-[#fafafa] dark:bg-[#0a0a0a] relative print:bg-inherit"
     >
       <div className="pt-6 px-6 flex flex-col items-start gap-6">
+        <Link
+          href="/document"
+          className="text-sm text-neutral-600 dark:text-neutral-400 flex items-center gap-2"
+        >
+          <span className="material-symbols-rounded select-none text-sm -mb-[0.1em]">
+            arrow_back
+          </span>
+          Documents
+        </Link>
         <ResizableDocumentTitleInput
           initialValue={document.title}
           onSubmit={handleUpdateTitle}
