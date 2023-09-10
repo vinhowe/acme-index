@@ -695,6 +695,7 @@ export default function DocumentPage({ id }: { id: string }) {
     editingCellIndex,
     handleCommitCell,
     document?.id,
+    handleUpdateDocumentCells,
   ]);
 
   const setupContainerRef = useCallback((node: HTMLDivElement | null) => {
