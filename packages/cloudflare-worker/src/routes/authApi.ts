@@ -256,13 +256,36 @@ router
   })
   .patch<UserDataRequest>('/document/:id', withAuthenticatedRequest, async (request, env) => {
     const { id } = request.params;
-    const { title, reference, cells } = await request.json<{ title?: string; reference?: string; cells: Array<UniqueID | null> }>();
-
-    const document = await request.database.documents.update(id, {
+    const {
+      id: newId,
       title,
       reference,
       cells,
-    });
+    } = await request.json<{ id?: string; title?: string; reference?: string; cells?: Array<UniqueID | null> }>();
+
+    const currentDocument = await request.database.documents.get(id);
+
+    if (!currentDocument) {
+      return json({ error: 'Document not found' }, { status: 404 });
+    }
+
+    let document;
+    if (newId && newId !== id) {
+      await request.database.documents.delete(id);
+      document = await request.database.documents.set(newId, {
+        createdAt: currentDocument.createdAt,
+        updatedAt: new Date().toISOString(),
+        title: title || currentDocument.title,
+        reference: reference || currentDocument.reference,
+        cells: cells || currentDocument.cells,
+      });
+    } else {
+      document = await request.database.documents.update(id, {
+        title,
+        reference,
+        cells,
+      });
+    }
 
     return json(document);
   })
@@ -283,9 +306,12 @@ router
   .post<UserDataRequest>('/document/:documentId/cell', withAuthenticatedRequest, async (request, env) => {
     const cellBody = await request.json<Omit<DocumentCell, 'documentId' | 'id'>>();
 
+    const createdAt = new Date().toISOString();
     const cell = await request.database.documentCells.create({
       ...cellBody,
       documentId: request.params.documentId,
+      createdAt,
+      updatedAt: createdAt,
     });
 
     return json(cell);

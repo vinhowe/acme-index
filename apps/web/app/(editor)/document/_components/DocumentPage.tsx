@@ -405,13 +405,14 @@ export default function DocumentPage({ id }: { id: string }) {
   );
 
   const handleUpdateTitle = useCallback(
-    (title: string, _id: string) => {
+    (title: string, id: string) => {
       if (!document) {
         return;
       }
-      updateDocument(document.id, { title })
+      updateDocument(document.id, { title, id })
         .then((document) => {
           setDocument(document);
+          window.history.replaceState(null, "", `/document/${document.id}`);
         })
         .catch((error) => {
           setError(error.message);
@@ -535,6 +536,8 @@ export default function DocumentPage({ id }: { id: string }) {
         }
         if (updatedCell) {
           updateDocumentCell(document.id, updatedCell.id, updatedCell);
+          // Also update the document updated timestamp (empty body to patch)
+          updateDocument(document.id, {});
         }
         return updatedCells;
       });

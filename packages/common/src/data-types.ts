@@ -43,6 +43,8 @@ export type History = UniqueObject & {
 type BaseCell<T> = UniqueObject & {
   type: string;
   documentId: UniqueID;
+  createdAt: string;
+  updatedAt: string;
   content: T;
 };
 
@@ -61,4 +63,6 @@ export type Document = UniqueObject & {
   reference?: string;
   // We allow null values because individual cells can be empty
   cells: Array<UniqueID | null>;
+  createdAt: string;
+  updatedAt: string;
 };

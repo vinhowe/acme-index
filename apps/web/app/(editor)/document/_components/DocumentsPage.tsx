@@ -47,25 +47,48 @@ export default function DocumentsPage() {
         </div>
       </div>
       <div className="text-base flex flex-col items-start gap-4">
-        {documents?.map((document) => (
-          <a
-            key={document.id}
-            href={`/document/${document.id}`}
-            className="hover:underline"
-          >
-            <div className="text-lg leading-5">
-              {document.title || "(no title)"}{" "}
-              {document.reference && (
-                <span className="font-button text-base dark:text-neutral-400 text-neutral-600">
-                  ({document.reference})
-                </span>
-              )}
-            </div>
-            <span className="font-button dark:text-neutral-400 text-neutral-600 text-sm">
-              {document.id}
-            </span>
-          </a>
-        ))}
+        {documents
+          ?.sort((a, b) => {
+            const aTime = new Date(a.updatedAt).getTime();
+            const bTime = new Date(b.updatedAt).getTime();
+
+            // Check if both dates are invalid
+            if (isNaN(aTime) && isNaN(bTime)) {
+              return 0; // Return 0 to preserve the existing order
+            }
+
+            // Check if only a's date is invalid
+            if (isNaN(aTime)) {
+              return 1; // Make b "win"
+            }
+
+            // Check if only b's date is invalid
+            if (isNaN(bTime)) {
+              return -1; // Make a "win"
+            }
+
+            // Both dates are valid, so sort based on the timestamps
+            return bTime - aTime;
+          })
+          ?.map((document) => (
+            <a
+              key={document.id}
+              href={`/document/${document.id}`}
+              className="hover:underline"
+            >
+              <div className="text-lg leading-5">
+                {document.title || "(no title)"}{" "}
+                {document.reference && (
+                  <span className="font-button text-base dark:text-neutral-400 text-neutral-600">
+                    ({document.reference})
+                  </span>
+                )}
+              </div>
+              <span className="font-button dark:text-neutral-400 text-neutral-600 text-sm">
+                {document.id}
+              </span>
+            </a>
+          ))}
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ export interface ObjectTable<T extends UniqueObject> {
 export type MutableObjectTable<T extends UniqueObject> = ObjectTable<T> & {
   set(id: string, value: Omit<T, keyof UniqueObject>): Promise<T>;
   create(value: Omit<T, keyof UniqueObject>): Promise<T>;
+  delete(id: string): Promise<void>;
 };
 
 export interface Database {
@@ -63,7 +64,7 @@ export class DocumentCellAccess implements ObjectTable<DocumentCell> {
     return this.table.create(value);
   }
 
-  async update(id: string, value: Omit<DocumentCell, keyof UniqueObject>): Promise<DocumentCell> {
+  async update(id: string, value: Omit<DocumentCell, keyof UniqueObject | 'updatedAt'>): Promise<DocumentCell> {
     const cell = await this.get(id);
     if (!cell) {
       throw new Error('Cell not found');
@@ -72,6 +73,7 @@ export class DocumentCellAccess implements ObjectTable<DocumentCell> {
     return this.table.set(id, {
       ...cell,
       ...filteredValue,
+      updatedAt: new Date().toISOString(),
     });
   }
 }
@@ -94,13 +96,20 @@ export class DocumentAccess implements ObjectTable<Document> {
   }
 
   async create(value: Pick<Document, 'id' | 'title' | 'reference'>): Promise<Document> {
+    const createdAt = new Date().toISOString();
     return this.table.set(value.id, {
       ...value,
       cells: [],
+      createdAt,
+      updatedAt: createdAt,
     });
   }
 
-  async update(id: string, value: Omit<Document, keyof UniqueObject>): Promise<Document> {
+  async delete(id: string): Promise<void> {
+    await this.table.delete(id);
+  }
+
+  async update(id: string, value: Partial<Omit<Document, keyof UniqueObject | 'createdAt' | 'updatedAt'>>): Promise<Document> {
     const document = await this.get(id);
     if (!document) {
       throw new Error('Document not found');
@@ -109,6 +118,7 @@ export class DocumentAccess implements ObjectTable<Document> {
     return this.table.set(id, {
       ...document,
       ...filteredValue,
+      updatedAt: new Date().toISOString(),
     });
   }
 }
@@ -314,6 +324,10 @@ export class KVObjectTable<T extends UniqueObject = any & UniqueObject> implemen
     await this.set(id, body);
     return body;
   }
+
+  async delete(id: string): Promise<void> {
+    await this.kv.delete(`${this.prefix}:${id}`);
+  }
 }
 
 export class InMemoryObjectTable<T extends UniqueObject = any & UniqueObject> implements MutableObjectTable<T> {
@@ -342,6 +356,10 @@ export class InMemoryObjectTable<T extends UniqueObject = any & UniqueObject> im
     const body = { ...value, id } as T;
     await this.set(id, body);
     return body;
+  }
+
+  async delete(id: string): Promise<void> {
+    delete this.table[id];
   }
 }
 
@@ -375,5 +393,10 @@ export class CachedObjectTable<T extends UniqueObject = any & UniqueObject> impl
     const body = await this.table.create(value);
     this.cache[body.id] = body;
     return body;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.table.delete(id);
+    delete this.cache[id];
   }
 }
