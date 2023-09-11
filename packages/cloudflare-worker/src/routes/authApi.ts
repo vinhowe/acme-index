@@ -297,10 +297,6 @@ router
       return json({ error: 'Cell not found' }, { status: 404 });
     }
 
-    if (cell.documentId !== documentId) {
-      return json({ error: "Cell doesn't belong to specified document" }, { status: 400 });
-    }
-
     return json(cell);
   })
   .post<UserDataRequest>('/document/:documentId/cell', withAuthenticatedRequest, async (request, env) => {
