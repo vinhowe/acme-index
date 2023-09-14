@@ -178,13 +178,17 @@ router
     const { readable, writable } = new TransformStream();
     let writer = await writable.getWriter();
     let encoder = new TextEncoder();
+    const abortController = new AbortController();
 
     const pipeStream = async () => {
       await writer.write(encoder.encode(`event: start\n`));
       await writer.write(encoder.encode(`data: ${JSON.stringify(turn)}\n\n`));
       await writer.releaseLock();
 
-      const generator = await request.completionManager.completionGenerator(chat.id, turn.id, { maxTokens });
+      const generator = await request.completionManager.completionGenerator(chat.id, turn.id, {
+        maxTokens,
+        signal: abortController.signal,
+      });
 
       for await (const delta of generator) {
         writer = await writable.getWriter();

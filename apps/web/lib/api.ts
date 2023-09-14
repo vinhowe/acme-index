@@ -97,9 +97,11 @@ export async function generateTurnStreaming(
   {
     onopen,
     onupdate,
+    signal,
   }: {
     onopen?: (response: Response) => void;
     onupdate?: (turn: ChatTurn) => void;
+    signal?: AbortSignal;
   } = {},
 ): Promise<ChatTurn | null> {
   let turn: ChatTurn | null = null;
@@ -136,6 +138,7 @@ export async function generateTurnStreaming(
         turn = JSON.parse(message.data);
       }
     },
+    signal,
   });
 
   return turn;

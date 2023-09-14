@@ -9,6 +9,7 @@ import { ChatAccess, ChatTurnAccess } from './data';
 export interface CompletionOptions {
   maxTokens?: number;
   model?: string;
+  signal?: AbortSignal;
 }
 
 export interface CompletionUpdate {
@@ -26,7 +27,7 @@ interface BaseCompletionSource<T extends string> {
   generateCompletion(messages: ChatMessage[], options?: CompletionOptions): AsyncGenerator<string>;
 }
 
-type OpenAIChatModel = OpenAI.Chat.Completions.CompletionCreateParams.CreateChatCompletionRequestStreaming['model'];
+type OpenAIChatModel = OpenAI.Chat.Completions.CompletionCreateParams.CompletionCreateParamsStreaming['model'];
 
 type AnthropicChatModel = Anthropic.CompletionCreateParams['model'];
 
@@ -42,23 +43,28 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
   constructor(private client: OpenAI) {}
 
   async *generateCompletion(messages: ChatMessage[], options?: CompletionOptions): AsyncGenerator<string> {
-    const stream = await this.client.chat.completions.create({
-      model: options?.model || DEFAULT_OPENAI_MODEL,
-      // max_tokens: options?.maxTokens,
-      messages: messages.map((message) => ({
-        content: message.content,
-        role: OPENAI_ROLE_MAPPING[message.role],
-      })),
-      logit_bias: {
-        // " [["
-        4416: 2,
-        // " $"
-        400: 2,
-        // " $$"
-        27199: 2,
+    const stream = await this.client.chat.completions.create(
+      {
+        model: options?.model || DEFAULT_OPENAI_MODEL,
+        // max_tokens: options?.maxTokens,
+        messages: messages.map((message) => ({
+          content: message.content,
+          role: OPENAI_ROLE_MAPPING[message.role],
+        })),
+        logit_bias: {
+          // " [["
+          4416: 2,
+          // " $"
+          400: 2,
+          // " $$"
+          27199: 2,
+        },
+        stream: true,
       },
-      stream: true,
-    });
+      {
+        signal: options?.signal,
+      },
+    );
 
     for await (const part of stream) {
       const deltaContent = part.choices[0].delta.content;
@@ -104,10 +110,15 @@ export class AnthropicCompletionSource implements BaseCompletionSource<Anthropic
       max_tokens_to_sample: options?.maxTokens || 2000,
       model: options?.model || DEFAULT_ANTHROPIC_MODEL,
     };
-    const stream = await this.client.completions.create({
-      ...completionParams,
-      stream: true,
-    });
+    const stream = await this.client.completions.create(
+      {
+        ...completionParams,
+        stream: true,
+      },
+      {
+        signal: options?.signal,
+      },
+    );
 
     for await (const part of stream) {
       const deltaContent = part.completion;
@@ -279,13 +290,18 @@ export class CompletionManager {
     });
 
     let text = '';
+    let eventCount = 0;
 
     for await (const delta of generator) {
       yield { completion: delta };
 
       // Update turn with completion
       text += delta;
-      // await this.chatTurns.updateStreamingTurn(turn.id, text);
+      // This reduces the number of write operations we do (which can get expensive)
+      if (eventCount % 10 === 0) {
+        this.chatTurns.updateStreamingTurn(turn.id, text);
+      }
+      eventCount += 1;
     }
 
     await this.chatTurns.finishTurn(turn.id, { response: text });

@@ -30,6 +30,7 @@ interface ChatState {
     chat: Chat | null;
     turns: Array<ChatTurn | WaitingTurn>;
   } | null;
+  initialComposingText: string;
   referenceId: string | null;
   referenceInteractions: {
     [referenceId: string]: ChatHistoryItem[];
@@ -76,6 +77,12 @@ type ChatAction =
     }
   | { type: "send message"; payload: string }
   | {
+      type: "set initial composing text";
+      payload: {
+        text: string;
+      };
+    }
+  | {
       type: "add turn waiting for response";
       payload: {
         query: string;
@@ -111,6 +118,7 @@ const initialState: ChatState = {
   // - both non-null: existing chat is open
   // - showingReferenceId non-null: new chat is open
   // showingChatId !== null => showingReferenceId !== null
+  initialComposingText: "",
   chatData: null,
   referenceId: null,
   referenceInteractions: {},
@@ -168,6 +176,11 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         },
         chatHistory: [historyItem, ...state.chatHistory],
         referenceInteractions,
+      };
+    case "set initial composing text":
+      return {
+        ...state,
+        initialComposingText: action.payload.text,
       };
     case "add turn waiting for response":
       if (!state.chatData?.chat || !state.chatData?.turns) {
@@ -378,6 +391,7 @@ export const openChat = async (id: string, dispatch: Dispatch<ChatAction>) => {
 
   const turns = await getTurnsTo(chat.id, chat.currentTurn);
 
+  dispatch({ type: "set sidebar open state", payload: { isOpen: true } });
   dispatch({ type: "load chat", payload: { chat, turns } });
 };
 
@@ -387,10 +401,12 @@ export const openHistory = async (dispatch: Dispatch<ChatAction>) => {
 
 export const sendMessage = async (
   query: string,
+  parentTurnId: string | null,
   chat: Chat | null,
   referenceId: string,
   streamingUpdateCallback: (turn: ChatTurn) => void,
   dispatch: Dispatch<ChatAction>,
+  signal?: AbortSignal,
 ) => {
   if (!chat) {
     // Create chat
@@ -427,9 +443,10 @@ export const sendMessage = async (
   };
 
   // Generate turn streaming
-  const turn = await generateTurnStreaming(chat.id, chat.currentTurn, query, {
+  const turn = await generateTurnStreaming(chat.id, parentTurnId, query, {
     onopen: () => {},
     onupdate,
+    signal,
   });
 
   if (!turn) {
@@ -438,4 +455,20 @@ export const sendMessage = async (
   }
 
   dispatch({ type: "finish chat stream", payload: { turn } });
+};
+
+export const editTurn = async (
+  chat: Chat,
+  turn: ChatTurn,
+  dispatch: Dispatch<ChatAction>,
+) => {
+  let turns: ChatTurn[] = [];
+  if (turn.parent) {
+    turns = await getTurnsTo(chat.id, turn.parent);
+  }
+  dispatch({ type: "load chat", payload: { chat, turns } });
+  dispatch({
+    type: "set initial composing text",
+    payload: { text: turn.query ?? "" },
+  });
 };

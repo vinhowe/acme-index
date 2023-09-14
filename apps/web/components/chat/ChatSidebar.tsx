@@ -18,6 +18,7 @@ import remarkMath from "remark-math";
 import {
   ChatContext,
   WaitingTurn,
+  editTurn,
   openChat,
   openHistory,
   sendMessage,
@@ -27,10 +28,19 @@ import { parseRef } from "textref";
 import { buildDisplayReference } from "@/lib/textbook/textbook-ref";
 import { ChatTurn } from "@acme-index/common";
 
-const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
+const ChatInput = ({
+  streaming = false,
+  onSubmit,
+  initialValue = "",
+}: {
+  streaming?: boolean;
+  onSubmit: (value: string) => void;
+  initialValue?: string;
+}) => {
   const [composingText, setComposingText] = useState<string>("");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     if (!textareaRef || !textareaRef.current) {
       return;
@@ -42,6 +52,10 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
       textareaRef?.current?.scrollHeight > 400 ? "auto" : "hidden"
     }`;
   }, [composingText]);
+
+  useEffect(() => {
+    setComposingText(initialValue);
+  }, [initialValue]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -77,8 +91,9 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
           maxHeight: "400px",
         }}
         className={classNames(
-          "bg-neutral-300",
-          "dark:bg-neutral-700",
+          streaming
+            ? "bg-green-200/40 dark:bg-green-900/40"
+            : "bg-neutral-300 dark:bg-neutral-700",
           "mx-0",
           "resize-none",
           "px-2",
@@ -90,13 +105,16 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
           "pr-10",
           "min-w-0",
           "rounded-md",
+          streaming &&
+            "dark:placeholder:text-green-200 placeholder:text-green-800",
         )}
-        placeholder="Ask a question..."
+        placeholder={streaming ? "Responding..." : "Ask a question..."}
         rows={1}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         value={composingText}
         ref={textareaRef}
+        disabled={streaming}
       />
       <button
         className={classNames(
@@ -108,15 +126,16 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
           "mr-[4px]",
           "text-white",
           "dark:text-black",
-          "bg-blue-700",
-          "dark:bg-blue-400",
+          streaming
+            ? "bg-green-700 dark:bg-green-400"
+            : "bg-blue-700 dark:bg-blue-400",
           "rounded",
           "aspect-square",
           "flex",
           "justify-center",
           "items-center",
         )}
-        disabled={!composingText}
+        disabled={!composingText && !streaming}
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
@@ -129,7 +148,7 @@ const ChatInput = ({ onSubmit }: { onSubmit: (value: string) => void }) => {
         }}
       >
         <span className="select-none material-symbols-rounded leading-[0] text-xl">
-          send
+          {streaming ? "stop" : "send"}
         </span>
       </button>
     </div>
@@ -160,9 +179,15 @@ const StreamingChatTurnSection = ({
 
 const ChatTurnSection = ({
   turn,
+  onEdit,
 }: {
   turn: Pick<ChatTurn, "query" | "response">;
+  onEdit?: () => void;
 }) => {
+  const copyToClipboard = useCallback(() => {
+    navigator.clipboard.writeText(turn.response || "");
+  }, [turn.response]);
+
   return (
     <div className="flex flex-col items-start">
       <div className="my-2 w-full flex justify-end">
@@ -176,7 +201,9 @@ const ChatTurnSection = ({
             "rounded-xl",
           )}
         >
-          {turn.query}
+          {turn.query.split("\n").map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
         </div>
       </div>
       <ReactMarkdown
@@ -206,6 +233,28 @@ const ChatTurnSection = ({
       >
         {turn.response || ""}
       </ReactMarkdown>
+      <div className="flex w-full justify-start gap-2 text-neutral-700 dark:text-neutral-500">
+        <button
+          className={classNames(
+            "material-symbols-rounded text-lg  select-none",
+          )}
+          role="button"
+          onClick={copyToClipboard}
+        >
+          content_copy
+        </button>
+        {onEdit && (
+          <button
+            className={classNames(
+              "material-symbols-rounded text-lg select-none",
+            )}
+            role="button"
+            onClick={onEdit}
+          >
+            edit
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -218,10 +267,15 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
     null,
   );
   const [streamingTurn, setStreamingTurn] = useState<ChatTurn | null>(null);
+  const [streaming, setStreaming] = useState<boolean>(false);
+
+  const [composingText, setComposingText] = useState<string>("");
 
   const streamingUpdateRef = useRef<(turn: ChatTurn) => void>(
     (_turn: ChatTurn) => {},
   );
+  const abortSignalRef = useRef<AbortController | null>(null);
+  const lastTimeClickedRef = useRef<number>(0);
 
   const displayReference = useMemo(() => {
     const reference = parseRef(referenceId);
@@ -257,17 +311,66 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
     }
   }, [state.chatData?.turns]);
 
+  useEffect(() => {
+    if (state?.initialComposingText) {
+      setComposingText(state.initialComposingText);
+    }
+  }, [state?.initialComposingText]);
+
+  const cancelStreaming = useCallback(() => {
+    if (abortSignalRef.current) {
+      abortSignalRef.current.abort();
+      abortSignalRef.current = null;
+    }
+  }, []);
+
   const handleChatSubmit = useCallback(
     async (query: string) => {
+      const now = Date.now();
+      // Do this to debounce double clicks
+      if (now - lastTimeClickedRef.current < 1000) {
+        return;
+      }
+      lastTimeClickedRef.current = now;
+      if (streaming) {
+        cancelStreaming();
+        return;
+      }
+      if (abortSignalRef.current) {
+        await abortSignalRef.current.abort();
+        abortSignalRef.current = null;
+      }
+      abortSignalRef.current = new AbortController();
+      dispatch({
+        type: "set initial composing text",
+        payload: {
+          text: "",
+        },
+      });
+      setStreaming(true);
       await sendMessage(
         query,
+        turns?.length ? turns[turns.length - 1].id : null,
         chat ?? null,
         referenceId,
         (turn: ChatTurn) => streamingUpdateRef.current(turn),
         dispatch,
+        abortSignalRef.current.signal,
       );
+      abortSignalRef.current = null;
+      setStreaming(false);
     },
-    [chat, dispatch, referenceId],
+    [chat, dispatch, referenceId, turns, streaming, cancelStreaming],
+  );
+
+  const handleEditTurn = useCallback(
+    (turn: ChatTurn) => {
+      if (!chat) {
+        return;
+      }
+      editTurn(chat, turn, dispatch);
+    },
+    [dispatch, chat],
   );
 
   return (
@@ -306,7 +409,11 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
             <div>
               {turns &&
                 turns.map((turn) => (
-                  <ChatTurnSection key={turn.id} turn={turn} />
+                  <ChatTurnSection
+                    key={turn.id}
+                    turn={turn}
+                    onEdit={() => handleEditTurn(turn as ChatTurn)}
+                  />
                 ))}
               {streamingTurn && (
                 <StreamingChatTurnSection
@@ -319,7 +426,11 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
         </div>
         <div>
           <div className={classNames(turns?.length && "mt-4")}>
-            <ChatInput onSubmit={handleChatSubmit} />
+            <ChatInput
+              onSubmit={handleChatSubmit}
+              streaming={streaming}
+              initialValue={composingText}
+            />
           </div>
           {chat && (
             <div className="font-mono opacity-40 text-xs mt-2">
