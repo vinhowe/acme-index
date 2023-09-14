@@ -190,7 +190,7 @@ const ChatTurnSection = ({
 
   return (
     <div className="flex flex-col items-start">
-      <div className="my-2 w-full flex justify-between items-center">
+      <div className="my-2 w-full flex gap-4 justify-between items-center">
         <div
           className={classNames(
             "px-2.5",
