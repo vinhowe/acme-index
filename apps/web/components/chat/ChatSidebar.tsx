@@ -190,7 +190,7 @@ const ChatTurnSection = ({
 
   return (
     <div className="flex flex-col items-start">
-      <div className="my-2 w-full flex justify-end">
+      <div className="my-2 w-full flex justify-between items-center">
         <div
           className={classNames(
             "px-2.5",
@@ -201,9 +201,55 @@ const ChatTurnSection = ({
             "rounded-xl",
           )}
         >
-          {turn.query.split("\n").map((line, i) => (
-            <p key={i}>{line}</p>
-          ))}
+          <ReactMarkdown
+            className={classNames(
+              "prose",
+              "prose-neutral",
+              "dark:text-white",
+              "text-black",
+              "dark:prose-invert",
+            )}
+            remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
+            rehypePlugins={[rehypeKatex, rehypeMinifyWhitespace]}
+            components={{
+              div: ({ node, className, children, ...props }) => {
+                // if math isn't in classname, render as normal
+                if (!className?.includes("math-display")) {
+                  return <div {...props}>{children}</div>;
+                }
+
+                return (
+                  <div {...props} className={className}>
+                    <div className="katex-display-wrapper">{children}</div>
+                  </div>
+                );
+              },
+            }}
+          >
+            {turn.query}
+          </ReactMarkdown>
+        </div>
+        <div className="flex gap-2 text-neutral-700 dark:text-neutral-500">
+          {onEdit && (
+            <button
+              className={classNames(
+                "material-symbols-rounded text-lg select-none",
+              )}
+              role="button"
+              onClick={onEdit}
+            >
+              edit
+            </button>
+          )}
+          <button
+            className={classNames(
+              "material-symbols-rounded text-lg select-none",
+            )}
+            role="button"
+            onClick={copyToClipboard}
+          >
+            content_copy
+          </button>
         </div>
       </div>
       <ReactMarkdown
@@ -233,28 +279,6 @@ const ChatTurnSection = ({
       >
         {turn.response || ""}
       </ReactMarkdown>
-      <div className="flex w-full justify-start gap-2 text-neutral-700 dark:text-neutral-500">
-        <button
-          className={classNames(
-            "material-symbols-rounded text-lg  select-none",
-          )}
-          role="button"
-          onClick={copyToClipboard}
-        >
-          content_copy
-        </button>
-        {onEdit && (
-          <button
-            className={classNames(
-              "material-symbols-rounded text-lg select-none",
-            )}
-            role="button"
-            onClick={onEdit}
-          >
-            edit
-          </button>
-        )}
-      </div>
     </div>
   );
 };
