@@ -31,8 +31,8 @@ import {
   rectangularSelection,
 } from "@codemirror/view";
 import { EditorState, Prec } from "@codemirror/state";
-import { defaultKeymap } from "@codemirror/commands";
-import { getCM, vim } from "@replit/codemirror-vim";
+import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
+import { Vim, getCM, vim } from "@replit/codemirror-vim";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import {
   Lab_to_XYZ,
@@ -58,9 +58,17 @@ import { stexMath } from "@codemirror/legacy-modes/mode/stex";
 import {
   acceptCompletion,
   autocompletion,
+  clearSnippet,
   closeBrackets,
+  closeCompletion,
+  hasNextSnippetField,
+  hasPrevSnippetField,
   moveCompletionSelection,
+  nextSnippetField,
+  prevSnippetField,
   snippetCompletion,
+  snippetKeymap,
+  startCompletion,
 } from "@codemirror/autocomplete";
 import { search, searchKeymap } from "@codemirror/search";
 import rehypeKatex from "rehype-katex";
@@ -435,17 +443,52 @@ export default function DocumentPage({ id }: { id: string }) {
           shiftEscapeBinding,
           { key: "Ctrl-n", run: moveCompletionSelection(true) },
           { key: "Ctrl-p", run: moveCompletionSelection(false) },
-          { key: "Tab", run: moveCompletionSelection(true) },
-          ...defaultKeymap,
+          { key: "Tab", run: acceptCompletion },
+          // Default completion keymap minus escape to close completion
+          { key: "Ctrl-Space", run: startCompletion },
+          // { key: "Escape", run: closeCompletion },
+          { key: "ArrowDown", run: moveCompletionSelection(true) },
+          { key: "ArrowUp", run: moveCompletionSelection(false) },
+          { key: "PageDown", run: moveCompletionSelection(true, "page") },
+          { key: "PageUp", run: moveCompletionSelection(false, "page") },
+          // { key: "Enter", run: acceptCompletion },
         ]),
       ),
-      keymap.of(searchKeymap),
+      history(),
+      keymap.of([
+        ...searchKeymap,
+        ...historyKeymap,
+        ...defaultKeymap.filter((binding) => {
+          return binding.key !== "Ctrl-k" && binding.mac !== "Ctrl-k";
+        }),
+      ]),
       vim(),
       search(),
       drawSelection(),
       rectangularSelection(),
       lineNumbers(),
-      autocompletion(),
+      autocompletion({
+        defaultKeymap: false,
+      }),
+      Prec.highest(
+        snippetKeymap.of([
+          {
+            key: "Ctrl-j",
+            run: (target) =>
+              nextSnippetField(target) ||
+              hasNextSnippetField(target.state) ||
+              hasPrevSnippetField(target.state),
+          },
+          {
+            key: "Ctrl-k",
+            run: (target) =>
+              prevSnippetField(target) ||
+              hasNextSnippetField(target.state) ||
+              hasPrevSnippetField(target.state),
+          },
+          { key: "Escape", run: clearSnippet },
+        ]),
+      ),
       dropCursor(),
       highlightActiveLine(),
       highlightSpecialChars(),
