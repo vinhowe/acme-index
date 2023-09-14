@@ -98,6 +98,9 @@ export function parseMathIPython(latexParser?: Parser): MarkdownConfig {
                 end,
               ),
             );
+            // This keeps us from re-parsing the end delimiter as another start
+            // delimiter
+            cx.nextLine();
           }
           if (end !== undefined) {
             cx.addElement(

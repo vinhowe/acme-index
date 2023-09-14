@@ -30,9 +30,9 @@ import {
   lineNumbers,
   rectangularSelection,
 } from "@codemirror/view";
-import { EditorState, Prec } from "@codemirror/state";
+import { Prec } from "@codemirror/state";
 import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
-import { Vim, getCM, vim } from "@replit/codemirror-vim";
+import { getCM, vim } from "@replit/codemirror-vim";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import {
   Lab_to_XYZ,

@@ -7,9 +7,28 @@ interface KaTeXWidgetParams {
   latex: string;
 }
 
+const katexWorker = new Worker(new URL('./katex-worker.ts', import.meta.url));
+
+// Create a promise-based mechanism to get the result
+const renderLatex = (latex: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const id = Date.now().toString();  // A simple way to identify messages
+    katexWorker.onmessage = (e) => {
+      if (e.data.id === id) {
+        if (e.data.error) {
+          reject();
+        } else {
+          resolve(e.data.rendered);
+        }
+      }
+    };
+
+    katexWorker.postMessage({ id, latex });
+  });
+};
+
 class KaTeXWidget extends WidgetType {
   readonly latex;
-
   constructor({ latex }: KaTeXWidgetParams) {
     super();
     this.latex = latex;
@@ -25,17 +44,31 @@ class KaTeXWidget extends WidgetType {
     container.className = 'cm-katex-container';
 
     try {
-      const rendered = katex.renderToString(this.latex, {
+      // The initial render is done synchronously
+      const renderedKatex = katex.renderToString(this.latex, {
         displayMode: true,
       });
-      container.innerHTML = rendered;
+      container.innerHTML = renderedKatex;
     } catch (error) {
       // Ignore these because they will happen all the time
     }
 
     return container;
   }
+
+  updateDOM(dom: HTMLElement, _view: EditorView): boolean {
+    try {
+      // All subsequent updates will be done via the worker
+      renderLatex(this.latex).then((rendered) => {
+        dom.innerHTML = rendered;
+      });
+    } catch (error) {
+      // Ignore these because they will happen all the time
+    }
+    return true;
+  }
 }
+
 
 export const katexDisplay = (): Extension => {
   const decorate = (state: EditorState) => {
@@ -48,7 +81,7 @@ export const katexDisplay = (): Extension => {
           widgets.push(Decoration.widget({
             widget: new KaTeXWidget({ latex: latexString }),
             side: 1,
-            block: true,
+            block: false,
           }).range(state.doc.lineAt(to).to));
         }
       },
@@ -59,7 +92,6 @@ export const katexDisplay = (): Extension => {
 
   const katexTheme = EditorView.baseTheme({
     '.cm-katex-container': {
-      // You can style the KaTeX display here if required
     },
   });
 
