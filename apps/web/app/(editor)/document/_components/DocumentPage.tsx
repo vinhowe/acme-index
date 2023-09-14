@@ -84,9 +84,17 @@ const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
     expansion: "\\iff",
     displayLabel: "\\iff",
   },
+  "=>": {
+    expansion: "\\Rightarrow",
+    displayLabel: "\\Rightarrow",
+  },
   "//": {
-    expansion: "\\frac{${}}{${}}",
+    expansion: "\\frac{${}}{${}}${}",
     displayLabel: "\\frac{}{}",
+  },
+  "!=": {
+    expansion: "\\neq",
+    displayLabel: "\\neq",
   },
   tag: {
     expansion: "\\tag{${}}",
@@ -104,6 +112,26 @@ const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
   bmatrix: {
     expansion: "\\begin{bmatrix}\n\t${}\n\\end{bmatrix}",
     displayLabel: "bmatrix environment",
+  },
+  sum: {
+    expansion: "\\sum_{${}}^{${}} ${}",
+    displayLabel: "\\sum",
+  },
+  lim: {
+    expansion: "\\lim_{${}} ${}",
+    displayLabel: "\\lim",
+  },
+  left: {
+    expansion: "\\left${1}${3}\\right${2}",
+    displayLabel: "\\left",
+  },
+  prime: {
+    expansion: "${}^\\prime${}",
+    displayLabel: "^\\prime",
+  },
+  "\\\\n": {
+    expansion: "\\\\\n&= ${}",
+    displayLabel: "\\\\\n&= ${}",
   },
 };
 
@@ -406,7 +434,7 @@ export default function DocumentPage({ id }: { id: string }) {
           shiftEscapeBinding,
           { key: "Ctrl-n", run: moveCompletionSelection(true) },
           { key: "Ctrl-p", run: moveCompletionSelection(false) },
-          { key: "Tab", run: acceptCompletion },
+          { key: "Tab", run: moveCompletionSelection(true) },
         ]),
       ),
       keymap.of(searchKeymap),
