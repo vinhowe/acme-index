@@ -31,6 +31,7 @@ import {
   rectangularSelection,
 } from "@codemirror/view";
 import { EditorState, Prec } from "@codemirror/state";
+import { defaultKeymap } from "@codemirror/commands";
 import { getCM, vim } from "@replit/codemirror-vim";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import {
@@ -435,6 +436,7 @@ export default function DocumentPage({ id }: { id: string }) {
           { key: "Ctrl-n", run: moveCompletionSelection(true) },
           { key: "Ctrl-p", run: moveCompletionSelection(false) },
           { key: "Tab", run: moveCompletionSelection(true) },
+          ...defaultKeymap,
         ]),
       ),
       keymap.of(searchKeymap),

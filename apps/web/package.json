@@ -11,6 +11,7 @@
   "dependencies": {
     "@acme-index/common": "workspace:^",
     "@codemirror/autocomplete": "^6.9.0",
+    "@codemirror/commands": "^6.2.5",
     "@codemirror/history": "^0.19.2",
     "@codemirror/lang-markdown": "^6.2.0",
     "@codemirror/language": "^6.9.0",
