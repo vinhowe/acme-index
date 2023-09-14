@@ -39,6 +39,16 @@ const DELIMITERS = Object.keys(DELIMITER_LENGTH).reduce<
   return agg;
 }, {});
 
+function isLatexBlock(line: Line) {
+  if (line.next != 36 /* '$' */) return -1;
+  let pos = line.pos + 1;
+  while (pos < line.text.length && line.text.charCodeAt(pos) == 36) pos++;
+  if (line.next == 36)
+    for (let i = pos; i < line.text.length; i++)
+      if (line.text.charCodeAt(i) == 36) return -1;
+  return pos;
+}
+
 /**
  * Define an IPython mathematical expression parser for Markdown.
  *
