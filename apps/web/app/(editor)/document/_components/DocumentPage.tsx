@@ -11,14 +11,26 @@ import {
   Document,
   DocumentCell,
   DocumentDrawingCell,
-  DocumentTextCell,
   Drawing,
   Rect,
 } from "@acme-index/common";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ResizableDocumentTitleInput from "./ResizableDocumentTItleInput";
 import ResizableReferenceInput from "./ResizableReferenceInput";
-import { EditorView, KeyBinding, ViewUpdate, keymap } from "@codemirror/view";
+import {
+  EditorView,
+  KeyBinding,
+  ViewUpdate,
+  drawSelection,
+  dropCursor,
+  highlightActiveLine,
+  highlightSpecialChars,
+  highlightTrailingWhitespace,
+  keymap,
+  lineNumbers,
+  rectangularSelection,
+} from "@codemirror/view";
+import { EditorState, Prec } from "@codemirror/state";
 import { getCM, vim } from "@replit/codemirror-vim";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import {
@@ -33,10 +45,23 @@ import {
 import ReactMarkdown from "react-markdown";
 import classNames from "classnames";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
-import { markdown } from "@codemirror/lang-markdown";
+import { commonmarkLanguage, markdown } from "@codemirror/lang-markdown";
 import { parseMathIPython } from "@/lib/editor/codemirror/ipython-md";
-import { StreamLanguage } from "@codemirror/language";
+import {
+  StreamLanguage,
+  bracketMatching,
+  codeFolding,
+  foldGutter,
+} from "@codemirror/language";
 import { stexMath } from "@codemirror/legacy-modes/mode/stex";
+import {
+  acceptCompletion,
+  autocompletion,
+  closeBrackets,
+  moveCompletionSelection,
+  snippetCompletion,
+} from "@codemirror/autocomplete";
+import { search, searchKeymap } from "@codemirror/search";
 import rehypeKatex from "rehype-katex";
 import rehypeMinifyWhitespace from "rehype-minify-whitespace";
 import remarkGfm from "remark-gfm";
@@ -47,6 +72,48 @@ import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
 import { extension } from "mime-types";
 import Link from "next/link";
+
+interface SnippetDefinition {
+  expansion: string;
+  boost?: number;
+  displayLabel?: string;
+}
+
+const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
+  iff: {
+    expansion: "\\iff",
+    displayLabel: "\\iff",
+  },
+  "//": {
+    expansion: "\\frac{${}}{${}}",
+    displayLabel: "\\frac{}{}",
+  },
+  tag: {
+    expansion: "\\tag{${}}",
+    displayLabel: "\\tag{}",
+  },
+  "align*": {
+    expansion: "\\begin{align*}\n\t${}\n\\end{align*}",
+    boost: 100,
+    displayLabel: "align* environment",
+  },
+  align: {
+    expansion: "\\begin{align}\n\t${}\n\\end{align}",
+    displayLabel: "align environment",
+  },
+  bmatrix: {
+    expansion: "\\begin{bmatrix}\n\t${}\n\\end{bmatrix}",
+    displayLabel: "bmatrix environment",
+  },
+};
+
+const MARKDOWN_SNIPPETS: Record<string, SnippetDefinition> = {
+  "align*": {
+    expansion: "$$\n\\begin{align*}\n\t${}\n\\end{align*}\n$$",
+    boost: 100,
+    displayLabel: "align* environment",
+  },
+};
 
 const SPECIAL_KEY_MAP = {
   ArrowUp: "↑",
@@ -91,15 +158,6 @@ const shiftEscapeBinding: KeyBinding = {
     return false;
   },
 };
-
-const EXTENSIONS = [
-  keymap.of([cmdEnterBinding, shiftEnterBinding, shiftEscapeBinding]),
-  vim(),
-  markdown({
-    extensions: [parseMathIPython(StreamLanguage.define(stexMath).parser)],
-  }),
-  EditorView.lineWrapping,
-];
 
 interface BaseDrawingUpdate {
   status: "start" | "update" | "stop";
@@ -337,6 +395,60 @@ export default function DocumentPage({ id }: { id: string }) {
     [0, 0],
     [0, 0],
   ]);
+
+  const EXTENSIONS = useMemo(() => {
+    const latexLanguage = StreamLanguage.define(stexMath);
+    return [
+      Prec.highest(
+        keymap.of([
+          cmdEnterBinding,
+          shiftEnterBinding,
+          shiftEscapeBinding,
+          { key: "Ctrl-n", run: moveCompletionSelection(true) },
+          { key: "Ctrl-p", run: moveCompletionSelection(false) },
+          { key: "Tab", run: acceptCompletion },
+        ]),
+      ),
+      keymap.of(searchKeymap),
+      vim(),
+      search(),
+      drawSelection(),
+      rectangularSelection(),
+      lineNumbers(),
+      autocompletion(),
+      dropCursor(),
+      highlightActiveLine(),
+      highlightSpecialChars(),
+      highlightTrailingWhitespace(),
+      bracketMatching(),
+      closeBrackets(),
+      codeFolding(),
+      foldGutter(),
+      markdown({
+        extensions: [parseMathIPython(latexLanguage.parser)],
+      }),
+      EditorView.lineWrapping,
+      latexLanguage.data.of({
+        autocomplete: Object.entries(LATEX_SNIPPETS).map(([key, value]) =>
+          snippetCompletion(value.expansion, {
+            label: key,
+            boost: value.boost,
+            displayLabel: value.displayLabel,
+          }),
+        ),
+      }),
+      commonmarkLanguage.data.of({
+        closeBrackets: { brackets: ["(", "[", "{", "'", '"', "`", "$"] },
+        autocomplete: Object.entries(MARKDOWN_SNIPPETS).map(([key, value]) =>
+          snippetCompletion(value.expansion, {
+            label: key,
+            boost: value.boost,
+            displayLabel: value.displayLabel,
+          }),
+        ),
+      }),
+    ];
+  }, []);
 
   useEffect(() => {
     getDocument(id)
@@ -1026,6 +1138,7 @@ export default function DocumentPage({ id }: { id: string }) {
                               ? vscodeDark
                               : "light"
                           }
+                          basicSetup={false}
                           extensions={EXTENSIONS}
                           ref={setupEditorRef}
                         />

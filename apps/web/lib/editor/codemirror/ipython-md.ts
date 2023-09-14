@@ -4,8 +4,10 @@
 import { parseMixed, Parser } from "@lezer/common";
 import { tags } from "@lezer/highlight";
 import {
+  BlockContext,
   DelimiterType,
   InlineContext,
+  Line,
   MarkdownConfig,
   NodeSpec,
 } from "@lezer/markdown";
@@ -56,6 +58,46 @@ export function parseMathIPython(latexParser?: Parser): MarkdownConfig {
   });
   return {
     defineNodes,
+    parseBlock: [
+      {
+        name: BLOCK_MATH_DOLLAR,
+        parse(cx: BlockContext, line: Line): boolean {
+          let blockEnd = isLatexBlock(line);
+          if (blockEnd < 0) return false;
+          let from = cx.lineStart + line.pos,
+            len = blockEnd - line.pos;
+          let marks = [
+            cx.elt(DELIMITERS[BLOCK_MATH_DOLLAR]!.mark!, from, from + len),
+          ];
+          const endRegex = /\$\$/g;
+          let remaining = line.text.slice(blockEnd);
+          let startOffset = line.pos + len;
+          let match: RegExpExecArray | null;
+          while (!(match = endRegex.exec(remaining)) && cx.nextLine()) {
+            remaining = line.text;
+            startOffset = 0;
+          }
+          let end;
+          if (match) {
+            const lineEnd = match.index + startOffset + match[0].length;
+            end = cx.lineStart + lineEnd;
+            marks.push(
+              cx.elt(
+                DELIMITERS[BLOCK_MATH_DOLLAR]!.mark!,
+                end - match[0].length,
+                end,
+              ),
+            );
+          }
+          if (end !== undefined) {
+            cx.addElement(
+              cx.elt(DELIMITERS[BLOCK_MATH_DOLLAR]!.resolve!, from, end, marks),
+            );
+          }
+          return true;
+        },
+      },
+    ],
     parseInline: [
       {
         name: BLOCK_MATH_DOLLAR,
@@ -139,6 +181,9 @@ export function parseMathIPython(latexParser?: Parser): MarkdownConfig {
           // Test if the node type is one of the math expression
           const delimiterLength = DELIMITER_LENGTH[node.type.name];
           if (delimiterLength) {
+            if (node.from + delimiterLength == node.to - delimiterLength) {
+              return null;
+            }
             return {
               parser: latexParser,
               // Remove delimiter from LaTeX parser otherwise it won't be highlighted
