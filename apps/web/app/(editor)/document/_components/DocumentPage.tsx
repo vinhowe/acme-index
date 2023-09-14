@@ -81,6 +81,7 @@ import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
 import { extension } from "mime-types";
 import Link from "next/link";
+import { katexDisplay } from "@/lib/editor/codemirror/katex-view-plugin";
 
 interface SnippetDefinition {
   expansion: string;
@@ -497,6 +498,7 @@ export default function DocumentPage({ id }: { id: string }) {
       closeBrackets(),
       codeFolding(),
       foldGutter(),
+      katexDisplay(),
       markdown({
         extensions: [parseMathIPython(latexLanguage.parser)],
       }),
