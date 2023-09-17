@@ -70,10 +70,13 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
     width: 0,
     height: 0,
   });
-  const childRef = useRef<HTMLElement | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  useEffect(() => {
-    if (childRef.current) {
+  const setupRef = (node: HTMLElement | null) => {
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+    }
+    if (node) {
       const observer = new ResizeObserver((entries) => {
         for (let entry of entries) {
           const { width, height } = entry.contentRect;
@@ -82,26 +85,22 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
         }
       });
 
-      observer.observe(childRef.current);
-
-      return () => {
-        observer.disconnect();
-      };
+      observer.observe(node);
+      resizeObserverRef.current = observer;
     }
-  }, [children]);
+  };
 
   const firstChild = React.Children.toArray(children)[0];
   const enhancedFirstChild = cloneElement(firstChild as React.ReactElement, {
-    ref: (node: HTMLElement) => (childRef.current = node),
+    ref: setupRef,
   });
 
   return visible ? (
     enhancedFirstChild
   ) : (
     <p
-      className={"dark:bg-neutral-900 bg-neutral-200 flex flex-col"}
+      className={"dark:bg-neutral-900 bg-neutral-200 flex flex-col w-full"}
       style={{
-        width: `${sizeRef.current.width}px`,
         height: `${sizeRef.current.height}px`,
       }}
     ></p>
