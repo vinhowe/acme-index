@@ -162,7 +162,7 @@ export function DrawingViewer({
       <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full print:hidden"
+        className="w-full print:invisible"
         style={{
           height: `${Math.max((width - 1) * (4 / 30), height)}px`,
         }}
