@@ -84,6 +84,7 @@ import "@/lib/highlightjs/github-theme-switching.css";
 import { extension } from "mime-types";
 import Link from "next/link";
 import { katexDisplay } from "@/lib/editor/codemirror/katex-view-plugin";
+import { ReactMarkdownOptions } from "react-markdown/lib/react-markdown";
 
 interface SnippetDefinition {
   expansion: string;
@@ -419,6 +420,56 @@ function DrawingViewer({
     </div>
   );
 }
+
+const REMARK_PLUGINS: ReactMarkdownOptions["remarkPlugins"] = [
+  remarkGfm,
+  remarkMath,
+  wikiLinkPlugin,
+];
+const REHYPE_PLUGINS: ReactMarkdownOptions["rehypePlugins"] = [
+  rehypeHighlight,
+  // @ts-expect-error
+  rehypeRaw,
+  rehypeKatex,
+  rehypeMinifyWhitespace,
+];
+
+const REACT_MARKDOWN_COMPONENTS: ReactMarkdownOptions["components"] = {
+  code: ({ node, inline, className, children, ...props }) => {
+    const match = /language-(\w+)/.exec(className || "");
+    return !inline && match ? (
+      <div>
+        <pre className={classNames(className, "mb-4")}>
+          <code className={match[1]} {...props}>
+            {children}
+          </code>
+        </pre>
+      </div>
+    ) : (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+  pre: ({ children }) => {
+    return <>{children}</>;
+  },
+  img: ({ node, src, alt, title, ...props }) => {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt}
+        title={title}
+        {...props}
+        className="mx-auto max-h-72"
+      />
+    );
+  },
+};
+
+const MemoizedDrawingViewer = memo(DrawingViewer);
+const MemoizedReactMarkdown = memo(ReactMarkdown);
 
 export default function DocumentPage({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
@@ -1229,7 +1280,10 @@ export default function DocumentPage({ id }: { id: string }) {
                         />
                       ) : (
                         <div className="-m-px">
-                          <DrawingViewer selected drawing={cell.content} />
+                          <MemoizedDrawingViewer
+                            selected
+                            drawing={cell.content}
+                          />
                         </div>
                       )}
                     </div>
@@ -1238,7 +1292,7 @@ export default function DocumentPage({ id }: { id: string }) {
                       className="px-6 py-4"
                       ref={(node) => markdownContainerRefCallback(node, index)}
                     >
-                      <ReactMarkdown
+                      <MemoizedReactMarkdown
                         className={classNames(
                           "prose",
                           "prose-neutral",
@@ -1250,62 +1304,16 @@ export default function DocumentPage({ id }: { id: string }) {
                           !cell?.content?.trim() &&
                             "italic dark:text-neutral-600",
                         )}
-                        remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
-                        rehypePlugins={[
-                          rehypeHighlight,
-                          // @ts-expect-error
-                          rehypeRaw,
-                          rehypeKatex,
-                          rehypeMinifyWhitespace,
-                        ]}
-                        components={{
-                          code: ({
-                            node,
-                            inline,
-                            className,
-                            children,
-                            ...props
-                          }) => {
-                            const match = /language-(\w+)/.exec(
-                              className || "",
-                            );
-                            return !inline && match ? (
-                              <div>
-                                <pre className={classNames(className, "mb-4")}>
-                                  <code className={match[1]} {...props}>
-                                    {children}
-                                  </code>
-                                </pre>
-                              </div>
-                            ) : (
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            );
-                          },
-                          pre: ({ children }) => {
-                            return <>{children}</>;
-                          },
-                          img: ({ node, src, alt, title, ...props }) => {
-                            return (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={src}
-                                alt={alt}
-                                title={title}
-                                {...props}
-                                className="mx-auto max-h-72"
-                              />
-                            );
-                          },
-                        }}
+                        remarkPlugins={REMARK_PLUGINS}
+                        rehypePlugins={REHYPE_PLUGINS}
+                        components={REACT_MARKDOWN_COMPONENTS}
                       >
                         {cell?.content?.trim() ||
                           "Empty cell. Click to add content."}
-                      </ReactMarkdown>
+                      </MemoizedReactMarkdown>
                     </div>
                   ) : (
-                    <DrawingViewer drawing={cell.content} />
+                    <MemoizedDrawingViewer drawing={cell.content} />
                   )}
                 </div>
               </div>
