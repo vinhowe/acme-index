@@ -19,6 +19,9 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
               setShowingChildren(true);
             } else {
               const boundingRect = div.getBoundingClientRect();
+              if (boundingRect.width === 0 || boundingRect.height === 0) {
+                return;
+              }
               const height = div.offsetHeight;
               const width = boundingRect.width;
               div.style.height = `${height}px`;

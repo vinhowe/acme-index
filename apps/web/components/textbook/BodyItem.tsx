@@ -13,6 +13,7 @@ import Algorithm from "./Algorithm";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
+import { VirtualizedItemWrapper } from "./VirtualizedItemWrapper";
 
 export interface BodyItemsProps {
   bodyItems: BodyItemType[];
@@ -44,7 +45,11 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
 
   switch (bodyItem.type) {
     case "text":
-      return <InlineBody items={bodyItem.body} />;
+      return (
+        <VirtualizedItemWrapper>
+          <InlineBody items={bodyItem.body} />
+        </VirtualizedItemWrapper>
+      );
     case "standalone_heading":
       const HeadingTag = `h${bodyItem.level}` as keyof JSX.IntrinsicElements;
       return (
