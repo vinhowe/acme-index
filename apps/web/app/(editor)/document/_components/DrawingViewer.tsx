@@ -158,11 +158,20 @@ export function DrawingViewer({
   const patternSize = Math.max((width - 1) / 30, 5);
 
   return (
-    <div className="relative break-before-avoid">
+    <div
+      className="relative break-before-avoid"
+      style={
+        drawing
+          ? {
+              height: `${drawing.bounds[1][1] + drawing.bounds[0][1]}px`,
+            }
+          : {}
+      }
+    >
       <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full print:invisible"
+        className="w-full print:hidden"
         style={{
           height: `${Math.max((width - 1) * (4 / 30), height)}px`,
         }}
@@ -195,9 +204,10 @@ export function DrawingViewer({
           className="absolute w-full pointer-events-none break-before-avoid"
           style={{
             top: `${drawing.bounds[0][1]}px`,
+            height: `${drawing.bounds[1][1] - drawing.bounds[0][1]}px`,
           }}
         >
-          <div className="relative w-full">
+          <div className="relative w-full h-full">
             <MemoizedSVGDrawing
               drawing={drawing}
               viewBox={[
