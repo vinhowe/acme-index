@@ -125,6 +125,11 @@ export class DocumentAccess implements ObjectTable<Document> {
       throw new Error('Document not found');
     }
     const filteredValue: Partial<Document> = Object.fromEntries(Object.entries(value).filter(([_, v]) => v !== undefined));
+    if (filteredValue.cells !== undefined) {
+      // Find deleted cells
+      const deletedCells = document.cells.filter((cell) => cell !== null && !filteredValue?.cells?.includes(cell)) as UniqueID[];
+      filteredValue.deletedCells = [...(document.deletedCells || []), ...deletedCells];
+    }
     return this.table.set(id, {
       ...document,
       ...filteredValue,

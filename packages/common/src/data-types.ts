@@ -65,6 +65,8 @@ export type Document = UniqueObject & {
   reference?: string;
   // We allow null values because individual cells can be empty
   cells: Array<UniqueID | null>;
+  // Keep track of deleted cells so we can restore them if needed
+  deletedCells?: Array<UniqueID>;
   createdAt: string;
   updatedAt: string;
 };
