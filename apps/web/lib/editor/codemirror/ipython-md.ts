@@ -50,15 +50,22 @@ function isLatexBlockDollar(line: Line) {
 }
 
 function isLatexBlockBracket(line: Line) {
-  if (line.next != 92 /* '\' */ || line.text.charCodeAt(line.pos + 1) != 91 /* '[' */) return -1;
+  if (
+    line.next != 92 /* '\' */ ||
+    line.text.charCodeAt(line.pos + 1) != 91 /* '[' */
+  )
+    return -1;
   let pos = line.pos + 2;
   while (pos < line.text.length && line.text.charCodeAt(pos) == 91) pos++;
-  if (line.text.charCodeAt(pos) == 92 /* '\' */ && line.text.charCodeAt(pos + 1) == 93 /* ']' */)
+  if (
+    line.text.charCodeAt(pos) == 92 /* '\' */ &&
+    line.text.charCodeAt(pos + 1) == 93 /* ']' */
+  )
     for (let i = pos + 2; i < line.text.length; i++)
       if (line.text.charCodeAt(i) == 93 /* ']' */) return -1;
-  else if (line.text.charCodeAt(pos) == 93 /* ']' */)
-    for (let i = pos + 1; i < line.text.length; i++)
-      if (line.text.charCodeAt(i) == 93 /* ']' */) return -1;
+      else if (line.text.charCodeAt(pos) == 93 /* ']' */)
+        for (let i = pos + 1; i < line.text.length; i++)
+          if (line.text.charCodeAt(i) == 93 /* ']' */) return -1;
   return pos;
 }
 
@@ -158,7 +165,12 @@ export function parseMathIPython(latexParser?: Parser): MarkdownConfig {
           }
           if (end !== undefined) {
             cx.addElement(
-              cx.elt(DELIMITERS[BLOCK_MATH_BRACKET]!.resolve!, from, end, marks),
+              cx.elt(
+                DELIMITERS[BLOCK_MATH_BRACKET]!.resolve!,
+                from,
+                end,
+                marks,
+              ),
             );
           }
           return true;

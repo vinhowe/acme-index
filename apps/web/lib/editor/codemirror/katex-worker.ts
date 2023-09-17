@@ -1,6 +1,6 @@
-import katex from 'katex';  // Make sure to import KaTeX
+import katex from "katex"; // Make sure to import KaTeX
 
-onmessage = function(e) {
+onmessage = function (e) {
   const { id, latex } = e.data;
 
   try {
