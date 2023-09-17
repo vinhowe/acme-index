@@ -39,8 +39,13 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
     }
   }, [children]);
   return (
-    <div className="flex flex-col" ref={divRef}>
+    <p
+      className={classNames(
+        !showingChildren && "dark:bg-neutral-900 bg-neutral-200 flex flex-col",
+      )}
+      ref={divRef}
+    >
       {showingChildren && children}
-    </div>
+    </p>
   );
 };
