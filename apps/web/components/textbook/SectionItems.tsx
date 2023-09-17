@@ -2,6 +2,7 @@ import React from "react";
 import { SectionItem as SectionItemType } from "@acme-index/common";
 import { BodyItems } from "./BodyItem";
 import HeadingAnchor from "./HeadingAnchor";
+import { VirtualizedItemWrapper } from "./VirtualizedItemWrapper";
 
 export interface SectionItemsProps {
   sectionItems: SectionItemType[];
@@ -15,7 +16,11 @@ export const SectionItems: React.FC<SectionItemsProps> = ({ sectionItems }) => {
   return (
     <>
       {sectionItems.map((item, itemIndex) => {
-        return <SectionItem sectionItem={item} key={itemIndex} />;
+        return (
+          <VirtualizedItemWrapper key={itemIndex}>
+            <SectionItem sectionItem={item} />
+          </VirtualizedItemWrapper>
+        );
       })}
     </>
   );
