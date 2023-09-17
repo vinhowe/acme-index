@@ -397,6 +397,12 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
     [dispatch, chat],
   );
 
+  const lastTurn = turns?.length ? turns[turns.length - 1] : null;
+  let tokenCount: number | null = null;
+  if (lastTurn && lastTurn.status !== "pending" && "tokenCount" in lastTurn) {
+    tokenCount = lastTurn.tokenCount ?? null;
+  }
+
   return (
     <div className="overflow-hidden flex-1 w-full px-4 py-4">
       <div className="h-full max-h-full flex flex-col justify-between">
@@ -457,8 +463,11 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
             />
           </div>
           {chat && (
-            <div className="font-mono opacity-40 text-xs mt-2">
-              chat {chat?.id}
+            <div className="font-button text-xs mt-2 flex justify-between gap-2">
+              <span className="opacity-40">chat {chat?.id}</span>
+              <span className="dark:text-green-400 text-green-600">
+                {tokenCount !== null ? `${tokenCount} tokens` : ""}
+              </span>
             </div>
           )}
         </div>

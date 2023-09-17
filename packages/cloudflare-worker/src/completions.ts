@@ -5,6 +5,8 @@ import { parseRef } from 'textref';
 import { EventEmitter } from 'node:events';
 import { BaseChapter, ChatTurn, ExercisesChapter, TextChapter, renderExerciseChapterContext } from '@acme-index/common';
 import { ChatAccess, ChatTurnAccess } from './data';
+import { Tiktoken, TiktokenModel, encodingForModel } from 'js-tiktoken';
+import claude from './claude.json';
 
 export interface CompletionOptions {
   maxTokens?: number;
@@ -25,6 +27,7 @@ interface ChatMessage {
 
 interface BaseCompletionSource<T extends string> {
   generateCompletion(messages: ChatMessage[], options?: CompletionOptions): AsyncGenerator<string>;
+  calculateTokenCount(messages: ChatMessage[], model?: string): Promise<number>;
 }
 
 type OpenAIChatModel = OpenAI.Chat.Completions.CompletionCreateParams.CompletionCreateParamsStreaming['model'];
@@ -73,6 +76,18 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
       }
     }
   }
+
+  async calculateTokenCount(messages: ChatMessage[], model: OpenAIChatModel = DEFAULT_OPENAI_MODEL) {
+    const text = messages
+      .map((message) => {
+        return `<|im_start|>${OPENAI_ROLE_MAPPING[message.role]}\n${message.content}<|im_end|>`;
+      })
+      .join('\n');
+    const tiktoken = await encodingForModel(model as TiktokenModel);
+    const tokens = await tiktoken.encode(text);
+    console.log(tokens.length);
+    return tokens.length;
+  }
 }
 
 const DEFAULT_ANTHROPIC_MODEL: AnthropicChatModel = 'claude-2';
@@ -85,7 +100,7 @@ const ANTHROPIC_ROLE_MAPPING: Record<string, string> = {
 export class AnthropicCompletionSource implements BaseCompletionSource<AnthropicChatModel> {
   constructor(private client: Anthropic) {}
 
-  async *generateCompletion(messages: ChatMessage[], options?: CompletionOptions): AsyncGenerator<string> {
+  private constructConversationPrompt(messages: ChatMessage[]): string {
     let prompt = '';
     // If first turn is "system", we just dump it into the prompt
     if (messages[0].role === 'system') {
@@ -103,6 +118,11 @@ export class AnthropicCompletionSource implements BaseCompletionSource<Anthropic
       throw new Error('Last message must be from the user');
     }
     prompt += `${ANTHROPIC_ROLE_MAPPING[lastMessage.role]}: ${lastMessage.content}${ANTHROPIC_ROLE_MAPPING['model']}:`;
+    return prompt;
+  }
+
+  async *generateCompletion(messages: ChatMessage[], options?: CompletionOptions): AsyncGenerator<string> {
+    const prompt = this.constructConversationPrompt(messages);
 
     const completionParams = {
       prompt,
@@ -127,6 +147,13 @@ export class AnthropicCompletionSource implements BaseCompletionSource<Anthropic
         yield deltaContent;
       }
     }
+  }
+
+  async calculateTokenCount(messages: ChatMessage[], _model: AnthropicChatModel = DEFAULT_ANTHROPIC_MODEL) {
+    const text = this.constructConversationPrompt(messages);
+    const tiktoken = new Tiktoken(claude);
+    const tokens = await tiktoken.encode(text);
+    return tokens.length;
   }
 }
 
@@ -304,7 +331,19 @@ export class CompletionManager {
       eventCount += 1;
     }
 
-    await this.chatTurns.finishTurn(turn.id, { response: text });
+    const messagesWithCompletion: ChatMessage[] = [
+      ...messages,
+      {
+        role: 'model' as ChatMessage['role'],
+        content: text,
+      },
+    ];
+
+    const tokenCount = await completionSource.calculateTokenCount(messagesWithCompletion);
+
+    yield { tokenCount };
+
+    await this.chatTurns.finishTurn(turn.id, { response: text, tokenCount });
     // emitter.emit('end');
 
     // this.removeBroadcast(turnId);

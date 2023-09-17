@@ -365,6 +365,9 @@ importers:
       itty-router:
         specifier: ^4.0.14
         version: 4.0.22
+      js-tiktoken:
+        specifier: ^1.0.7
+        version: 1.0.7
       jsonwebtoken:
         specifier: ^9.0.1
         version: 9.0.1
@@ -8773,6 +8776,12 @@ packages:
 
   /js-sdsl@4.4.0:
     resolution: {integrity: sha512-FfVSdx6pJ41Oa+CF7RDaFmTnCaFhua+SNYQX74riGOpl96x+2jQCqEfQ2bnXu/5DPCqlRuiqyvTJM0Qjz26IVg==}
+    dev: false
+
+  /js-tiktoken@1.0.7:
+    resolution: {integrity: sha512-biba8u/clw7iesNEWLOLwrNGoBP2lA+hTaBLs/D45pJdUPFXyxD6nhcDVtADChghv4GgyAiMKYMiRx7x6h7Biw==}
+    dependencies:
+      base64-js: 1.5.1
     dev: false
 
   /js-tokens@4.0.0:

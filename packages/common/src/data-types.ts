@@ -29,6 +29,7 @@ export type ChatTurn = UniqueObject & {
   status: "pending" | "finished" | "error";
   response?: string;
   error?: string;
+  tokenCount?: number;
   createdAt: string;
 };
 

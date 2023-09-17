@@ -41,6 +41,10 @@ export class HistoryAccess implements MutableObjectTable<History> {
   async create(): Promise<History> {
     return this.table.create({ chats: [] });
   }
+
+  async delete(id: string): Promise<void> {
+    await this.table.delete(id);
+  }
 }
 
 export class DocumentCellAccess implements ObjectTable<DocumentCell> {
@@ -263,7 +267,7 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
     return tableTurn;
   }
 
-  async finishTurn(id: string, body: Pick<ChatTurn, 'response' | 'error'>) {
+  async finishTurn(id: string, body: Pick<ChatTurn, 'response' | 'error'> & Partial<Pick<ChatTurn, 'tokenCount'>>) {
     const turn = await this.get(id);
     if (!turn) {
       throw new Error('Turn not found');
@@ -280,6 +284,9 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
     if (body.response) {
       turn.response = body.response;
       turn.status = 'finished';
+      if (body.tokenCount) {
+        turn.tokenCount = body.tokenCount;
+      }
     }
     if (body.error) {
       turn.error = body.error;

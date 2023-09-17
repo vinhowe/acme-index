@@ -125,10 +125,15 @@ export async function generateTurnStreaming(
     onmessage: (message) => {
       if (message.event === "update") {
         const update = JSON.parse(message.data);
-        if (!turn!.response) {
+        if (!turn?.response) {
           turn!.response = "";
         }
-        turn!.response += update.completion;
+        if (update.completion) {
+          turn!.response += update.completion;
+        }
+        if (update.tokenCount) {
+          turn!.tokenCount = update.tokenCount;
+        }
         if (onupdate && turn) {
           onupdate(turn);
         }
