@@ -127,8 +127,12 @@ export class DocumentAccess implements ObjectTable<Document> {
     const filteredValue: Partial<Document> = Object.fromEntries(Object.entries(value).filter(([_, v]) => v !== undefined));
     if (filteredValue.cells !== undefined) {
       // Find deleted cells
-      const deletedCells = document.cells.filter((cell) => cell !== null && !filteredValue?.cells?.includes(cell)) as UniqueID[];
-      filteredValue.deletedCells = [...(document.deletedCells || []), ...deletedCells];
+      const cellsDeletedByUpdate = document.cells.filter((cell) => cell !== null && !filteredValue.cells?.includes(cell)) as UniqueID[];
+      filteredValue.deletedCells = [...(document.deletedCells || []), ...cellsDeletedByUpdate];
+      // Remove restored cells from deleted cells
+      if (document.deletedCells) {
+        document.deletedCells = document.deletedCells.filter((cell) => !filteredValue.cells?.includes(cell));
+      }
     }
     return this.table.set(id, {
       ...document,
