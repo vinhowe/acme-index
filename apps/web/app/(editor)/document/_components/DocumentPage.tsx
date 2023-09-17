@@ -702,6 +702,28 @@ export default function DocumentPage({ id }: { id: string }) {
     [document],
   );
 
+  const setCellHidden = useCallback(
+    (index: number, hidden: boolean) => {
+      if (!document) {
+        return;
+      }
+      const cell = cells[index];
+      if (!cell) {
+        return;
+      }
+      handleUpdateDocumentCells((prevCells) => {
+        const updatedCells = [...prevCells];
+        updatedCells[index] = {
+          ...cell,
+          hidden,
+        };
+        return updatedCells;
+      });
+      updateDocumentCell(document.id, cell.id, { hidden });
+    },
+    [document, cells, handleUpdateDocumentCells],
+  );
+
   const updateDeviceDrawingState = useCallback(
     (cellIndex: number, currentCell: DocumentCell | null) => {
       if (cellIndex === null) return;
@@ -1252,11 +1274,15 @@ export default function DocumentPage({ id }: { id: string }) {
                 }
               >
                 <div
-                  className={`border border-solid ${
+                  className={classNames(
+                    "border",
+                    cell?.hidden
+                      ? "border-dashed print:hidden"
+                      : "border-solid",
                     selectedCellIndex === index
                       ? "dark:bg-neutral-900 bg-neutral-100 border-neutral-400 print:bg-inherit print:border-transparent"
-                      : "border-transparent"
-                  }`}
+                      : "border-transparent",
+                  )}
                   onClick={() => handleSelectCell(index)}
                   onDoubleClick={(event) => handleEditCell(index)}
                 >
@@ -1295,36 +1321,54 @@ export default function DocumentPage({ id }: { id: string }) {
                         </div>
                       )}
                     </div>
-                  ) : !cell || cell?.type === "text" ? (
-                    <div
-                      className="px-6 py-4 overflow-x-clip"
-                      ref={(node) => markdownContainerRefCallback(node, index)}
-                    >
-                      <MemoizedReactMarkdown
-                        className={classNames(
-                          "prose",
-                          "prose-neutral",
-                          "dark:prose-invert",
-                          "prose-h1:font-light",
-                          "prose-headings:font-normal",
-                          "max-w-none",
-                          "w-full",
-                          !cell?.content?.trim() &&
-                            "italic dark:text-neutral-600",
-                        )}
-                        remarkPlugins={REMARK_PLUGINS}
-                        rehypePlugins={REHYPE_PLUGINS}
-                        components={REACT_MARKDOWN_COMPONENTS}
-                      >
-                        {cell?.content?.trim() ||
-                          "Empty cell. Click to add content."}
-                      </MemoizedReactMarkdown>
-                    </div>
                   ) : (
-                    <div className="w-full overflow-x-clip">
-                      <div className="w-[210mm]">
-                        <MemoizedDrawingViewer drawing={cell.content} />
-                      </div>
+                    <div className="relative">
+                      {!cell || cell?.type === "text" ? (
+                        <div
+                          className="px-6 py-4 overflow-x-clip"
+                          ref={(node) =>
+                            markdownContainerRefCallback(node, index)
+                          }
+                        >
+                          <MemoizedReactMarkdown
+                            className={classNames(
+                              "prose",
+                              "prose-neutral",
+                              "dark:prose-invert",
+                              "prose-h1:font-light",
+                              "prose-headings:font-normal",
+                              "max-w-none",
+                              "w-full",
+                              !cell?.content?.trim() &&
+                                "italic dark:text-neutral-600",
+                            )}
+                            remarkPlugins={REMARK_PLUGINS}
+                            rehypePlugins={REHYPE_PLUGINS}
+                            components={REACT_MARKDOWN_COMPONENTS}
+                          >
+                            {cell?.content?.trim() ||
+                              "Empty cell. Click to add content."}
+                          </MemoizedReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="w-full overflow-x-clip">
+                          <div className="w-[210mm]">
+                            <MemoizedDrawingViewer drawing={cell.content} />
+                          </div>
+                        </div>
+                      )}
+                      {cell && (
+                        <div className="absolute top-0 right-0 left-auto p-4 opacity-50 print:hidden">
+                          <button
+                            role="button"
+                            onClick={() => setCellHidden(index, !cell.hidden)}
+                          >
+                            <span className="material-symbols-rounded select-none -mb-[0.1em]">
+                              {cell.hidden ? "visibility_off" : "visibility"}
+                            </span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

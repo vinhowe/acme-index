@@ -45,6 +45,7 @@ type BaseDocumentCell<T> = UniqueObject & {
   documentId: UniqueID;
   createdAt: string;
   updatedAt: string;
+  hidden: boolean;
   content: T;
 };
 

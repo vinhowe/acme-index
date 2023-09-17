@@ -60,11 +60,17 @@ export class DocumentCellAccess implements ObjectTable<DocumentCell> {
     return this.table.set(id, value);
   }
 
-  async create(value: Omit<DocumentCell, keyof UniqueObject>): Promise<DocumentCell> {
-    return this.table.create(value);
+  async create(value: Omit<DocumentCell, keyof UniqueObject | 'hidden'> & Partial<Pick<DocumentCell, 'hidden'>>): Promise<DocumentCell> {
+    const createdAt = new Date().toISOString();
+    return this.table.set(uuid(), {
+      hidden: false,
+      ...value,
+      createdAt,
+      updatedAt: createdAt,
+    });
   }
 
-  async update(id: string, value: Omit<DocumentCell, keyof UniqueObject | 'updatedAt'>): Promise<DocumentCell> {
+  async update(id: string, value: Partial<Omit<DocumentCell, keyof UniqueObject | 'updatedAt'>>): Promise<DocumentCell> {
     const cell = await this.get(id);
     if (!cell) {
       throw new Error('Cell not found');
