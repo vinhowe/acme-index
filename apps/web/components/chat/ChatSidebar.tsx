@@ -560,7 +560,7 @@ const ChatHistoryPanel: React.FC = () => {
   const { state, dispatch } = useContext(ChatContext);
 
   return (
-    <div className="w-full py-4 px-4">
+    <div className="w-full py-4 px-4 overflow-scroll">
       <div className="flex flex-col w-full gap-2">
         {state.chatHistory.map((item) => (
           <div
