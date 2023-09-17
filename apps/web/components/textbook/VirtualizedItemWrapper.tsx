@@ -1,51 +1,109 @@
 "use client";
 
-import { PropsWithChildren, useEffect, useRef, useState } from "react";
+import React, {
+  PropsWithChildren,
+  cloneElement,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
+export interface BatchItemVisibilityAction {
+  type: "set visible";
+  payload: boolean;
+}
+
+interface BatchItemVirtualizationContextProps {
+  visible: boolean;
+}
+
+// Create context
+export const BatchItemVirtualizationContext =
+  createContext<BatchItemVirtualizationContextProps>({
+    visible: true,
+  });
+
+export const BatchItemVirtualizationProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [showingChildren, setShowingChildren] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const childRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
-    const div = divRef.current;
-    if (div) {
+    if (childRef.current) {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              div.style.height = ``;
-              div.style.width = ``;
-              setShowingChildren(true);
-            } else {
-              const boundingRect = div.getBoundingClientRect();
-              if (boundingRect.width === 0 || boundingRect.height === 0) {
-                return;
-              }
-              const height = div.offsetHeight;
-              const width = boundingRect.width;
-              div.style.height = `${height}px`;
-              div.style.width = `${width}px`;
-              setShowingChildren(false);
-            }
+            setVisible(entry.isIntersecting);
           });
         },
         { rootMargin: "800px" },
       );
-      observer.observe(divRef.current);
+      observer.observe(childRef.current);
+
       return () => {
         observer.disconnect();
       };
     }
   }, [children]);
+
+  const firstChild = React.Children.toArray(children)[0];
+  const enhancedFirstChild = cloneElement(firstChild as React.ReactElement, {
+    ref: (node: HTMLElement) => (childRef.current = node),
+  });
+
   return (
+    <BatchItemVirtualizationContext.Provider value={{ visible }}>
+      {enhancedFirstChild}
+      {React.Children.toArray(children).slice(1)}
+    </BatchItemVirtualizationContext.Provider>
+  );
+};
+
+export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
+  children,
+}) => {
+  const { visible } = useContext(BatchItemVirtualizationContext);
+  const sizeRef = useRef<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+  const childRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (childRef.current) {
+      const observer = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          const { width, height } = entry.contentRect;
+          if (width === 0 && height === 0) continue;
+          sizeRef.current = { width, height };
+        }
+      });
+
+      observer.observe(childRef.current);
+
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, [children]);
+
+  const firstChild = React.Children.toArray(children)[0];
+  const enhancedFirstChild = cloneElement(firstChild as React.ReactElement, {
+    ref: (node: HTMLElement) => (childRef.current = node),
+  });
+
+  return visible ? (
+    enhancedFirstChild
+  ) : (
     <p
-      className={classNames(
-        !showingChildren && "dark:bg-neutral-900 bg-neutral-200 flex flex-col",
-      )}
-      ref={divRef}
-    >
-      {showingChildren && children}
-    </p>
+      className={"dark:bg-neutral-900 bg-neutral-200 flex flex-col"}
+      style={{
+        width: `${sizeRef.current.width}px`,
+        height: `${sizeRef.current.height}px`,
+      }}
+    ></p>
   );
 };

@@ -13,7 +13,10 @@ import Algorithm from "./Algorithm";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
-import { VirtualizedItemWrapper } from "./VirtualizedItemWrapper";
+import {
+  BatchItemVirtualizationProvider,
+  VirtualizedItemWrapper,
+} from "./VirtualizedItemWrapper";
 
 export interface BodyItemsProps {
   bodyItems: BodyItemType[];
@@ -30,13 +33,15 @@ export const BodyItems: React.FC<BodyItemsProps> = ({
   nearestId,
 }) => {
   return (
-    <div className="overflow-x-clip">
-      {bodyItems.map((item, itemIndex) => {
-        return (
-          <BodyItem bodyItem={item} nearestId={nearestId} key={itemIndex} />
-        );
-      })}
-    </div>
+    <BatchItemVirtualizationProvider>
+      <div className="overflow-x-clip">
+        {bodyItems.map((item, itemIndex) => {
+          return (
+            <BodyItem bodyItem={item} nearestId={nearestId} key={itemIndex} />
+          );
+        })}
+      </div>
+    </BatchItemVirtualizationProvider>
   );
 };
 
