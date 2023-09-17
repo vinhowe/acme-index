@@ -787,7 +787,6 @@ export default function DocumentPage({ id }: { id: string }) {
       setCells((cells) => {
         const updatedCells = [...cells];
         const cell = updatedCells[index];
-        let valueChanged = false;
         let updatedCell: DocumentCell | null;
         if (cell?.type === "text") {
           const editorValueRef = editorValueRefs.current.get(index);
@@ -797,7 +796,6 @@ export default function DocumentPage({ id }: { id: string }) {
               content: editorValueRef,
             };
             updatedCells[index] = updatedCell;
-            valueChanged = true;
           } else {
             updatedCell = cell;
           }
