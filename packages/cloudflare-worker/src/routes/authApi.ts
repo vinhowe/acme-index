@@ -275,14 +275,26 @@ router
 
     let document;
     if (newId && newId !== id) {
-      await request.database.documents.delete(id);
-      document = await request.database.documents.set(newId, {
-        createdAt: currentDocument.createdAt,
-        updatedAt: new Date().toISOString(),
-        title: title || currentDocument.title,
-        reference: reference || currentDocument.reference,
-        cells: cells || currentDocument.cells,
-      });
+      const [newDocument] = await Promise.all([
+        request.database.documents.set(newId, {
+          createdAt: currentDocument.createdAt,
+          updatedAt: new Date().toISOString(),
+          title: title || currentDocument.title,
+          reference: reference || currentDocument.reference,
+          cells: cells || currentDocument.cells,
+        }),
+        request.database.documents.delete(id),
+        Promise.all(
+          currentDocument.cells.map((cellId) => {
+            if (cellId) {
+              return request.database.documentCells.update(cellId, {
+                documentId: newId,
+              });
+            }
+          }),
+        ),
+      ]);
+      document = newDocument;
     } else {
       document = await request.database.documents.update(id, {
         title,
