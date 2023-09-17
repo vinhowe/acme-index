@@ -220,7 +220,7 @@ const REMARK_PLUGINS: ReactMarkdownOptions["remarkPlugins"] = [
   wikiLinkPlugin,
 ];
 const REHYPE_PLUGINS: ReactMarkdownOptions["rehypePlugins"] = [
-  rehypeHighlight,
+  () => rehypeHighlight({ ignoreMissing: true }),
   // @ts-expect-error
   rehypeRaw,
   rehypeKatex,
