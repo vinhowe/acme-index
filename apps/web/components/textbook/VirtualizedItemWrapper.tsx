@@ -6,7 +6,7 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
-  const [showingChildren, setShowingChildren] = useState(true);
+  const [showingChildren, setShowingChildren] = useState(false);
   useEffect(() => {
     const div = divRef.current;
     if (div) {
