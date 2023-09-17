@@ -9,6 +9,7 @@ import SectionItem, {
   SectionItemsProps,
 } from "@/components/textbook/SectionItems";
 import IntegratedExercises from "./IntegratedExercises";
+import { VirtualizedItemWrapper } from "@/components/textbook/VirtualizedItemWrapper";
 
 export interface ChapterWithIntegratedExercisesProps {
   book: string;
@@ -57,7 +58,9 @@ const ExerciseIntegratedSectionItems: React.FC<
       {zippedSectionItems.map(({ section, exercises }, itemIndex) => {
         return (
           <ExerciseIntegratedSectionWrapper key={itemIndex}>
-            <SectionItem sectionItem={section} />
+            <VirtualizedItemWrapper>
+              <SectionItem sectionItem={section} />
+            </VirtualizedItemWrapper>
             <div className="md:sticky top-0 mb-4 md:mb-10">
               <IntegratedExercises
                 book={book}

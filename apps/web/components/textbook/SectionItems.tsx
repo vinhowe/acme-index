@@ -16,11 +16,7 @@ export const SectionItems: React.FC<SectionItemsProps> = ({ sectionItems }) => {
   return (
     <>
       {sectionItems.map((item, itemIndex) => {
-        return (
-          <VirtualizedItemWrapper key={itemIndex}>
-            <SectionItem sectionItem={item} />
-          </VirtualizedItemWrapper>
-        );
+        return <SectionItem sectionItem={item} key={itemIndex} />;
       })}
     </>
   );
