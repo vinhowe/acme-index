@@ -961,6 +961,12 @@ export default function DocumentPage({ id }: { id: string }) {
         // @ts-expect-error
         window.webkit?.messageHandlers?.documentBounds?.postMessage(rectInfo);
         documentBoundsRef.current = rectInfo;
+        if (window.matchMedia("print").matches) {
+          node.style.transform = `scale(${
+            window.innerWidth / boundingRect.width
+          })`;
+          node.style.transformOrigin = "top left";
+        }
       });
 
       observer.observe(node);
@@ -1208,7 +1214,7 @@ export default function DocumentPage({ id }: { id: string }) {
   return (
     <div
       ref={setupContainerRef}
-      className="w-[min(210mm,_100%)] print:w-full bg-[#fafafa] dark:bg-[#0a0a0a] relative print:bg-inherit"
+      className="w-[min(210mm,_100%)] print:w-[210mm] bg-[#fafafa] dark:bg-[#0a0a0a] relative print:bg-inherit"
     >
       <div className="pt-6 px-6 flex flex-col items-start gap-6">
         <Link
@@ -1279,17 +1285,19 @@ export default function DocumentPage({ id }: { id: string }) {
                           ref={setupEditorRef}
                         />
                       ) : (
-                        <div className="-m-px">
-                          <MemoizedDrawingViewer
-                            selected
-                            drawing={cell.content}
-                          />
+                        <div className="w-full overflow-x-clip">
+                          <div className="-m-px w-[210mm] overflow-x-clip">
+                            <MemoizedDrawingViewer
+                              selected
+                              drawing={cell.content}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
                   ) : !cell || cell?.type === "text" ? (
                     <div
-                      className="px-6 py-4"
+                      className="px-6 py-4 overflow-x-clip"
                       ref={(node) => markdownContainerRefCallback(node, index)}
                     >
                       <MemoizedReactMarkdown
@@ -1313,7 +1321,11 @@ export default function DocumentPage({ id }: { id: string }) {
                       </MemoizedReactMarkdown>
                     </div>
                   ) : (
-                    <MemoizedDrawingViewer drawing={cell.content} />
+                    <div className="w-full overflow-x-clip">
+                      <div className="w-[210mm]">
+                        <MemoizedDrawingViewer drawing={cell.content} />
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
