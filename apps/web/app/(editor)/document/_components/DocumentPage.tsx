@@ -12,9 +12,10 @@ import {
   DocumentCell,
   DocumentDrawingCell,
   Drawing,
+  Point,
   Rect,
 } from "@acme-index/common";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ResizableDocumentTitleInput from "./ResizableDocumentTItleInput";
 import ResizableReferenceInput from "./ResizableReferenceInput";
 import {
@@ -42,6 +43,7 @@ import {
   lin_P3,
   lin_P3_to_XYZ,
   offsetDrawing,
+  transformPoint,
 } from "@/lib/editor/drawing-utils";
 import ReactMarkdown from "react-markdown";
 import classNames from "classnames";
@@ -275,15 +277,23 @@ function SVGDrawing({ drawing, viewBox }: { drawing: Drawing; viewBox: Rect }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: `${height}px` }}
       viewBox={`${minX} ${minY} ${width} ${height}`}
+      className="break-before-avoid absolute top-0"
     >
       <style>{fullCss}</style>
       {drawing.strokes.map((stroke, index) => {
         const controlPoints = stroke.path.controlPoints.map(
           (cp) => cp.location,
         );
-        let pathData = `M${controlPoints[0][0]},${controlPoints[0][1]} `;
+
+        const transform = stroke.transform;
+
+        let startPoint = controlPoints[0];
+        if (transform) {
+          startPoint = transformPoint(startPoint as Point, transform);
+        }
+        let pathData = `M${startPoint[0]},${startPoint[1]} `;
 
         // Average instead:
         let strokeWidth = 0;
@@ -294,9 +304,14 @@ function SVGDrawing({ drawing, viewBox }: { drawing: Drawing; viewBox: Rect }) {
           stroke.path.controlPoints.length * window.devicePixelRatio;
 
         for (let i = 1; i < controlPoints.length - 2; i += 3) {
-          const cp1 = controlPoints[i];
-          const cp2 = controlPoints[i + 1];
-          const end = controlPoints[i + 2];
+          let cp1 = controlPoints[i];
+          let cp2 = controlPoints[i + 1];
+          let end = controlPoints[i + 2];
+          if (transform) {
+            cp1 = transformPoint(cp1 as Point, transform);
+            cp2 = transformPoint(cp2 as Point, transform);
+            end = transformPoint(end as Point, transform);
+          }
           pathData += `C${cp1[0]},${cp1[1]} ${cp2[0]},${cp2[1]} ${end[0]},${end[1]} `;
         }
 
@@ -319,6 +334,8 @@ function SVGDrawing({ drawing, viewBox }: { drawing: Drawing; viewBox: Rect }) {
     </svg>
   );
 }
+
+const MemoizedSVGDrawing = memo(SVGDrawing);
 
 function DrawingViewer({
   selected = false,
@@ -349,11 +366,11 @@ function DrawingViewer({
   const patternSize = Math.max((width - 1) / 30, 5);
 
   return (
-    <div className="relative">
+    <div className="relative break-before-avoid">
       <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full"
+        className="w-full print:hidden"
         style={{
           height: `${Math.max((width - 1) * (4 / 30), height)}px`,
         }}
@@ -381,29 +398,22 @@ function DrawingViewer({
         </defs>
         <rect width="100%" height="100%" fill="url(#drawing-grid)"></rect>
       </svg>
-      {/* {!selected && drawing && svgContent && (
-        <div
-          dangerouslySetInnerHTML={{ __html: svgContent }}
-          className="absolute w-full pointer-events-none"
-          style={{
-            top: `${drawing.bounds[0][1]}px`,
-          }}
-        />
-      )} */}
       {!selected && drawing && (
         <div
-          className="absolute w-full pointer-events-none"
+          className="absolute w-full pointer-events-none break-before-avoid"
           style={{
             top: `${drawing.bounds[0][1]}px`,
           }}
         >
-          <SVGDrawing
-            drawing={drawing}
-            viewBox={[
-              [0, drawing.bounds[0][1]],
-              [width, drawing.bounds[1][1]],
-            ]}
-          />
+          <div className="relative w-full">
+            <MemoizedSVGDrawing
+              drawing={drawing}
+              viewBox={[
+                [0, drawing.bounds[0][1]],
+                [width, drawing.bounds[1][1]],
+              ]}
+            />
+          </div>
         </div>
       )}
     </div>

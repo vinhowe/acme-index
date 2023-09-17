@@ -1,5 +1,13 @@
 export type Point = [x: number, y: number];
 export type Rect = [[x: number, y: number], [width: number, height: number]];
+export type Transform = [
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
+];
 export type Range = [start: number, end: number];
 
 export interface Drawing {
@@ -13,6 +21,7 @@ export interface Stroke {
   mask: Mask;
   renderBounds: Rect;
   ink: Ink;
+  transform?: Transform;
 }
 
 export interface Ink {

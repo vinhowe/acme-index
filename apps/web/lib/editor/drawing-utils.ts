@@ -1,4 +1,4 @@
-import { Drawing, Rect } from "@acme-index/common";
+import { Drawing, Point, Rect, Transform } from "@acme-index/common";
 
 export function offsetDrawing(
   drawing: Drawing,
@@ -255,4 +255,10 @@ export function XYZ_to_lin_P3(XYZ: Color3) {
   ];
 
   return multiplyMatrices(M, XYZ) as Color3;
+}
+
+export function transformPoint(point: Point, transform: Transform): Point {
+  const [x, y] = point;
+  const [a, b, c, d, tx, ty] = transform;
+  return [a * x + c * y + tx, b * x + d * y + ty];
 }
