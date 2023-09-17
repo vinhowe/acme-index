@@ -257,6 +257,95 @@ const REACT_MARKDOWN_COMPONENTS: ReactMarkdownOptions["components"] = {
   },
 };
 
+const latexLanguage = StreamLanguage.define(stexMath);
+const EXTENSIONS = [
+  Prec.highest(
+    keymap.of([
+      cmdEnterBinding,
+      shiftEnterBinding,
+      shiftEscapeBinding,
+      { key: "Ctrl-n", run: moveCompletionSelection(true) },
+      { key: "Ctrl-p", run: moveCompletionSelection(false) },
+      { key: "Tab", run: acceptCompletion },
+      // Default completion keymap minus escape to close completion
+      { key: "Ctrl-Space", run: startCompletion },
+      // { key: "Escape", run: closeCompletion },
+      { key: "ArrowDown", run: moveCompletionSelection(true) },
+      { key: "ArrowUp", run: moveCompletionSelection(false) },
+      { key: "PageDown", run: moveCompletionSelection(true, "page") },
+      { key: "PageUp", run: moveCompletionSelection(false, "page") },
+      // { key: "Enter", run: acceptCompletion },
+    ]),
+  ),
+  history(),
+  keymap.of([
+    ...searchKeymap,
+    ...historyKeymap,
+    ...defaultKeymap.filter((binding) => {
+      return binding.key !== "Ctrl-k" && binding.mac !== "Ctrl-k";
+    }),
+  ]),
+  vim(),
+  search(),
+  drawSelection(),
+  rectangularSelection(),
+  lineNumbers(),
+  autocompletion({
+    defaultKeymap: false,
+  }),
+  Prec.highest(
+    snippetKeymap.of([
+      {
+        key: "Ctrl-j",
+        run: (target) =>
+          nextSnippetField(target) ||
+          hasNextSnippetField(target.state) ||
+          hasPrevSnippetField(target.state),
+      },
+      {
+        key: "Ctrl-k",
+        run: (target) =>
+          prevSnippetField(target) ||
+          hasNextSnippetField(target.state) ||
+          hasPrevSnippetField(target.state),
+      },
+      { key: "Escape", run: clearSnippet },
+    ]),
+  ),
+  dropCursor(),
+  highlightActiveLine(),
+  highlightSpecialChars(),
+  highlightTrailingWhitespace(),
+  bracketMatching(),
+  closeBrackets(),
+  codeFolding(),
+  foldGutter(),
+  katexDisplay(),
+  markdown({
+    extensions: [parseMathIPython(latexLanguage.parser)],
+  }),
+  EditorView.lineWrapping,
+  latexLanguage.data.of({
+    autocomplete: Object.entries(LATEX_SNIPPETS).map(([key, value]) =>
+      snippetCompletion(value.expansion, {
+        label: key,
+        boost: value.boost,
+        displayLabel: value.displayLabel,
+      }),
+    ),
+  }),
+  commonmarkLanguage.data.of({
+    closeBrackets: { brackets: ["(", "[", "{", "'", '"', "`", "$"] },
+    autocomplete: Object.entries(MARKDOWN_SNIPPETS).map(([key, value]) =>
+      snippetCompletion(value.expansion, {
+        label: key,
+        boost: value.boost,
+        displayLabel: value.displayLabel,
+      }),
+    ),
+  }),
+];
+
 const MemoizedDrawingViewer = memo(DrawingViewer);
 const MemoizedReactMarkdown = memo(ReactMarkdown);
 
@@ -283,97 +372,6 @@ export default function DocumentPage({ id }: { id: string }) {
     [0, 0],
     [0, 0],
   ]);
-
-  const EXTENSIONS = useMemo(() => {
-    const latexLanguage = StreamLanguage.define(stexMath);
-    return [
-      Prec.highest(
-        keymap.of([
-          cmdEnterBinding,
-          shiftEnterBinding,
-          shiftEscapeBinding,
-          { key: "Ctrl-n", run: moveCompletionSelection(true) },
-          { key: "Ctrl-p", run: moveCompletionSelection(false) },
-          { key: "Tab", run: acceptCompletion },
-          // Default completion keymap minus escape to close completion
-          { key: "Ctrl-Space", run: startCompletion },
-          // { key: "Escape", run: closeCompletion },
-          { key: "ArrowDown", run: moveCompletionSelection(true) },
-          { key: "ArrowUp", run: moveCompletionSelection(false) },
-          { key: "PageDown", run: moveCompletionSelection(true, "page") },
-          { key: "PageUp", run: moveCompletionSelection(false, "page") },
-          // { key: "Enter", run: acceptCompletion },
-        ]),
-      ),
-      history(),
-      keymap.of([
-        ...searchKeymap,
-        ...historyKeymap,
-        ...defaultKeymap.filter((binding) => {
-          return binding.key !== "Ctrl-k" && binding.mac !== "Ctrl-k";
-        }),
-      ]),
-      vim(),
-      search(),
-      drawSelection(),
-      rectangularSelection(),
-      lineNumbers(),
-      autocompletion({
-        defaultKeymap: false,
-      }),
-      Prec.highest(
-        snippetKeymap.of([
-          {
-            key: "Ctrl-j",
-            run: (target) =>
-              nextSnippetField(target) ||
-              hasNextSnippetField(target.state) ||
-              hasPrevSnippetField(target.state),
-          },
-          {
-            key: "Ctrl-k",
-            run: (target) =>
-              prevSnippetField(target) ||
-              hasNextSnippetField(target.state) ||
-              hasPrevSnippetField(target.state),
-          },
-          { key: "Escape", run: clearSnippet },
-        ]),
-      ),
-      dropCursor(),
-      highlightActiveLine(),
-      highlightSpecialChars(),
-      highlightTrailingWhitespace(),
-      bracketMatching(),
-      closeBrackets(),
-      codeFolding(),
-      foldGutter(),
-      katexDisplay(),
-      markdown({
-        extensions: [parseMathIPython(latexLanguage.parser)],
-      }),
-      EditorView.lineWrapping,
-      latexLanguage.data.of({
-        autocomplete: Object.entries(LATEX_SNIPPETS).map(([key, value]) =>
-          snippetCompletion(value.expansion, {
-            label: key,
-            boost: value.boost,
-            displayLabel: value.displayLabel,
-          }),
-        ),
-      }),
-      commonmarkLanguage.data.of({
-        closeBrackets: { brackets: ["(", "[", "{", "'", '"', "`", "$"] },
-        autocomplete: Object.entries(MARKDOWN_SNIPPETS).map(([key, value]) =>
-          snippetCompletion(value.expansion, {
-            label: key,
-            boost: value.boost,
-            displayLabel: value.displayLabel,
-          }),
-        ),
-      }),
-    ];
-  }, []);
 
   useEffect(() => {
     getDocument(id)
