@@ -77,7 +77,7 @@ const ExerciseInteractionSection = ({
   return (
     <div className="flex flex-col items-start gap-4">
       <button
-        className="font-button text-white dark:text-black bg-green-600 dark:bg-green-500 rounded cursor-pointer py-1 px-3 mt-2"
+        className="font-button text-green-50 dark:text-green-950 bg-green-600 dark:bg-green-500 rounded cursor-pointer py-1 px-3 mt-2"
         onClick={() => {
           newChat(referenceId, dispatch);
         }}
@@ -85,7 +85,7 @@ const ExerciseInteractionSection = ({
         Ask a question
       </button>
       {interactions?.length > 0 && (
-        <div className="flex flex-col gap-2 text-lg underline dark:text-green-300">
+        <div className="flex flex-col gap-2 text-lg underline text-green-800 dark:text-green-300">
           {interactions.slice(0, 2).map((interaction) => (
             <div
               key={interaction.id}

@@ -92,7 +92,7 @@ const ChatInput = ({
         }}
         className={classNames(
           streaming
-            ? "bg-green-200/40 dark:bg-green-900/40"
+            ? "bg-green-300/40 dark:bg-green-900/40"
             : "bg-neutral-300 dark:bg-neutral-700",
           "mx-0",
           "resize-none",
@@ -105,8 +105,9 @@ const ChatInput = ({
           "pr-10",
           "min-w-0",
           "rounded-md",
-          streaming &&
-            "dark:placeholder:text-green-200 placeholder:text-green-800",
+          streaming
+            ? "dark:placeholder:text-green-200 placeholder:text-green-800"
+            : "dark:placeholder:text-neutral-400 placeholder:text-neutral-500",
         )}
         placeholder={streaming ? "Responding..." : "Ask a question..."}
         rows={1}
@@ -486,7 +487,7 @@ const ChatToggleButton = ({
   return (
     <button
       type="button"
-      className="font-mono px-3 h-full bg-green-300 text-green-900 dark:bg-green-900 dark:text-green-100 flex items-center select-none gap-2"
+      className="font-mono px-3 h-full bg-green-600 dark:bg-green-500 text-green-50 dark:text-green-950 flex items-center select-none gap-2"
       onClick={onClick}
     >
       Chat
