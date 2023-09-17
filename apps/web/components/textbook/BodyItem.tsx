@@ -44,11 +44,7 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
 
   switch (bodyItem.type) {
     case "text":
-      return (
-        <p className="text-justify">
-          <InlineBody items={bodyItem.body} />
-        </p>
-      );
+      return <InlineBody items={bodyItem.body} />;
     case "standalone_heading":
       const HeadingTag = `h${bodyItem.level}` as keyof JSX.IntrinsicElements;
       return (

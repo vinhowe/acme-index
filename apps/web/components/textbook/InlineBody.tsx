@@ -10,7 +10,7 @@ export interface InlineBodyProps {
 
 const InlineBody: React.FC<InlineBodyProps> = ({ items }) => {
   return (
-    <>
+    <p className="text-justify">
       {items.map((item, index) => {
         if (item.type === "inline") {
           return <MathRender key={index} body={item.body} />;
@@ -22,7 +22,7 @@ const InlineBody: React.FC<InlineBodyProps> = ({ items }) => {
           return null;
         }
       })}
-    </>
+    </p>
   );
 };
 
