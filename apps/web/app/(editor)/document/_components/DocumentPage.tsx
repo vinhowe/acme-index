@@ -14,7 +14,7 @@ import {
   Drawing,
   Rect,
 } from "@acme-index/common";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ResizableDocumentTitleInput from "./ResizableDocumentTItleInput";
 import ResizableReferenceInput from "./ResizableReferenceInput";
 import {
@@ -33,7 +33,10 @@ import {
 import { Prec } from "@codemirror/state";
 import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
 import { getCM, vim } from "@replit/codemirror-vim";
-import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
+import CodeMirror, {
+  ReactCodeMirrorRef,
+  useCodeMirror,
+} from "@uiw/react-codemirror";
 import { offsetDrawing } from "@/lib/editor/drawing-utils";
 import ReactMarkdown from "react-markdown";
 import classNames from "classnames";
@@ -75,6 +78,7 @@ import Link from "next/link";
 import { katexDisplay } from "@/lib/editor/codemirror/katex-view-plugin";
 import { ReactMarkdownOptions } from "react-markdown/lib/react-markdown";
 import { DrawingViewer } from "./DrawingViewer";
+import { useCodeMirrorCells } from "./useCodeMirrorCells";
 
 interface SnippetDefinition {
   expansion: string;
@@ -362,6 +366,21 @@ export default function DocumentPage({ id }: { id: string }) {
     null,
   );
   const [minHeight, setMinHeight] = useState<number>(0);
+
+  const editingCell =
+    (cells && editingCellIndex !== null && cells[editingCellIndex]) || null;
+  const { setContainer } = useCodeMirrorCells(editingCell?.id || null, {
+    value: (editingCell?.type === "text" && editingCell?.content) || "",
+    autoFocus: true,
+    className: "text-sm w-full",
+    onChange: (value, viewUpdate) =>
+      handleEditorChange(value, viewUpdate, editingCellIndex || 0),
+    theme: window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? vscodeDark
+      : "light",
+    basicSetup: false,
+    extensions: EXTENSIONS,
+  });
 
   const editingTopRefs = useRef<Map<number, number>>(new Map());
   const editorRefs = useRef<Map<number, ReactCodeMirrorRef>>(new Map());
@@ -807,6 +826,23 @@ export default function DocumentPage({ id }: { id: string }) {
     [editingCellIndex, handleCommitAndMoveToNextCell, handleCommitCell],
   );
 
+  const setupEditorContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node) {
+        setContainer(undefined);
+        return;
+      }
+
+      node.addEventListener("commitCell", handleCommitCell);
+      node.addEventListener(
+        "commitCellAndContinue",
+        handleCommitAndMoveToNextCell,
+      );
+      setContainer(node);
+    },
+    [handleCommitAndMoveToNextCell, handleCommitCell, setContainer],
+  );
+
   const markdownContainerRefCallback = (
     node: HTMLDivElement | null,
     index: number,
@@ -1084,24 +1120,7 @@ export default function DocumentPage({ id }: { id: string }) {
                         ref={(node) => editingTopRefCallback(node, index)}
                       ></div>
                       {!cell || cell?.type === "text" ? (
-                        <CodeMirror
-                          value={cell?.content || ""}
-                          autoFocus
-                          className="text-sm w-full"
-                          onChange={(value, viewUpdate) =>
-                            handleEditorChange(value, viewUpdate, index)
-                          }
-                          // theme={githubDark}
-                          theme={
-                            window.matchMedia("(prefers-color-scheme: dark)")
-                              .matches
-                              ? vscodeDark
-                              : "light"
-                          }
-                          basicSetup={false}
-                          extensions={EXTENSIONS}
-                          ref={setupEditorRef}
-                        />
+                        <div ref={setupEditorContainerRef} />
                       ) : (
                         <div className="w-full overflow-x-clip">
                           <div className="-m-px w-[210mm] overflow-x-clip">
