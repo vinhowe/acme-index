@@ -530,6 +530,28 @@ export default function DocumentPage({ id }: { id: string }) {
     [document, cells, handleUpdateDocumentCells],
   );
 
+  const restoreDeletedCells = useCallback(async () => {
+    if (!document) {
+      return;
+    }
+    const deletedCellIds = document.deletedCells;
+
+    if (!deletedCellIds) {
+      return;
+    }
+
+    // Fetch the deleted cells
+    const deletedCells = await Promise.all(
+      deletedCellIds.map((cellId) =>
+        cellId ? getDocumentCell(document.id, cellId) : null,
+      ),
+    );
+
+    handleUpdateDocumentCells((prevCells) => {
+      return [...prevCells, ...(deletedCells || [])];
+    });
+  }, [document, handleUpdateDocumentCells]);
+
   const updateDeviceDrawingState = useCallback(
     (cellIndex: number, currentCell: DocumentCell | null) => {
       if (cellIndex === null) return;
@@ -1200,6 +1222,9 @@ export default function DocumentPage({ id }: { id: string }) {
           >
             Add Drawing Cell
           </button>
+        </div>
+        <div className="flex justify-center opacity-50 print:hidden">
+          <button onClick={restoreDeletedCells}>Restore deleted cells</button>
         </div>
       </div>
     </div>
