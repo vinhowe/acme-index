@@ -1,18 +1,29 @@
-import { syntaxTree } from '@codemirror/language';
-import { EditorState, Extension, Range, RangeSet, StateField } from '@codemirror/state';
-import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
-import katex from 'katex';  // Make sure to import KaTeX
+import { syntaxTree } from "@codemirror/language";
+import {
+  EditorState,
+  Extension,
+  Range,
+  RangeSet,
+  StateField,
+} from "@codemirror/state";
+import {
+  Decoration,
+  DecorationSet,
+  EditorView,
+  WidgetType,
+} from "@codemirror/view";
+import katex from "katex"; // Make sure to import KaTeX
 
 interface KaTeXWidgetParams {
   latex: string;
 }
 
-const katexWorker = new Worker(new URL('./katex-worker.ts', import.meta.url));
+const katexWorker = new Worker(new URL("./katex-worker.ts", import.meta.url));
 
 // Create a promise-based mechanism to get the result
 const renderLatex = (latex: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const id = Date.now().toString();  // A simple way to identify messages
+    const id = Date.now().toString(); // A simple way to identify messages
     katexWorker.onmessage = (e) => {
       if (e.data.id === id) {
         if (e.data.error) {
@@ -39,9 +50,9 @@ class KaTeXWidget extends WidgetType {
   }
 
   toDOM() {
-    const container = document.createElement('div');
-    container.setAttribute('aria-hidden', 'true');
-    container.className = 'cm-katex-container';
+    const container = document.createElement("div");
+    container.setAttribute("aria-hidden", "true");
+    container.className = "cm-katex-container";
 
     try {
       // The initial render is done synchronously
@@ -69,30 +80,33 @@ class KaTeXWidget extends WidgetType {
   }
 }
 
-
 export const katexDisplay = (): Extension => {
   const decorate = (state: EditorState) => {
     const widgets: Range<Decoration>[] = [];
 
     syntaxTree(state).iterate({
       enter: ({ type, from, to }) => {
-        if (type.name === 'BlockMathDollar') {
+        if (
+          type.name === "BlockMathDollar" ||
+          type.name === "BlockMathBracket"
+        ) {
           const latexString = state.doc.sliceString(from + 2, to - 2);
-          widgets.push(Decoration.widget({
-            widget: new KaTeXWidget({ latex: latexString }),
-            side: 1,
-            block: false,
-          }).range(state.doc.lineAt(to).to));
+          widgets.push(
+            Decoration.widget({
+              widget: new KaTeXWidget({ latex: latexString }),
+              side: 1,
+              block: false,
+            }).range(state.doc.lineAt(to).to),
+          );
         }
       },
     });
 
     return widgets.length > 0 ? RangeSet.of(widgets) : Decoration.none;
-  }
+  };
 
   const katexTheme = EditorView.baseTheme({
-    '.cm-katex-container': {
-    },
+    ".cm-katex-container": {},
   });
 
   const katexField = StateField.define<DecorationSet>({
@@ -111,8 +125,5 @@ export const katexDisplay = (): Extension => {
     },
   });
 
-  return [
-    katexTheme,
-    katexField,
-  ];
+  return [katexTheme, katexField];
 };

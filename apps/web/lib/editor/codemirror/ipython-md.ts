@@ -39,13 +39,26 @@ const DELIMITERS = Object.keys(DELIMITER_LENGTH).reduce<
   return agg;
 }, {});
 
-function isLatexBlock(line: Line) {
+function isLatexBlockDollar(line: Line) {
   if (line.next != 36 /* '$' */) return -1;
   let pos = line.pos + 1;
   while (pos < line.text.length && line.text.charCodeAt(pos) == 36) pos++;
   if (line.next == 36)
     for (let i = pos; i < line.text.length; i++)
       if (line.text.charCodeAt(i) == 36) return -1;
+  return pos;
+}
+
+function isLatexBlockBracket(line: Line) {
+  if (line.next != 92 /* '\' */ || line.text.charCodeAt(line.pos + 1) != 91 /* '[' */) return -1;
+  let pos = line.pos + 2;
+  while (pos < line.text.length && line.text.charCodeAt(pos) == 91) pos++;
+  if (line.text.charCodeAt(pos) == 92 /* '\' */ && line.text.charCodeAt(pos + 1) == 93 /* ']' */)
+    for (let i = pos + 2; i < line.text.length; i++)
+      if (line.text.charCodeAt(i) == 93 /* ']' */) return -1;
+  else if (line.text.charCodeAt(pos) == 93 /* ']' */)
+    for (let i = pos + 1; i < line.text.length; i++)
+      if (line.text.charCodeAt(i) == 93 /* ']' */) return -1;
   return pos;
 }
 
@@ -72,7 +85,7 @@ export function parseMathIPython(latexParser?: Parser): MarkdownConfig {
       {
         name: BLOCK_MATH_DOLLAR,
         parse(cx: BlockContext, line: Line): boolean {
-          let blockEnd = isLatexBlock(line);
+          let blockEnd = isLatexBlockDollar(line);
           if (blockEnd < 0) return false;
           let from = cx.lineStart + line.pos,
             len = blockEnd - line.pos;
@@ -105,6 +118,47 @@ export function parseMathIPython(latexParser?: Parser): MarkdownConfig {
           if (end !== undefined) {
             cx.addElement(
               cx.elt(DELIMITERS[BLOCK_MATH_DOLLAR]!.resolve!, from, end, marks),
+            );
+          }
+          return true;
+        },
+      },
+      {
+        name: BLOCK_MATH_BRACKET,
+        parse(cx: BlockContext, line: Line): boolean {
+          let blockEnd = isLatexBlockBracket(line);
+          if (blockEnd < 0) return false;
+          let from = cx.lineStart + line.pos,
+            len = blockEnd - line.pos;
+          let marks = [
+            cx.elt(DELIMITERS[BLOCK_MATH_BRACKET]!.mark!, from, from + len),
+          ];
+          const endRegex = /\\\]/g;
+          let remaining = line.text.slice(blockEnd);
+          let startOffset = line.pos + len;
+          let match: RegExpExecArray | null;
+          while (!(match = endRegex.exec(remaining)) && cx.nextLine()) {
+            remaining = line.text;
+            startOffset = 0;
+          }
+          let end;
+          if (match) {
+            const lineEnd = match.index + startOffset + match[0].length;
+            end = cx.lineStart + lineEnd;
+            marks.push(
+              cx.elt(
+                DELIMITERS[BLOCK_MATH_BRACKET]!.mark!,
+                end - match[0].length,
+                end,
+              ),
+            );
+            // This keeps us from re-parsing the end delimiter as another start
+            // delimiter
+            cx.nextLine();
+          }
+          if (end !== undefined) {
+            cx.addElement(
+              cx.elt(DELIMITERS[BLOCK_MATH_BRACKET]!.resolve!, from, end, marks),
             );
           }
           return true;
