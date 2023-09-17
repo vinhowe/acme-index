@@ -27,7 +27,7 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
             }
           });
         },
-        { rootMargin: "500px" },
+        { rootMargin: "800px" },
       );
       observer.observe(divRef.current);
       return () => {
