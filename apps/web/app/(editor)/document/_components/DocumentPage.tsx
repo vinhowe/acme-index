@@ -1018,6 +1018,12 @@ export default function DocumentPage({ id }: { id: string }) {
     return <div>Loading...</div>;
   }
 
+  const cellEmpty = (cell: DocumentCell | null) => {
+    return !cell || cell?.type === "text"
+      ? !cell?.content?.trim()
+      : cell.content.strokes.length === 0;
+  };
+
   return (
     <div
       ref={setupContainerRef}
@@ -1061,6 +1067,7 @@ export default function DocumentPage({ id }: { id: string }) {
                 <div
                   className={classNames(
                     "border",
+                    (cell?.hidden || cellEmpty(cell)) && "print:hidden",
                     cell?.hidden
                       ? "border-dashed print:hidden"
                       : "border-solid",
