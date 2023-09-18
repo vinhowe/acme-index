@@ -2,8 +2,10 @@
 
 import React, {
   PropsWithChildren,
+  RefCallback,
   cloneElement,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -25,34 +27,57 @@ export const BatchItemVirtualizationContext =
     visible: true,
   });
 
+const useEnhancedFirstChild = (
+  children: React.ReactNode,
+  ref: RefCallback<unknown>,
+) => {
+  const [enhancedFirstChild, setEnhancedFirstChild] =
+    useState<React.ReactElement>(() => {
+      const firstChild = React.Children.toArray(children)[0];
+      const enhancedFirstChild = cloneElement(
+        firstChild as React.ReactElement,
+        {
+          ref,
+        },
+      );
+      return enhancedFirstChild;
+    });
+
+  useEffect(() => {
+    const firstChild = React.Children.toArray(children)[0];
+    const enhancedFirstChild = cloneElement(firstChild as React.ReactElement, {
+      ref,
+    });
+    setEnhancedFirstChild(enhancedFirstChild);
+  }, [children, ref]);
+
+  return enhancedFirstChild;
+};
+
 export const BatchItemVirtualizationProvider: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   const [visible, setVisible] = useState(true);
-  const childRef = useRef<HTMLElement | null>(null);
+  const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
 
-  useEffect(() => {
-    if (childRef.current) {
+  const setupRef = useCallback((node: HTMLElement | null) => {
+    if (intersectionObserverRef.current) {
+      intersectionObserverRef.current.disconnect();
+    }
+    if (node) {
       const observer = new IntersectionObserver(
         (entries) => {
-          entries.forEach((entry) => {
-            setVisible(entry.isIntersecting);
-          });
+          setVisible(entries.some((entry) => entry.isIntersecting));
         },
         { rootMargin: "800px" },
       );
-      observer.observe(childRef.current);
+      observer.observe(node);
 
-      return () => {
-        observer.disconnect();
-      };
+      intersectionObserverRef.current = observer;
     }
-  }, [children]);
+  }, []);
 
-  const firstChild = React.Children.toArray(children)[0];
-  const enhancedFirstChild = cloneElement(firstChild as React.ReactElement, {
-    ref: (node: HTMLElement) => (childRef.current = node),
-  });
+  const enhancedFirstChild = useEnhancedFirstChild(children, setupRef);
 
   return (
     <BatchItemVirtualizationContext.Provider value={{ visible }}>
@@ -66,13 +91,15 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
   children,
 }) => {
   const { visible } = useContext(BatchItemVirtualizationContext);
+  const [laggingVisible, setLaggingVisible] = useState<boolean>(true);
   const sizeRef = useRef<{ width: number; height: number }>({
     width: 0,
     height: 0,
   });
+  const idleCallbackRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  const setupRef = (node: HTMLElement | null) => {
+  const setupRef = useCallback((node: HTMLElement | null) => {
     if (resizeObserverRef.current) {
       resizeObserverRef.current.disconnect();
     }
@@ -88,14 +115,21 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
       observer.observe(node);
       resizeObserverRef.current = observer;
     }
-  };
+  }, []);
 
-  const firstChild = React.Children.toArray(children)[0];
-  const enhancedFirstChild = cloneElement(firstChild as React.ReactElement, {
-    ref: setupRef,
-  });
+  const enhancedFirstChild = useEnhancedFirstChild(children, setupRef);
 
-  return visible ? (
+  useEffect(() => {
+    if (idleCallbackRef.current) {
+      cancelIdleCallback(idleCallbackRef.current);
+    }
+    idleCallbackRef.current = requestIdleCallback(() => {
+      setLaggingVisible(visible);
+      idleCallbackRef.current = null;
+    });
+  }, [visible]);
+
+  return laggingVisible ? (
     enhancedFirstChild
   ) : (
     <p
