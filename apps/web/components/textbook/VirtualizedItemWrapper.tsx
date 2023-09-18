@@ -69,7 +69,7 @@ export const BatchItemVirtualizationProvider: React.FC<PropsWithChildren> = ({
         (entries) => {
           setVisible(entries.some((entry) => entry.isIntersecting));
         },
-        { rootMargin: "800px" },
+        { rootMargin: "1200px" },
       );
       observer.observe(node);
 
