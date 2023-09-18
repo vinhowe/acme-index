@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import { renderMathInString } from "@/lib/katex-utils";
@@ -30,10 +30,9 @@ const MathRender: React.FC<MathRenderProps> = ({ body }) => {
         } else {
           const { leading, trailing } = captureWhitespace(item.data);
           return (
-            <>
+            <Fragment key={index}>
               {leading}
               <ReactMarkdown
-                key={index}
                 // @ts-expect-error
                 rehypePlugins={[rehypeRaw]}
                 components={{
@@ -45,7 +44,7 @@ const MathRender: React.FC<MathRenderProps> = ({ body }) => {
                 {item.data}
               </ReactMarkdown>
               {trailing}
-            </>
+            </Fragment>
           );
         }
       })}
