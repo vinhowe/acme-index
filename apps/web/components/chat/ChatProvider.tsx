@@ -5,6 +5,7 @@ import {
   createChat,
   generateTurnStreaming,
   getChat,
+  getChatHistory,
   getChats,
   getTurn,
   getTurnsTo,
@@ -295,33 +296,33 @@ export const ChatProvider: React.FC<React.PropsWithChildren> = ({
   // Download chat history from server
   useEffect(() => {
     const loadChatHistory = async () => {
-      const chatHistory = await getChats();
+      const chatHistoryInfoItems = await getChatHistory();
       // Sort by updatedAt, which is an ISO string that needs to be parsed
-      chatHistory.sort((a, b) => {
-        const aDate = new Date(a.updatedAt);
-        const bDate = new Date(b.updatedAt);
+      chatHistoryInfoItems.sort((a, b) => {
+        const aDate = new Date(a.chat.updatedAt);
+        const bDate = new Date(b.chat.updatedAt);
         return bDate.getTime() - aDate.getTime();
       });
 
       // Get current turn for each chat, then get turn with id currentTurn.root
       // —using Promise.all
       const chatHistoryWithCurrentTurns = await Promise.all(
-        chatHistory.map(async (chat) => {
+        chatHistoryInfoItems.map(async (historyInfo) => {
           const historyItem: ChatHistoryItem = {
-            id: chat.id,
-            reference: chat.reference,
-            createdAt: chat.createdAt,
-            updatedAt: chat.updatedAt,
+            id: historyInfo.id,
+            reference: historyInfo.chat.reference,
+            createdAt: historyInfo.chat.createdAt,
+            updatedAt: historyInfo.chat.updatedAt,
             description: null,
             displayReference: null,
           };
 
-          if (!chat.currentTurn) {
+          if (!historyInfo.currentTurn) {
             return historyItem;
           }
 
-          const turn = await getTurn(chat.id, chat.currentTurn);
-          const reference = parseRef(chat.reference);
+          const turn = historyInfo.currentTurn;
+          const reference = parseRef(historyInfo.chat.reference);
 
           if (reference) {
             historyItem.displayReference = buildDisplayReference(reference);
@@ -335,7 +336,7 @@ export const ChatProvider: React.FC<React.PropsWithChildren> = ({
             historyItem.description = turn.query;
             return historyItem;
           } else {
-            const rootTurn = await getTurn(chat.id, turn.root);
+            const rootTurn = historyInfo.rootTurn;
             if (!rootTurn) {
               historyItem.description = turn.query;
               return historyItem;

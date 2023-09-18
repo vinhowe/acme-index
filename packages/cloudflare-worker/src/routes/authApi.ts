@@ -8,7 +8,7 @@ import { AnthropicCompletionSource, CompletionManager, CompletionSourceMap, Open
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { getTextbook } from '../textbook/util';
-import { Chat, DocumentCell, ExercisesChapter, TextChapter, UniqueID } from '@acme-index/common';
+import { Chat, ChatTurn, DocumentCell, ExercisesChapter, TextChapter, UniqueID } from '@acme-index/common';
 import { v4 as uuid } from 'uuid';
 import { extension } from 'mime-types';
 
@@ -63,6 +63,22 @@ router
   .get<UserDataRequest>('/chat', async (req, env) => {
     const chats = await req.database.chats.getAll();
     return json(chats);
+  })
+  .get<UserDataRequest>('/chat/history', async (req, env) => {
+    const chatHistoryItems = await Promise.all(
+      (await req.database.chats.getAll()).map(async (chat) => {
+        const currentTurn = chat.currentTurn ? await req.database.chatTurns.get(chat.currentTurn) : null;
+        const rootTurn = currentTurn?.root ? await req.database.chatTurns.get(currentTurn.root) : null;
+
+        return {
+          id: chat.id,
+          chat: chat,
+          currentTurn,
+          rootTurn,
+        };
+      }),
+    );
+    return json(chatHistoryItems);
   })
   .get<UserDataRequest>('/chat/:id', async (req, res) => {
     const { id } = req.params;

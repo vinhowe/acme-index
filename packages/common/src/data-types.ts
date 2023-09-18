@@ -33,6 +33,12 @@ export type ChatTurn = UniqueObject & {
   createdAt: string;
 };
 
+export type ChatHistoryInfo = UniqueObject & {
+  chat: Chat;
+  rootTurn: ChatTurn | null;
+  currentTurn: ChatTurn | null;
+};
+
 export type Reference = UniqueObject & {
   chats: UniqueID[];
 };

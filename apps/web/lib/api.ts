@@ -8,6 +8,7 @@ import {
   TextChapter,
   Document,
   DocumentCell,
+  ChatHistoryInfo,
 } from "@acme-index/common";
 
 export interface ChatHistoryItem {
@@ -49,6 +50,14 @@ export async function getChats(): Promise<Chat[]> {
   console.log(process.env.NEXT_PUBLIC_API_URL);
   return (
     await fetch(`${API_URL}/chat`, {
+      credentials: "include",
+    })
+  ).json();
+}
+
+export async function getChatHistory(): Promise<ChatHistoryInfo[]> {
+  return (
+    await fetch(`${API_URL}/chat/history`, {
       credentials: "include",
     })
   ).json();
