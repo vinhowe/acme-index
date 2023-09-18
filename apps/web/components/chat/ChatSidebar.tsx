@@ -3,6 +3,7 @@ import { ChatHistoryItem } from "@/lib/api";
 import classNames from "classnames";
 import {
   MutableRefObject,
+  memo,
   useCallback,
   useContext,
   useEffect,
@@ -27,6 +28,8 @@ import wikiLinkPlugin from "@/lib/textbook/link-parsing/remark-plugin";
 import { parseRef } from "textref";
 import { buildDisplayReference } from "@/lib/textbook/textbook-ref";
 import { ChatTurn } from "@acme-index/common";
+import { ReactMarkdownOptions } from "react-markdown/lib/react-markdown";
+import rehypeRaw from "rehype-raw";
 
 const ChatInput = ({
   streaming = false,
@@ -178,6 +181,34 @@ const StreamingChatTurnSection = ({
   return <ChatTurnSection turn={turn} />;
 };
 
+const REMARK_PLUGINS: ReactMarkdownOptions["remarkPlugins"] = [
+  remarkGfm,
+  remarkMath,
+  wikiLinkPlugin,
+];
+const REHYPE_PLUGINS: ReactMarkdownOptions["rehypePlugins"] = [
+  // @ts-expect-error
+  rehypeRaw,
+  rehypeKatex,
+  rehypeMinifyWhitespace,
+];
+const REACT_MARKDOWN_COMPONENTS: ReactMarkdownOptions["components"] = {
+  div: ({ node, className, children, ...props }) => {
+    // if math isn't in classname, render as normal
+    if (!className?.includes("math-display")) {
+      return <div {...props}>{children}</div>;
+    }
+
+    return (
+      <div {...props} className={className}>
+        <div className="katex-display-wrapper">{children}</div>
+      </div>
+    );
+  },
+};
+
+const MemoizedReactMarkdown = memo(ReactMarkdown);
+
 const ChatTurnSection = ({
   turn,
   onEdit,
@@ -202,7 +233,7 @@ const ChatTurnSection = ({
             "rounded-xl",
           )}
         >
-          <ReactMarkdown
+          <MemoizedReactMarkdown
             className={classNames(
               "prose",
               "prose-neutral",
@@ -210,25 +241,12 @@ const ChatTurnSection = ({
               "text-black",
               "dark:prose-invert",
             )}
-            remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
-            rehypePlugins={[rehypeKatex, rehypeMinifyWhitespace]}
-            components={{
-              div: ({ node, className, children, ...props }) => {
-                // if math isn't in classname, render as normal
-                if (!className?.includes("math-display")) {
-                  return <div {...props}>{children}</div>;
-                }
-
-                return (
-                  <div {...props} className={className}>
-                    <div className="katex-display-wrapper">{children}</div>
-                  </div>
-                );
-              },
-            }}
+            remarkPlugins={REMARK_PLUGINS}
+            rehypePlugins={REHYPE_PLUGINS}
+            components={REACT_MARKDOWN_COMPONENTS}
           >
             {turn.query}
-          </ReactMarkdown>
+          </MemoizedReactMarkdown>
         </div>
         <div className="flex gap-2 text-neutral-700 dark:text-neutral-500">
           {onEdit && (
@@ -253,7 +271,7 @@ const ChatTurnSection = ({
           </button>
         </div>
       </div>
-      <ReactMarkdown
+      <MemoizedReactMarkdown
         className={classNames(
           "mb-2",
           "prose",
@@ -261,25 +279,12 @@ const ChatTurnSection = ({
           "dark:prose-invert",
           "w-full",
         )}
-        remarkPlugins={[remarkGfm, remarkMath, wikiLinkPlugin]}
-        rehypePlugins={[rehypeKatex, rehypeMinifyWhitespace]}
-        components={{
-          div: ({ node, className, children, ...props }) => {
-            // if math isn't in classname, render as normal
-            if (!className?.includes("math-display")) {
-              return <div {...props}>{children}</div>;
-            }
-
-            return (
-              <div {...props} className={className}>
-                <div className="katex-display-wrapper">{children}</div>
-              </div>
-            );
-          },
-        }}
+        remarkPlugins={REMARK_PLUGINS}
+        rehypePlugins={REHYPE_PLUGINS}
+        components={REACT_MARKDOWN_COMPONENTS}
       >
         {turn.response || ""}
-      </ReactMarkdown>
+      </MemoizedReactMarkdown>
     </div>
   );
 };
