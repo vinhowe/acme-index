@@ -15,7 +15,7 @@ import {
   Rect,
 } from "@acme-index/common";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import ResizableDocumentTitleInput from "./ResizableDocumentTItleInput";
+import ResizableDocumentTitleInput from "./ResizableDocumentTitleInput";
 import ResizableReferenceInput from "./ResizableReferenceInput";
 import {
   EditorView,

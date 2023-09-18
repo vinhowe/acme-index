@@ -3,7 +3,7 @@ import { usePathname } from "next/navigation";
 import DocumentsPage from "./DocumentsPage";
 import { getDocument, createDocument, updateDocument } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
-import ResizableDocumentTitleInput from "./ResizableDocumentTItleInput";
+import ResizableDocumentTitleInput from "./ResizableDocumentTitleInput";
 import ResizableReferenceInput from "./ResizableReferenceInput";
 import { Document } from "@acme-index/common";
 import DocumentPage from "./DocumentPage";
