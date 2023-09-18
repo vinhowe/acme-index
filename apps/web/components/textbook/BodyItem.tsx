@@ -13,9 +13,7 @@ import Algorithm from "./Algorithm";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
-import {
-  VirtualizedItemWrapper,
-} from "./VirtualizedItemWrapper";
+import { VirtualizedItemWrapper } from "./VirtualizedItemWrapper";
 
 export interface BodyItemsProps {
   bodyItems: BodyItemType[];
