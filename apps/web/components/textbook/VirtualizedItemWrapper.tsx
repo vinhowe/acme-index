@@ -126,7 +126,7 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
     idleCallbackRef.current = requestIdleCallback(() => {
       setLaggingVisible(visible);
       idleCallbackRef.current = null;
-    });
+    }, { timeout: 1000 });
   }, [visible]);
 
   return laggingVisible ? (
