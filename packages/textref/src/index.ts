@@ -79,7 +79,7 @@ const PARTIAL_LIST_ITEM_RANGE_REGEX = (
 ) =>
   `${LIST_ITEM_REGEX(
     startListItemName,
-  )}(?:(?:(?<!\\.)\\.)(?<${listItemRangeOpName}>\\.)(?:${LIST_ITEM_REGEX(
+  )}(?:(?:\\.)(?<${listItemRangeOpName}>\\.)(?:${LIST_ITEM_REGEX(
     endListItemName,
   )})?)?`;
 const PARTIAL_REFERENCE_RANGE_REGEX = makeRegexListPartial([
@@ -95,7 +95,7 @@ const PARTIAL_REFERENCE_RANGE_REGEX = makeRegexListPartial([
       "\\)",
     ]),
   ),
-  "(?:(?<!\\.)\\.)",
+  "(?:\\.)",
   "(?<rangeOp>\\.)",
   PARTIAL_REFERENCE_NUMBER_REGEX("chapterEnd", "sectionEnd", "subsectionEnd"),
   makeRegexItemOptional(
