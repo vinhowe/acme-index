@@ -120,6 +120,12 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
   const enhancedFirstChild = useEnhancedFirstChild(children, setupRef);
 
   useEffect(() => {
+    // if requestIdleCallback is not supported
+    if (!("requestIdleCallback" in window)) {
+      setLaggingVisible(visible);
+      return;
+    }
+
     if (idleCallbackRef.current) {
       cancelIdleCallback(idleCallbackRef.current);
     }
