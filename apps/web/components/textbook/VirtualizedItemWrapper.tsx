@@ -82,7 +82,6 @@ export const BatchItemVirtualizationProvider: React.FC<PropsWithChildren> = ({
   return (
     <BatchItemVirtualizationContext.Provider value={{ visible }}>
       {enhancedFirstChild}
-      {React.Children.toArray(children).slice(1)}
     </BatchItemVirtualizationContext.Provider>
   );
 };
