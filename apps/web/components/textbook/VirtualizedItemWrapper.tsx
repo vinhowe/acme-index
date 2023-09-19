@@ -98,6 +98,25 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
   const idleCallbackRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
+  useEffect(() => {
+    // if requestIdleCallback is not supported
+    if (!("requestIdleCallback" in window)) {
+      setLaggingVisible(visible);
+      return;
+    }
+
+    if (idleCallbackRef.current) {
+      cancelIdleCallback(idleCallbackRef.current);
+    }
+    idleCallbackRef.current = requestIdleCallback(
+      () => {
+        setLaggingVisible(visible);
+        idleCallbackRef.current = null;
+      },
+      { timeout: 2000 },
+    );
+  }, [visible]);
+
   const setupRef = useCallback((node: HTMLElement | null) => {
     if (resizeObserverRef.current) {
       resizeObserverRef.current.disconnect();
@@ -117,22 +136,6 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
   }, []);
 
   const enhancedFirstChild = useEnhancedFirstChild(children, setupRef);
-
-  useEffect(() => {
-    // if requestIdleCallback is not supported
-    if (!("requestIdleCallback" in window)) {
-      setLaggingVisible(visible);
-      return;
-    }
-
-    if (idleCallbackRef.current) {
-      cancelIdleCallback(idleCallbackRef.current);
-    }
-    idleCallbackRef.current = requestIdleCallback(() => {
-      setLaggingVisible(visible);
-      idleCallbackRef.current = null;
-    }, { timeout: 1000 });
-  }, [visible]);
 
   return laggingVisible ? (
     enhancedFirstChild
