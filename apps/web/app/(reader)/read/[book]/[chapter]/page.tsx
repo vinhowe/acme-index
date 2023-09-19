@@ -49,7 +49,7 @@ export default async function Textbook({
 export async function generateStaticParams() {
   // const chapters = await getTextbookChapters("v1");
   const chapters = {
-    v1: ["1"],
+    v1: ["1", "2"],
     v2: ["1"],
   };
   return Object.entries(chapters).flatMap(([book, chapters]) =>
