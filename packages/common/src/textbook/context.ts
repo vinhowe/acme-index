@@ -17,6 +17,7 @@ import {
   SectionItem,
   SectionSectionItem,
   StandaloneHeadingBodyItem,
+  TableBodyItem,
   TextBodyItem,
   TextChapter,
 } from "./types";
@@ -75,6 +76,8 @@ class TextbookContextRenderer {
         return this.renderTextbookEquation(item);
       case "algorithm":
         return this.renderTextbookAlgorithm(item);
+      case "table":
+        return this.renderTextbookTable(item);
       case "figure":
         return this.renderTextbookFigure(item);
       case "fence":
@@ -206,6 +209,13 @@ end equation [[${reference}]]`;
     return `begin algorithm [[${reference}]]\n\
 ${this.renderTextbookBodyItems(algorithm.body, "algorithm", algorithm.id)}\n\
 end algorithm [[${reference}]]`;
+  }
+
+  renderTextbookTable(table: TableBodyItem): string {
+    const reference = this.buildReference("table", table.id);
+    return `begin table [[${reference}]]\n\
+${this.renderTextbookBodyItems(table.body, "table", table.id)}\n\
+end table [[${reference}]]`;
   }
 
   renderTextbookFigure(figure: FigureBodyItem): string {

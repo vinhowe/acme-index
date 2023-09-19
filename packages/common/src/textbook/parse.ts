@@ -18,6 +18,7 @@ import {
   InlineText,
   AlgorithmBodyItem,
   TextBodyItem,
+  TableBodyItem,
 } from "./types";
 
 type Attributes = { [key: string]: string };
@@ -152,6 +153,7 @@ const handlers: { [tagName: string]: HandlerFunction } = {
   pagebreak: handlePageBreak,
   equation: handleEquationTag,
   algorithm: handleAlgorithmTag,
+  texttable: handleTextTableTag,
 };
 
 function handleHtmlInnards(htmlContent: string): Array<BodyItem> {
@@ -401,6 +403,32 @@ function handleAlgorithmTag(
   return algorithm as AlgorithmBodyItem;
 }
 
+function handleTextTableTag(
+  htmlContent: string,
+  tagAttributes: { [key: string]: string },
+): TableBodyItem {
+  const table = {
+    type: "table",
+    body: handleHtmlInnards(htmlContent),
+  } as Partial<TableBodyItem>;
+
+  Object.entries(tagAttributes).forEach(([key, value]) => {
+    switch (key) {
+      case "id":
+        table[key] = value;
+        break;
+      case "name":
+        table[key] = value;
+        break;
+      case "page":
+        table[key] = parseInt(value, 10);
+        break;
+    }
+  });
+
+  return table as TableBodyItem;
+}
+
 function handleFigureTag(
   htmlContent: string,
   tagAttributes: { [key: string]: string },
@@ -624,6 +652,8 @@ function parseTextbookMarkdown(markdown: string): Array<object> {
         newBodyItems = [handleEquationTag(htmlContent, tagAttributes)];
       } else if (tagName === "algorithm") {
         newBodyItems = [handleAlgorithmTag(htmlContent, tagAttributes)];
+      } else if (tagName === "texttable") {
+        newBodyItems = [handleTextTableTag(htmlContent, tagAttributes)];
       } else if (tagName === "ol") {
         const bodyItem = handleOlTag(htmlContent, tagAttributes);
         newBodyItems = [bodyItem];

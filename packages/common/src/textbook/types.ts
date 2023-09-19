@@ -23,6 +23,7 @@ export interface BaseBodyItem<T> {
     | "list_item"
     | "proof"
     | "equation"
+    | "table"
     | "algorithm"
     | "figure"
     | "pagebreak"
@@ -57,6 +58,13 @@ export interface AlgorithmBodyItem extends BaseBodyItem<Array<BodyItem>> {
   id: string;
   name?: string;
 }
+
+export interface TableBodyItem extends BaseBodyItem<Array<BodyItem>> {
+  type: "table";
+  id: string;
+  name?: string;
+}
+
 export interface FigureBodyItem extends BaseBodyItem<Array<BodyItem>> {
   type: "figure";
   id: string;
@@ -95,6 +103,7 @@ export type BodyItem =
   | ProofBodyItem
   | EquationBodyItem
   | AlgorithmBodyItem
+  | TableBodyItem
   | ExerciseBodyItem
   | FigureBodyItem
   | ListBodyItem
