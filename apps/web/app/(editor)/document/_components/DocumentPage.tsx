@@ -128,6 +128,10 @@ const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
     expansion: "\\lim_{${}} ${}",
     displayLabel: "\\lim",
   },
+  choose: {
+    expansion: "{${} \\choose ${}}${}",
+    displayLabel: "\\choose",
+  },
   left: {
     expansion: "\\left${1}${3}\\right${2}",
     displayLabel: "\\left",
