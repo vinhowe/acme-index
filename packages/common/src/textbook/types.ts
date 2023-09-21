@@ -5,6 +5,7 @@ export interface InlineReference {
   roman?: string;
   letter?: string;
   number?: number;
+  book?: string;
   body: string;
 }
 export interface InlineText {
@@ -30,6 +31,10 @@ export interface BaseBodyItem<T> {
     | "exercise";
   page?: number;
   body: T;
+  content: string;
+}
+export interface BaseBodyItemWithReference<T> extends BaseBodyItem<T> {
+  reference: string;
 }
 export interface TextBodyItem extends BaseBodyItem<Array<InlineItem>> {
   type: "text";
@@ -39,73 +44,92 @@ export interface StandaloneHeadingBodyItem extends BaseBodyItem<string> {
   type: "standalone_heading";
   level: number;
 }
-export interface ResultBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface ResultBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "result";
   result_type: string;
   id: string;
+  reference: string;
   name?: string;
 }
-export interface ProofBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface ProofBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "proof";
   of: string;
+  reference: string;
 }
-export interface EquationBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface EquationBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "equation";
   id: string;
+  reference: string;
 }
-export interface AlgorithmBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface AlgorithmBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "algorithm";
   id: string;
   name?: string;
+  reference: string;
 }
 
-export interface TableBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface TableBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "table";
   id: string;
   name?: string;
+  reference: string;
 }
 
-export interface FigureBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface FigureBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "figure";
   id: string;
   name: string;
+  reference: string;
 }
 export interface FenceBodyItem extends BaseBodyItem<string> {
   type: "fence";
   info?: string;
   lang?: string;
 }
-export interface ListItemBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface ListItemBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "list_item";
   number: number;
   roman?: string;
   letter?: string;
+  reference: string;
 }
 export interface ListBodyItem
   extends BaseBodyItem<Array<ListItemBodyItem | PageBreakItem>> {
   type: "list";
   list_type: "roman" | "letter";
 }
-export interface ExerciseBodyItem extends BaseBodyItem<Array<BodyItem>> {
+export interface ExerciseBodyItem
+  extends BaseBodyItemWithReference<Array<BodyItem>> {
   type: "exercise";
   id: string;
   name: string;
+  reference: string;
 }
 export interface PageBreakItem {
   type: "pagebreak";
   page: number;
 }
 
-export type BodyItem =
-  | TextBodyItem
-  | StandaloneHeadingBodyItem
+export type BodyItemWithReference =
   | ResultBodyItem
   | ProofBodyItem
   | EquationBodyItem
   | AlgorithmBodyItem
   | TableBodyItem
   | ExerciseBodyItem
-  | FigureBodyItem
+  | FigureBodyItem;
+
+export type BodyItem =
+  | BodyItemWithReference
+  | TextBodyItem
+  | StandaloneHeadingBodyItem
   | ListBodyItem
   | FenceBodyItem
   | PageBreakItem;
@@ -113,9 +137,11 @@ export type BodyItem =
 export interface BaseSectionItem<T = BodyItem> {
   type: "chapter" | "section" | "subsection";
   id: string;
+  reference: string;
   name: string;
   page?: number;
   body: Array<T>;
+  content: string;
 }
 export interface ChapterSectionItem<T = BodyItem> extends BaseSectionItem<T> {
   type: "chapter";
@@ -136,8 +162,10 @@ export type SectionItem<T = BodyItem> =
 
 export interface BaseChapter<T = BodyItem> {
   id: string;
+  reference: string;
   name: string;
   body: Array<BodyItem>;
+  content: string;
   page?: number;
   sections: Array<SectionItem<T>>;
 }

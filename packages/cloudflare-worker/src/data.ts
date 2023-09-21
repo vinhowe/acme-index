@@ -1,4 +1,4 @@
-import { Chat, ChatTurn, Document, DocumentCell, History, UniqueID, UniqueObject } from '@acme-index/common';
+import { Chat, ChatTurn, Document, DocumentCell, History, Reference, UniqueID, UniqueObject } from '@acme-index/common';
 import { v4 as uuid } from 'uuid';
 
 export type CreateChatTurnBody = Pick<ChatTurn, 'chatId' | 'parent' | 'additionalContextReferences' | 'query' | 'response' | 'error'>;
@@ -19,6 +19,7 @@ export interface Database {
   chatTurns: ChatTurnAccess;
   documents: DocumentAccess;
   documentCells: DocumentCellAccess;
+  references: ReferenceAccess;
 }
 
 export class HistoryAccess implements MutableObjectTable<History> {
@@ -44,6 +45,58 @@ export class HistoryAccess implements MutableObjectTable<History> {
 
   async delete(id: string): Promise<void> {
     await this.table.delete(id);
+  }
+}
+
+export class ReferenceAccess implements ObjectTable<Reference> {
+  constructor(private table: MutableObjectTable<Reference>) {
+    this.table = table;
+  }
+
+  private escapeId(id: string) {
+    // We can't have dots in the KV key
+    // (https://developers.cloudflare.com/kv/api/write-key-value-pairs/#parameters)
+    // so we replace them with backticks, which seem uncommon enough to never
+    // end up in the reference format.
+    return id.replace('.', '`');
+  }
+
+  private unescapeId(id: string) {
+    return id.replace('`', '.');
+  }
+
+  async get(id: string): Promise<Reference | null> {
+    return this.table.get(this.escapeId(id));
+  }
+  async getAll(): Promise<Reference[]> {
+    return this.table.getAll();
+  }
+  async set(id: string, value: Omit<Reference, 'id'>): Promise<Reference> {
+    return this.table.set(this.escapeId(id), value);
+  }
+  async create(value: Omit<Reference, 'questionSuggestions' | 'createdAt' | 'updatedAt' | 'chats'>): Promise<Reference> {
+    const createdAt = new Date().toISOString();
+    return this.table.set(this.escapeId(value.id), {
+      ...value,
+      chats: [],
+      createdAt,
+      updatedAt: createdAt,
+    });
+  }
+  async delete(id: string): Promise<void> {
+    return this.table.delete(this.escapeId(id));
+  }
+
+  async update(id: string, value: Partial<Omit<Reference, 'id'>>): Promise<Reference> {
+    const reference = await this.get(this.escapeId(id));
+    if (!reference) {
+      throw new Error('Reference not found');
+    }
+    const filteredValue: Partial<Reference> = Object.fromEntries(Object.entries(value).filter(([_, v]) => v !== undefined));
+    return this.table.set(this.escapeId(id), {
+      ...reference,
+      ...filteredValue,
+    });
   }
 }
 
@@ -335,7 +388,7 @@ export class KVObjectTable<T extends UniqueObject = any & UniqueObject> implemen
   }
 
   async set(id: string, value: Omit<T, keyof UniqueObject>): Promise<T> {
-    const body = { ...value, id } as T;
+    const body = { id, ...value } as T;
     await this.kv.put(`${this.prefix}:${id}`, JSON.stringify(body));
     return body;
   }

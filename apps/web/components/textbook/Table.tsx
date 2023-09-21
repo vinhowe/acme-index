@@ -11,7 +11,11 @@ const Table: React.FC<React.PropsWithChildren<AlgorithmProps>> = ({
   children,
 }) => {
   return (
-    <InfoBox title={`Table ${table.id}`} id={`table-${table.id}`}>
+    <InfoBox
+      title={`Table ${table.id}`}
+      id={`table-${table.id}`}
+      content={table.content}
+    >
       {children}
     </InfoBox>
   );

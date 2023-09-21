@@ -16,6 +16,8 @@ export interface ChatHistoryItem {
   reference: string;
   createdAt: string;
   updatedAt: string;
+  provider: string;
+  model: string;
   description: string | null;
   displayReference: string | null;
 }
@@ -76,9 +78,25 @@ export async function getTurn(
 
 export async function getReference(reference: string): Promise<Reference> {
   return (
-    await fetch(`${API_URL}/reference/${reference}`, {
+    await fetch(`${API_URL}/reference/${encodeURIComponent(reference)}`, {
       credentials: "include",
     })
+  ).json();
+}
+
+export async function requestReferenceSuggestions(
+  reference: string,
+): Promise<string[]> {
+  return (
+    await fetch(
+      `${API_URL}/reference/${encodeURIComponent(
+        reference,
+      )}/generate-suggestions`,
+      {
+        method: "POST",
+        credentials: "include",
+      },
+    )
   ).json();
 }
 

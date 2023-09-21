@@ -1,6 +1,7 @@
 import {
   AlgorithmBodyItem,
   BodyItem,
+  BodyItemWithReference,
   ChapterSectionItem,
   EquationBodyItem,
   ExerciseBodyItem,
@@ -58,11 +59,7 @@ class TextbookContextRenderer {
     return this.renderTextbookSection(chapterWithSingleSection);
   }
 
-  renderTextbookBodyItem(
-    item: Exclude<BodyItem, PageBreakItem>,
-    parentType: string,
-    parentId: string,
-  ): string {
+  renderTextbookBodyItem(item: Exclude<BodyItem, PageBreakItem>): string {
     switch (item.type) {
       case "text":
         return this.renderTextbookText(item);
@@ -71,19 +68,19 @@ class TextbookContextRenderer {
       case "result":
         return this.renderTextbookResult(item);
       case "proof":
-        return this.renderTextbookProof(item);
+        return this.renderGenericItemWithReference(item, "proof");
       case "equation":
-        return this.renderTextbookEquation(item);
+        return this.renderGenericItemWithReference(item, "equation");
       case "algorithm":
-        return this.renderTextbookAlgorithm(item);
+        return this.renderGenericItemWithReference(item, "algorithm");
       case "table":
-        return this.renderTextbookTable(item);
+        return this.renderGenericItemWithReference(item, "table");
       case "figure":
-        return this.renderTextbookFigure(item);
+        return this.renderGenericItemWithReference(item, "figure");
       case "fence":
         return this.renderTextbookFence(item);
       case "list":
-        return this.renderTextbookList(item, parentType, parentId);
+        return this.renderTextbookList(item);
       case "exercise":
         return this.renderTextbookExercise(item);
     }
@@ -100,7 +97,9 @@ class TextbookContextRenderer {
         // —one way to do this is to add a list of references to keep
         // track of—we can pull it from the exercise or the target
         return (
-          !["example", "application", "vista"].includes(bodyItem.result_type) ||
+          !["example", "unexample", "application", "vista"].includes(
+            bodyItem.result_type,
+          ) ||
           (this.pinnedReferences !== undefined &&
             this.pinnedReferences.has(
               this.buildReference("result", bodyItem.id),
@@ -111,19 +110,11 @@ class TextbookContextRenderer {
     }
   }
 
-  renderTextbookBodyItems(
-    bodyItems: BodyItem[],
-    parentType: string,
-    parentId: string,
-  ): string {
+  renderTextbookBodyItems(bodyItems: BodyItem[]): string {
     return bodyItems
       .filter(this.filterContextItem)
       .map((item) =>
-        this.renderTextbookBodyItem(
-          item as Exclude<BodyItem, PageBreakItem>,
-          parentType,
-          parentId,
-        ),
+        this.renderTextbookBodyItem(item as Exclude<BodyItem, PageBreakItem>),
       )
       .join("\n\n");
   }
@@ -161,10 +152,9 @@ class TextbookContextRenderer {
   }
 
   renderTextbookExercise(exercise: ExerciseBodyItem): string {
-    const reference = this.buildReference("exercise", exercise.id);
-    return `begin exercise [[${reference}]]\n\
-${this.renderTextbookBodyItems(exercise.body, "exercise", exercise.id)}\n\
-end exercise [[${reference}]]`;
+    return `begin exercise [[${exercise.reference}]]\n\
+${this.renderTextbookBodyItems(exercise.body)}\n\
+end exercise [[${exercise.reference}]]`;
   }
 
   renderTextbookResult(result: ResultBodyItem): string {
@@ -178,51 +168,23 @@ end exercise [[${reference}]]`;
 
     const resultType = getResultType(result.result_type);
 
-    let title = `${resultType}`;
+    let title = `${resultType} ${result.id}`;
     if (result.name) {
       title += ` (${result.name})`;
     }
 
-    const reference = this.buildReference("result", result.id);
-
-    return `begin result [[${reference}]]: ${title}\n\
-${this.renderTextbookBodyItems(result.body, "result", result.id)}\n\
-end result [[${reference}]]`;
+    return `begin result [[${result.reference}]]: ${title}\n\
+${this.renderTextbookBodyItems(result.body)}\n\
+end result [[${result.reference}]]`;
   }
 
-  renderTextbookProof(proof: ProofBodyItem): string {
-    const reference = this.buildReference("proof", proof.of);
-    return `begin proof [[${reference}]]\n\
-${this.renderTextbookBodyItems(proof.body, "proof", proof.of)}\n\
-end proof [[${reference}]]`;
-  }
-
-  renderTextbookEquation(equation: EquationBodyItem): string {
-    const reference = this.buildReference("equation", equation.id);
-    return `begin equation [[${reference}]]\n\
-${this.renderTextbookBodyItems(equation.body, "equation", equation.id)}\n\
-end equation [[${reference}]]`;
-  }
-
-  renderTextbookAlgorithm(algorithm: AlgorithmBodyItem): string {
-    const reference = this.buildReference("algorithm", algorithm.id);
-    return `begin algorithm [[${reference}]]\n\
-${this.renderTextbookBodyItems(algorithm.body, "algorithm", algorithm.id)}\n\
-end algorithm [[${reference}]]`;
-  }
-
-  renderTextbookTable(table: TableBodyItem): string {
-    const reference = this.buildReference("table", table.id);
-    return `begin table [[${reference}]]\n\
-${this.renderTextbookBodyItems(table.body, "table", table.id)}\n\
-end table [[${reference}]]`;
-  }
-
-  renderTextbookFigure(figure: FigureBodyItem): string {
-    const reference = this.buildReference("figure", figure.id);
-    return `begin figure [[${reference}]]\n\
-${this.renderTextbookBodyItems(figure.body, "figure", figure.id)}\n\
-end figure [[${reference}]]`;
+  renderGenericItemWithReference(
+    item: BodyItemWithReference,
+    type: string,
+  ): string {
+    return `begin ${type} [[${item.reference}]]\n\
+${this.renderTextbookBodyItems(item.body)}\n\
+end ${type} [[${item.reference}]]`;
   }
 
   renderTextbookFence(item: FenceBodyItem): string {
@@ -231,46 +193,23 @@ ${item.body}\n\
 \`\`\``;
   }
 
-  renderTextbookListItem(
-    item: ListItemBodyItem,
-    parentType: string,
-    parentId: string,
-  ): string {
-    const reference = this.buildReference(
-      parentType,
-      `${parentId}(${item.roman || item.letter})`,
-    );
-    return `begin item [[${reference}]]\n\
-${this.renderTextbookBodyItems(item.body, parentType, parentId)}\n\
-end item [[${reference}]]`;
+  renderTextbookListItem(item: ListItemBodyItem): string {
+    return `begin item [[${item.reference}]]\n\
+${this.renderTextbookBodyItems(item.body)}\n\
+end item [[${item.reference}]]`;
   }
 
-  renderTextbookList(
-    list: ListBodyItem,
-    parentType: string,
-    parentId: string,
-  ): string {
+  renderTextbookList(list: ListBodyItem): string {
     return list.body
       .filter((item) => item.type === "list_item")
-      .map((item) =>
-        this.renderTextbookListItem(
-          item as ListItemBodyItem,
-          parentType,
-          parentId,
-        ),
-      )
+      .map((item) => this.renderTextbookListItem(item as ListItemBodyItem))
       .join("\n");
   }
 
   renderTextbookSection(section: SectionItem): string {
     const sectionDisplayType = section.type.toLowerCase();
-    const reference = this.buildReference("text", section.id);
-    let sectionText = `begin ${sectionDisplayType} [[${reference}]]\n\n`;
-    const sectionBody = this.renderTextbookBodyItems(
-      section.body,
-      "text",
-      "section.id",
-    ).trim();
+    let sectionText = `begin ${sectionDisplayType} [[${section.reference}]]\n\n`;
+    const sectionBody = this.renderTextbookBodyItems(section.body).trim();
     if (sectionBody !== "") {
       sectionText += `${sectionBody}\n`;
     }
@@ -284,7 +223,7 @@ end item [[${reference}]]`;
         sectionText += `${sectionsText}\n`;
       }
     }
-    sectionText += `\nend ${sectionDisplayType} [[${reference}]]`;
+    sectionText += `\nend ${sectionDisplayType} [[${section.reference}]]`;
     return sectionText;
   }
 
@@ -325,7 +264,7 @@ const buildPinnedReferencesSet = (
   }, new Set<string>());
 };
 
-export const renderExerciseChapterContext = (
+export const renderExerciseHelpContext = (
   namespace: string,
   book: string,
   sectionId: string,
@@ -368,6 +307,62 @@ You are helping a student UNDERSTAND this exercise—not solve it. You must\
  BEGINNING OF ANY SOLUTION RESPONSE, IN BOLD.
 - Respond only in Markdown with LaTeX math blocks ($, $$). Do not use any other\
  formatting.
+- When writing a dollar sign if you are not writing LaTeX, use the escape\
+  character \\ (backslash) before the dollar sign. For example, write \\$100 to\
+  get $100.
+- Write references as follows:
+  - Results (Theorems, Statements, Lemmas, Corollaries, Examples, etc.):\
+ [[${exampleReferencePrefix}/result/1.2.34]]
+  - Sections: [[${exampleReferencePrefix}/text/1.2.3]]
+  - Proofs, Figures, Equations, Algorithms:\
+ [[${exampleReferencePrefix}/{proof,figure,equation,algorithm}/1.4]]
+  - If the item of interest is a numbered list item, include the number in\
+ parentheses: [[${exampleReferencePrefix}/result/1.2.3(iv)]]`;
+};
+
+export const renderReferenceSuggestionsContext = (
+  namespace: string,
+  book: string,
+  sectionId: string,
+  itemWithReference: BodyItemWithReference,
+  chapter: TextChapter,
+): string => {
+  const contextRenderer = new TextbookContextRenderer(
+    namespace,
+    book,
+    undefined,
+  );
+
+  const singleSectionContext =
+    contextRenderer.renderSingleSectionChapterContext(sectionId, chapter);
+
+  const exampleReferencePrefix = `${namespace}:${book}`;
+
+  return `begin textbook material
+
+${singleSectionContext}
+
+end textbook material
+
+
+${contextRenderer.renderTextbookBodyItem(itemWithReference).trim()}
+
+A student is seeing [[${itemWithReference.reference}]] for the first time and\
+ has asked you to help them come up with a suggestions for ideas for follow-up\
+ queries to ask you. You should come up with at least three short suggestions\
+ for queries that guide the student to understand the material better. They can
+ be questions or requests in command form. Some ideas include:
+- Questions about how this relates to other material in this chapter
+- Requests to reframe the material in a simpler or more intuitive way
+- Asking to see why a proof wouldn't work without a step or assumption
+- And whatever else you think might be helpful.
+
+Here are your formatting rules, which you MUST follow:
+- If you use math, use inline LaTeX math blocks ($). Do not use any other math\
+ formatting.
+- When writing a dollar sign if you are not writing LaTeX, use the escape\
+  character \\ (backslash) before the dollar sign. For example, write \\$100 to\
+  get $100.
 - Write references as follows:
   - Results (Theorems, Statements, Lemmas, Corollaries, Examples, etc.):\
  [[${exampleReferencePrefix}/result/1.2.34]]

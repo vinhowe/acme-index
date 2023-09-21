@@ -14,6 +14,7 @@ const Algorithm: React.FC<React.PropsWithChildren<AlgorithmProps>> = ({
     <InfoBox
       title={`Algorithm ${algorithm.id}`}
       id={`algorithm-${algorithm.id}`}
+      content={algorithm.content}
     >
       {children}
     </InfoBox>

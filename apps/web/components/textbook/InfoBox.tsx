@@ -1,11 +1,13 @@
 import React from "react";
 import HeadingAnchor from "./HeadingAnchor";
+import { CopyContentButton } from "./CopyContentButton";
 
 export interface InfoBoxProps {
   id?: string;
   className?: string;
   title: string;
   children: React.ReactNode;
+  content?: string;
 }
 
 const InfoBox: React.FC<InfoBoxProps> = ({
@@ -13,6 +15,7 @@ const InfoBox: React.FC<InfoBoxProps> = ({
   className,
   title,
   children,
+  content = null,
 }) => {
   return (
     <div
@@ -21,13 +24,16 @@ const InfoBox: React.FC<InfoBoxProps> = ({
       }`}
       id={id}
     >
-      <h5 className="text-base font-bold [&:hover_>_a]:text-current">
-        {title}
-        {id && (
-          <>
-            <HeadingAnchor id={id} />
-          </>
-        )}
+      <h5 className="flex w-full justify-between text-base font-bold [&:hover_>_a]:text-current">
+        <span>
+          {title}
+          {id && (
+            <>
+              <HeadingAnchor id={id} />
+            </>
+          )}
+        </span>
+        {content && <CopyContentButton content={content} />}
       </h5>
       {children}
     </div>

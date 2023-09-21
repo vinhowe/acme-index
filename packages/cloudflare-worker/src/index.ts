@@ -7,7 +7,7 @@ import { router as apiRouter } from './routes/authApi';
 import { Octokit } from '@octokit/rest';
 import { parseRef } from 'textref';
 import { getTextbook } from './textbook/util';
-import { TextChapter, renderExerciseChapterContext } from '@acme-index/common';
+import { TextChapter, renderExerciseHelpContext } from '@acme-index/common';
 
 export type Handler = RouteHandler<Request, [Env, ExecutionContext, { session: string }]>;
 
@@ -49,7 +49,7 @@ router
       return json({ error: 'Invalid book' }, { status: 400 });
     }
 
-    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, env, req.botOctokit);
+    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, book, env, req.botOctokit);
 
     if ('chapter' in parsedReference && parsedReference.chapter !== undefined) {
       const { chapter } = parsedReference;
@@ -76,7 +76,7 @@ router
       return json({ error: 'Invalid book' }, { status: 400 });
     }
 
-    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, env, req.botOctokit);
+    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, book, env, req.botOctokit);
 
     return json(Object.keys(textbookData));
   })
@@ -100,7 +100,12 @@ router
 
     // For now, we ignore the namespace and book
     // const { namespace, book } = parsedReference;
-    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(`${book}-exercises`, env, req.botOctokit);
+    let textbookData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(
+      book,
+      `${book}-exercises`,
+      env,
+      req.botOctokit,
+    );
     if ('chapter' in parsedReference && parsedReference.chapter !== undefined) {
       const { chapter } = parsedReference;
       textbookData = textbookData[chapter];
@@ -134,8 +139,9 @@ router
       return json({ error: 'Invalid book' }, { status: 400 });
     }
 
-    let textbookTextData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, env, req.botOctokit);
+    let textbookTextData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(book, book, env, req.botOctokit);
     let textbookExercisesData: Record<string, TextChapter> | TextChapter = await getTextbook<TextChapter>(
+      book,
       `${book}-exercises`,
       env,
       req.botOctokit,
@@ -163,7 +169,7 @@ router
     if (!exercise || !sectionId) {
       return json({ error: 'Invalid exercise' }, { status: 400 });
     }
-    const context = renderExerciseChapterContext(namespace, book, sectionId, exercise, chapterTextData);
+    const context = renderExerciseHelpContext(namespace, book, sectionId, exercise, chapterTextData);
     return text(context);
   });
 

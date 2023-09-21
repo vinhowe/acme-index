@@ -41,6 +41,9 @@ export type ChatHistoryInfo = UniqueObject & {
 
 export type Reference = UniqueObject & {
   chats: UniqueID[];
+  questionSuggestions?: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type History = UniqueObject & {

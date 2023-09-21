@@ -15,7 +15,11 @@ const Exercise: React.FC<React.PropsWithChildren<ExerciseProps>> = ({
     title += ` (${exercise.name})`;
   }
   return (
-    <InfoBox id={`exercise-${exercise.id}`} title={title}>
+    <InfoBox
+      id={`exercise-${exercise.id}`}
+      title={title}
+      content={exercise.content}
+    >
       {children}
     </InfoBox>
   );

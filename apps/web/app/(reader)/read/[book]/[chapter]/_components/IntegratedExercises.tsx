@@ -1,7 +1,15 @@
 "use client";
 import { ChatContext, newChat, openChat } from "@/components/chat/ChatProvider";
+import ReferenceInteractions from "@/components/chat/ReferenceInteractions";
 import { BodyItems } from "@/components/textbook/BodyItem";
-import { ExerciseBodyItem } from "@acme-index/common";
+import { CopyContentButton } from "@/components/textbook/CopyContentButton";
+import Exercise from "@/components/textbook/Exercise";
+import {
+  BaseBodyItem,
+  BodyItem,
+  BodyItemWithReference,
+  ExerciseBodyItem,
+} from "@acme-index/common";
 import classNames from "classnames";
 import { useContext, useEffect, useState } from "react";
 
@@ -25,7 +33,7 @@ export default function IntegratedExercises({
   }, [exercises]);
 
   return (
-    <div className="flex flex-col items-start">
+    <div className="flex flex-col items-start gap-2">
       <div className="flex items-baseline gap-4">
         <h2 className="text-2xl font-normal tracking-tight scroll-mt-4 [&:hover_>_a]:text-current shrink-0">
           {sectionId}&ensp;Exercises
@@ -51,56 +59,18 @@ export default function IntegratedExercises({
           })}
         </div>
       </div>
-      <ExerciseInteractionSection
-        book={book}
-        exercise={exercises[selectedExercise]}
-      />
       <div>
         {exercises[selectedExercise].body && (
-          <BodyItems bodyItems={exercises[selectedExercise].body} />
+          <Exercise exercise={exercises[selectedExercise]}>
+            <BodyItems bodyItems={exercises[selectedExercise].body} />
+            <div className="-mx-4 p-4 border-t dark:border-white dark:border-opacity-25">
+              <ReferenceInteractions
+                reference={exercises[selectedExercise].reference}
+              />
+            </div>
+          </Exercise>
         )}
       </div>
     </div>
   );
 }
-
-const ExerciseInteractionSection = ({
-  book,
-  exercise,
-}: {
-  book: string;
-  exercise: ExerciseBodyItem;
-}) => {
-  const { state, dispatch } = useContext(ChatContext);
-  const referenceId = `acme:${book}/exercise/${exercise.id}`;
-  const interactions = state.referenceInteractions[referenceId];
-  return (
-    <div className="flex flex-col items-start gap-4">
-      <button
-        className="font-button text-green-50 dark:text-green-950 bg-green-600 dark:bg-green-500 rounded cursor-pointer py-1 px-3 mt-2"
-        onClick={() => {
-          newChat(referenceId, dispatch);
-        }}
-      >
-        Ask a question
-      </button>
-      {interactions?.length > 0 && (
-        <div className="flex flex-col gap-2 text-lg underline text-green-800 dark:text-green-300">
-          {interactions.slice(0, 2).map((interaction) => (
-            <div
-              key={interaction.id}
-              role="button"
-              className="line-clamp-2"
-              onClick={() => openChat(interaction.id, dispatch)}
-            >
-              {interaction.description}
-            </div>
-          ))}
-          {interactions.length > 2 && (
-            <div role="button">+ {interactions.length - 2} more</div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};

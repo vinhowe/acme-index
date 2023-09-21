@@ -11,7 +11,11 @@ const Proof: React.FC<React.PropsWithChildren<ProofProps>> = ({
   children,
 }) => {
   return (
-    <InfoBox id={`proof-${proof.of}`} title={`Proof of ${proof.of}`}>
+    <InfoBox
+      id={`proof-${proof.of}`}
+      title={`Proof of ${proof.of}`}
+      content={proof.content}
+    >
       {children}
     </InfoBox>
   );

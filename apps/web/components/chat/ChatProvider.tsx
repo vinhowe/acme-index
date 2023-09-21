@@ -7,6 +7,8 @@ import {
   getChat,
   getChatHistory,
   getChats,
+  getReference,
+  requestReferenceSuggestions,
   getTurn,
   getTurnsTo,
 } from "@/lib/api";
@@ -33,9 +35,8 @@ interface ChatState {
   } | null;
   initialComposingText: string;
   referenceId: string | null;
-  referenceInteractions: {
-    [referenceId: string]: ChatHistoryItem[];
-  };
+  referenceInteractions: Map<string, ChatHistoryItem[]>;
+  referenceSuggestions: Map<string, string[]>;
 }
 
 // Define the action shape
@@ -44,6 +45,13 @@ type ChatAction =
       type: "set sidebar open state";
       payload: {
         isOpen: boolean;
+      };
+    }
+  | {
+      type: "load reference suggestions";
+      payload: {
+        reference: string;
+        suggestions: string[];
       };
     }
   | {
@@ -122,7 +130,8 @@ const initialState: ChatState = {
   initialComposingText: "",
   chatData: null,
   referenceId: null,
-  referenceInteractions: {},
+  referenceInteractions: new Map(),
+  referenceSuggestions: new Map(),
 };
 
 // Reducer function
@@ -133,11 +142,23 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         ...state,
         isSidebarOpen: action.payload.isOpen,
       };
+    case "load reference suggestions":
+      return {
+        ...state,
+        referenceSuggestions: new Map(
+          state.referenceSuggestions.set(
+            action.payload.reference,
+            action.payload.suggestions,
+          ),
+        ),
+      };
     case "load chat history":
       return {
         ...state,
         chatHistory: action.payload.chatHistory,
-        referenceInteractions: action.payload.referenceInteractions,
+        referenceInteractions: new Map(
+          Object.entries(action.payload.referenceInteractions),
+        ),
       };
     case "new chat":
       return {
@@ -163,12 +184,14 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         updatedAt: chat.updatedAt,
         description: action.payload.query,
         displayReference: action.payload.displayReference,
+        provider: chat.provider,
+        model: chat.model,
       };
       const referenceInteractions = state.referenceInteractions;
-      if (!referenceInteractions[chat.reference]) {
-        referenceInteractions[chat.reference] = [];
+      if (!referenceInteractions.has(chat.reference)) {
+        referenceInteractions.set(chat.reference, []);
       }
-      referenceInteractions[chat.reference].push(historyItem);
+      referenceInteractions.get(chat.reference)?.push(historyItem);
       return {
         ...state,
         chatData: {
@@ -313,6 +336,8 @@ export const ChatProvider: React.FC<React.PropsWithChildren> = ({
             reference: historyInfo.chat.reference,
             createdAt: historyInfo.chat.createdAt,
             updatedAt: historyInfo.chat.updatedAt,
+            provider: historyInfo.chat.provider,
+            model: historyInfo.chat.model,
             description: null,
             displayReference: null,
           };
@@ -471,5 +496,22 @@ export const editTurn = async (
   dispatch({
     type: "set initial composing text",
     payload: { text: turn.query ?? "" },
+  });
+};
+
+export const generateReferenceSuggestions = async (
+  reference: string,
+  dispatch: Dispatch<ChatAction>,
+) => {
+  let referenceObject = await getReference(reference);
+  // Should only happen if reference is invalid
+  if (!referenceObject || "error" in referenceObject) {
+    throw new Error("Reference not found");
+  }
+
+  const suggestions = await requestReferenceSuggestions(referenceObject.id);
+  dispatch({
+    type: "load reference suggestions",
+    payload: { reference, suggestions },
   });
 };

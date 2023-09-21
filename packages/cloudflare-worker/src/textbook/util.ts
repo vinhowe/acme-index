@@ -2,7 +2,7 @@ import { Octokit } from '@octokit/rest';
 import { Env } from '../types';
 import { BaseChapter, parseTextbook } from '@acme-index/common';
 
-export const getTextbook = async <T extends BaseChapter>(name: string, env: Env, botOctokit: Octokit) => {
+export const getTextbook = async <T extends BaseChapter>(book: string, name: string, env: Env, botOctokit: Octokit) => {
   let textbookData: any;
   const kvValue = await env.TEXTBOOK.get(name, 'json');
   if (!kvValue) {
@@ -15,7 +15,7 @@ export const getTextbook = async <T extends BaseChapter>(name: string, env: Env,
     const downloadUrl = (response.data as any).download_url;
     const downloadResponse = await fetch(downloadUrl);
     const text = await downloadResponse.text();
-    textbookData = await parseTextbook<T>(text);
+    textbookData = await parseTextbook<T>('acme', book, text);
     await env.TEXTBOOK.put(name, JSON.stringify(textbookData));
   } else {
     textbookData = kvValue as Record<string, T>;

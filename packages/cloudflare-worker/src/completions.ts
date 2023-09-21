@@ -3,14 +3,27 @@ import OpenAI from 'openai';
 import { parseRef } from 'textref';
 // @ts-expect-error
 import { EventEmitter } from 'node:events';
-import { BaseChapter, ChatTurn, ExercisesChapter, TextChapter, renderExerciseChapterContext } from '@acme-index/common';
+import {
+  BaseChapter,
+  BodyItem,
+  BodyItemWithReference,
+  ChatTurn,
+  ExercisesChapter,
+  SectionItem,
+  TextChapter,
+  renderExerciseHelpContext,
+  renderReferenceSuggestionsContext,
+} from '@acme-index/common';
 import { ChatAccess, ChatTurnAccess } from './data';
 import { Tiktoken, TiktokenModel, encodingForModel } from 'js-tiktoken';
 import claude from './claude.json';
+import { ChatCompletionMessage } from 'openai/resources/chat';
 
 export interface CompletionOptions {
   maxTokens?: number;
   model?: string;
+  functions?: OpenAI.Chat.Completions.CompletionCreateParams['functions'];
+  function_call?: OpenAI.Chat.Completions.CompletionCreateParams['function_call'];
   signal?: AbortSignal;
 }
 
@@ -75,6 +88,40 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
         yield deltaContent;
       }
     }
+  }
+
+  async generateFunctionCallingCompletion(
+    messages: ChatMessage[],
+    options?: CompletionOptions,
+  ): Promise<ChatCompletionMessage.FunctionCall | null> {
+    const response = await this.client.chat.completions.create(
+      {
+        model: options?.model || DEFAULT_OPENAI_MODEL,
+        // max_tokens: options?.maxTokens,
+        messages: messages.map((message) => ({
+          content: message.content,
+          role: OPENAI_ROLE_MAPPING[message.role],
+        })),
+        logit_bias: {
+          // " [["
+          4416: 2,
+          // " $"
+          400: 2,
+        },
+        stream: false,
+        functions: options?.functions ?? [],
+        function_call: options?.function_call ?? 'auto',
+      },
+      {
+        signal: options?.signal,
+      },
+    );
+
+    if (response.choices[0].message.function_call) {
+      return response.choices[0].message.function_call;
+    }
+
+    return null;
   }
 
   async calculateTokenCount(messages: ChatMessage[], model: OpenAIChatModel = DEFAULT_OPENAI_MODEL) {
@@ -173,31 +220,17 @@ export class CompletionManager {
     private completionSources: CompletionSourceMap,
     private chats: ChatAccess,
     private chatTurns: ChatTurnAccess,
-    private getTextbookFn: <T extends BaseChapter>(textbook: string) => Promise<Record<string, T>>,
+    private getTextbookFn: <T extends BaseChapter>(book: string, textbookName: string) => Promise<Record<string, T>>,
   ) {
     this.broadcasts = new Map();
   }
 
-  getCompletionBroadcast(id: string) {
-    return this.broadcasts.get(id) || null;
-  }
-
-  // createCompletionBroadcast(turnId: string) {
-  //   if (this.broadcasts.has(turnId)) {
-  //     throw new Error('Broadcast already exists');
-  //   }
-
-  //   const emitter = new EventEmitter();
-  //   this.broadcasts.set(turnId, emitter);
-  //   return emitter;
-  // }
-
-  async startCompletion(chatId: string, turnId: string, options?: CompletionOptions) {
+  async startInteractionCompletion(chatId: string, turnId: string, options?: CompletionOptions) {
     if (!this.broadcasts.has(turnId)) {
       throw new Error('No broadcast found');
     }
 
-    await this.completionGenerator(chatId, turnId, options);
+    await this.interactionCompletionGenerator(chatId, turnId, options);
   }
 
   removeBroadcast(turnId: string) {
@@ -206,13 +239,7 @@ export class CompletionManager {
     }
   }
 
-  async *completionGenerator(chatId: string, turnId: string, options?: CompletionOptions) {
-    // const emitter = this.broadcasts.get(turnId);
-
-    // if (!emitter) {
-    //   throw new Error('No broadcast found');
-    // }
-
+  async *interactionCompletionGenerator(chatId: string, turnId: string, options?: CompletionOptions) {
     const turn = await this.chatTurns.get(turnId);
 
     if (!turn) {
@@ -246,8 +273,8 @@ export class CompletionManager {
       throw new Error('Invalid reference type');
     }
 
-    const textbookTextData = await this.getTextbookFn<TextChapter>(book);
-    const textbookExercisesData = await this.getTextbookFn<ExercisesChapter>(`${book}-exercises`);
+    const textbookTextData = await this.getTextbookFn<TextChapter>(book, book);
+    const textbookExercisesData = await this.getTextbookFn<ExercisesChapter>(book, `${book}-exercises`);
     const chapterTextData = textbookTextData[chapter];
     const chapterExercisesData = textbookExercisesData[chapter];
     if (!chapterTextData || !chapterExercisesData) {
@@ -271,7 +298,7 @@ export class CompletionManager {
     if (!exercise || !sectionId) {
       throw new Error('Exercise not found');
     }
-    const context = renderExerciseChapterContext(namespace, book, sectionId, exercise, chapterTextData);
+    const context = renderExerciseHelpContext(namespace, book, sectionId, exercise, chapterTextData);
 
     let turnHistory: ChatTurn[] = [];
     if (turnId) {
@@ -344,8 +371,140 @@ export class CompletionManager {
     yield { tokenCount };
 
     await this.chatTurns.finishTurn(turn.id, { response: text, tokenCount });
-    // emitter.emit('end');
+  }
 
-    // this.removeBroadcast(turnId);
+  async generateReferenceSuggestions(reference: string) {
+    // Parse reference string
+    const parsedReference = parseRef(reference, { partial: true });
+
+    // TODO: This should really all be validated when a chat is created, not
+    // when coming up with a completion
+    if (!parsedReference || !('type' in parsedReference) || parsedReference.chapter === undefined) {
+      throw new Error('Invalid reference');
+    }
+
+    const { namespace, book, type, chapter, section } = parsedReference;
+
+    if (!namespace || !book || !section) {
+      throw new Error('Invalid reference type');
+    }
+
+    const textbookTextData = await this.getTextbookFn<TextChapter>(book, book);
+    const chapterTextData = textbookTextData[chapter];
+    if (!chapterTextData) {
+      throw new Error('Chapter not found');
+    }
+
+    let item: BodyItem | SectionItem | TextChapter | null = null;
+    if (type === 'exercise') {
+      const textbookExercisesData = await this.getTextbookFn<ExercisesChapter>(book, `${book}-exercises`);
+      const chapterExercisesData = textbookExercisesData[chapter];
+      if (!chapterExercisesData) {
+        throw new Error('Chapter not found');
+      }
+      // Find exercise in chapter (section doesn't mean chapter section)
+      item = CompletionManager.findChildByReference(chapterExercisesData, reference);
+    } else {
+      item = CompletionManager.findChildByReference(chapterTextData, reference);
+    }
+
+    if (!item) {
+      throw new Error('Item not found');
+    }
+
+    const context = renderReferenceSuggestionsContext(namespace, book, section, item as BodyItemWithReference, chapterTextData);
+
+    // Hardcoding this for now
+    const completionSource = this.completionSources['openai'];
+
+    if (!completionSource) {
+      throw new Error('Invalid completion source');
+    }
+
+    // Set up function calling
+    const functions = [
+      {
+        name: 'submit_suggestions',
+        description: 'Submit query suggestions for a reference',
+        parameters: {
+          type: 'object',
+          properties: {
+            suggestions: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+          required: ['suggestions'],
+        },
+      },
+    ];
+
+    const response = await completionSource.generateFunctionCallingCompletion(
+      [
+        {
+          role: 'system',
+          content: context,
+        },
+      ],
+      {
+        functions,
+        function_call: { name: 'submit_suggestions' },
+      },
+    );
+
+    if (response === null) {
+      return null;
+    }
+
+    try {
+      const functionResponse = JSON.parse(response.arguments);
+      if (functionResponse.suggestions) {
+        return functionResponse.suggestions;
+      }
+    } catch (e) {
+      console.error('Error while attempting to parse suggestions');
+      console.error(e);
+      // Do nothing
+    }
+    return null;
+  }
+
+  private static findChildByReference(
+    root: BodyItem | SectionItem | TextChapter,
+    targetReference: string,
+  ): BodyItem | SectionItem | TextChapter | null {
+    // Check if the current item's reference matches the target reference
+    if ('reference' in root && root.reference === targetReference) {
+      return root;
+    }
+
+    if ('body' in root && root.body) {
+      for (let child of root.body) {
+        if (typeof child === 'string' || child.type === 'text') {
+          continue;
+        }
+        let result = this.findChildByReference(child as BodyItem | SectionItem | TextChapter, targetReference);
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    if ('sections' in root && root.sections) {
+      for (let child of root.sections) {
+        if (typeof child === 'string') {
+          continue;
+        }
+        let result = this.findChildByReference(child as BodyItem | SectionItem | TextChapter, targetReference);
+        if (result) {
+          return result;
+        }
+      }
+    }
+
+    // If we've gone through all children and haven't found the target reference, return null
+    return null;
   }
 }

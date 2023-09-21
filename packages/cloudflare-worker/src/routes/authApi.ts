@@ -1,7 +1,7 @@
 import { IRequest, Router, json } from 'itty-router';
 import { AuthenticatedRequest, withAuthenticatedRequest } from '../auth';
 import { Env } from '../types';
-import { DocumentCellAccess, ChatAccess, ChatTurnAccess, Database, DocumentAccess, KVObjectTable } from '../data';
+import { DocumentCellAccess, ChatAccess, ChatTurnAccess, Database, DocumentAccess, KVObjectTable, ReferenceAccess } from '../data';
 import { BotOctokitRequest, withBotOctokit } from '../github';
 import { parseRef } from 'textref';
 import { AnthropicCompletionSource, CompletionManager, CompletionSourceMap, OpenAICompletionSource } from '../completions';
@@ -29,6 +29,7 @@ const withUserData = async (request: IRequest & Partial<AuthenticatedRequest> & 
     chatTurns: new ChatTurnAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:chat-turns`), chatAccess),
     documents: new DocumentAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:documents`)),
     documentCells: new DocumentCellAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:document-cells`)),
+    references: new ReferenceAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:references`)),
   };
 };
 
@@ -51,8 +52,11 @@ const withCompletionManager = async (request: UserDataRequest, env: Env) => {
   }
 
   // TODO: Figure out how to get this for free like everything else
-  const completionManager = new CompletionManager(completionSources, request.database.chats, request.database.chatTurns, (name: string) =>
-    getTextbook(name, env, request.botOctokit),
+  const completionManager = new CompletionManager(
+    completionSources,
+    request.database.chats,
+    request.database.chatTurns,
+    (book: string, name: string) => getTextbook(book, name, env, request.botOctokit),
   );
 
   request.completionManager = completionManager;
@@ -109,8 +113,8 @@ router
       return json({ error: 'Reference type must be exercise' }, { status: 400 });
     }
 
-    const textbookTextData = await getTextbook<TextChapter>(book, env, request.botOctokit);
-    const textbookExercisesData = await getTextbook<ExercisesChapter>(`${book}-exercises`, env, request.botOctokit);
+    const textbookTextData = await getTextbook<TextChapter>(book, book, env, request.botOctokit);
+    const textbookExercisesData = await getTextbook<ExercisesChapter>(book, `${book}-exercises`, env, request.botOctokit);
     const chapterTextData = textbookTextData[chapter];
     const chapterExercisesData = textbookExercisesData[chapter];
     if (!chapterTextData || !chapterExercisesData) {
@@ -201,7 +205,7 @@ router
       await writer.write(encoder.encode(`data: ${JSON.stringify(turn)}\n\n`));
       await writer.releaseLock();
 
-      const generator = await request.completionManager.completionGenerator(chat.id, turn.id, {
+      const generator = await request.completionManager.interactionCompletionGenerator(chat.id, turn.id, {
         maxTokens,
         signal: abortController.signal,
       });
@@ -247,6 +251,49 @@ router
     }
 
     return json(turn);
+  })
+  .get<UserDataRequest>('/reference', async (req, env) => {
+    const references = await req.database.references.getAll();
+    return json(references);
+  })
+  .get<UserDataRequest>('/reference/:id', async (req, env) => {
+    let { id } = req.params;
+    // Url decode id
+    id = decodeURIComponent(id);
+    let reference = await req.database.references.get(id);
+
+    if (!reference) {
+      // Naively we just create a new reference if it doesn't exist
+      reference = await req.database.references.create({
+        id,
+      });
+    }
+
+    return json(reference);
+  })
+  .post<UserDataRequest>('/reference/:id/generate-suggestions', withCompletionManager, async (req, env) => {
+    let { id } = req.params;
+    // Url decode id
+    id = decodeURIComponent(id);
+    let reference = await req.database.references.get(id);
+
+    if (!reference) {
+      return json({ error: 'Reference not found' }, { status: 404 });
+    }
+
+    let suggestions;
+    try {
+      suggestions = await req.completionManager.generateReferenceSuggestions(reference.id);
+    } catch (e) {
+      console.error(e);
+      return json({ error: 'Error generating suggestions' }, { status: 500 });
+    }
+
+    await req.database.references.update(reference.id, {
+      questionSuggestions: suggestions,
+    });
+
+    return json(suggestions);
   })
   .get<UserDataRequest>('/document', async (req, env) => {
     const documents = await req.database.documents.getAll();

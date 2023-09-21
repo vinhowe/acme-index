@@ -3,6 +3,8 @@ import type { ResultBodyItem } from "@acme-index/common";
 import InfoBox from "./InfoBox";
 
 export interface ResultProps {
+  namespace: string;
+  book: string;
   result: ResultBodyItem;
 }
 
@@ -29,7 +31,7 @@ const Result: React.FC<React.PropsWithChildren<ResultProps>> = ({
   }
 
   return (
-    <InfoBox id={`result-${result.id}`} title={title}>
+    <InfoBox id={`result-${result.id}`} title={title} content={result.content}>
       {children}
     </InfoBox>
   );
