@@ -132,7 +132,6 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
       .join('\n');
     const tiktoken = await encodingForModel(model as TiktokenModel);
     const tokens = await tiktoken.encode(text);
-    console.log(tokens.length);
     return tokens.length;
   }
 }
