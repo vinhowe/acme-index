@@ -3,8 +3,6 @@ import type { ResultBodyItem } from "@acme-index/common";
 import InfoBox from "./InfoBox";
 
 export interface ResultProps {
-  namespace: string;
-  book: string;
   result: ResultBodyItem;
 }
 
