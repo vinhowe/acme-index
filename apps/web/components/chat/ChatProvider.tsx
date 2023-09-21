@@ -275,13 +275,6 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         chatData: null,
         referenceId: null,
       };
-
-    // case "OPEN_CHAT":
-    //   return { ...state, isOpen: true, showingChatId: action.payload };
-    // case "CLOSE_CHAT":
-    //   return { ...state, isOpen: false };
-    // case "SEND_MESSAGE":
-    //   return { ...state, chatHistory: [...state.chatHistory, action.payload] };
     default:
       return state;
   }
