@@ -2,7 +2,7 @@ import { Octokit } from '@octokit/rest';
 import { Env } from '../types';
 import { BaseChapter, parseTextbook } from '@acme-index/common';
 
-const getTextbookLocal = async <T extends BaseChapter>(book: string, name: string, env: Env, botOctokit: Octokit) => {
+const getTextbookLocal = async <T extends BaseChapter>(book: string, name: string, env: Env) => {
   const response = await fetch(`${env.TEXT_REPOSITORY}/${name}.md`);
   const text = await response.text();
   return await parseTextbook<T>('acme', book, text);
@@ -32,7 +32,7 @@ const getTextbookKV = async <T extends BaseChapter>(book: string, name: string, 
 export const getTextbook = async <T extends BaseChapter>(book: string, name: string, env: Env, botOctokit: Octokit) => {
   // Check if env.TEXT_REPOSITORY is a URL (for local development)
   if (env.TEXT_REPOSITORY.startsWith('http://') || env.TEXT_REPOSITORY.startsWith('https://')) {
-    return await getTextbookLocal<T>(book, name, env, botOctokit);
+    return await getTextbookLocal<T>(book, name, env);
   } else {
     return await getTextbookKV<T>(book, name, env, botOctokit);
   }
