@@ -59,7 +59,7 @@ export default function IntegratedExercises({
           })}
         </div>
       </div>
-      <div>
+      <div className="w-full">
         {exercises[selectedExercise].body && (
           <Exercise exercise={exercises[selectedExercise]}>
             <BodyItems bodyItems={exercises[selectedExercise].body} />
