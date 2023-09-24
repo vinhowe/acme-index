@@ -2,17 +2,23 @@ import { Octokit } from '@octokit/rest';
 import { Env } from '../types';
 import { BaseChapter, parseTextbook } from '@acme-index/common';
 
-const getTextbookLocal = async <T extends BaseChapter>(book: string, name: string, env: Env) => {
-  const response = await fetch(`${env.TEXT_REPOSITORY}/${name}.md`);
+const getTextbookLocal = async <T extends BaseChapter>(book: string, name: string, textRespositorySource: string) => {
+  const response = await fetch(`${textRespositorySource}/${name}.md`);
   const text = await response.text();
   return await parseTextbook<T>('acme', book, text);
 };
 
-const getTextbookKV = async <T extends BaseChapter>(book: string, name: string, env: Env, botOctokit: Octokit) => {
+const getTextbookKV = async <T extends BaseChapter>(
+  book: string,
+  name: string,
+  textRespositorySource: string,
+  botOctokit: Octokit,
+  env: Env,
+) => {
   let textbookData: any;
   const kvValue = await env.TEXTBOOK.get(name, 'json');
   if (!kvValue) {
-    const [owner, repo] = env.TEXT_REPOSITORY.split('/');
+    const [owner, repo] = textRespositorySource.split('/');
     const response = await botOctokit.repos.getContent({
       owner,
       repo,
@@ -30,10 +36,11 @@ const getTextbookKV = async <T extends BaseChapter>(book: string, name: string, 
 };
 
 export const getTextbook = async <T extends BaseChapter>(book: string, name: string, env: Env, botOctokit: Octokit) => {
+  const textRespositorySource = env.TEXT_REPOSITORY;
   // Check if env.TEXT_REPOSITORY is a URL (for local development)
-  if (env.TEXT_REPOSITORY.startsWith('http://') || env.TEXT_REPOSITORY.startsWith('https://')) {
-    return await getTextbookLocal<T>(book, name, env);
+  if (textRespositorySource.startsWith('http://') || textRespositorySource.startsWith('https://')) {
+    return await getTextbookLocal<T>(book, name, textRespositorySource);
   } else {
-    return await getTextbookKV<T>(book, name, env, botOctokit);
+    return await getTextbookKV<T>(book, name, textRespositorySource, botOctokit, env);
   }
 };
