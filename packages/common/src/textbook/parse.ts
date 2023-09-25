@@ -31,12 +31,13 @@ interface LightHTMLElement {
 
 function extractRefs(input: string): Array<InlineText | InlineReference> {
   function parseAttributes(tag: string) {
-    const attributeRegex = /(\w+)\s*=\s*['"]([^'"]*)['"]/g;
+    const attributeRegex =
+      /(\w+)=(?:"((?:[^"\\]|\\.)*)"|(?:'((?:[^'\\]|\\.)*))')/g;
     const attributes: Attributes = {};
     let match;
 
     while ((match = attributeRegex.exec(tag)) !== null) {
-      attributes[match[1]] = match[2];
+      attributes[match[1]] = match[2] || match[3];
     }
 
     return attributes;
@@ -130,7 +131,7 @@ function handleHTMLContent(
     let match;
 
     while ((match = attributeRegex.exec(openingTag)) !== null) {
-      attrs[match[1]] = match[2];
+      attrs[match[1]] = match[2] || match[3];
     }
   }
 
