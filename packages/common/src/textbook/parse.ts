@@ -18,6 +18,8 @@ import {
   InlineText,
   AlgorithmBodyItem,
   TableBodyItem,
+  BaseBodyItem,
+  BaseBodyItemWithReference,
 } from "./types";
 
 type Attributes = { [key: string]: string };
@@ -146,7 +148,7 @@ type ContextType = { parentType: string; parentId: string };
 
 type HandlerFunction = (
   body: string,
-  attrs: { [key: string]: string },
+  attrs: Attributes,
   context: ContextType,
 ) => BodyItem;
 
@@ -158,21 +160,134 @@ class TextbookFormatParser {
     private book: string,
     private markdown: string,
   ) {
-    this.handleOlTag = this.handleOlTag.bind(this);
-    this.handleProofTag = this.handleProofTag.bind(this);
+    this.buildTagHandler = this.buildTagHandler.bind(this);
+    this.buildOlTagHandler = this.buildOlTagHandler.bind(this);
+    // this.handleProofTag = this.handleProofTag.bind(this);
     this.handlePageBreak = this.handlePageBreak.bind(this);
-    this.handleEquationTag = this.handleEquationTag.bind(this);
-    this.handleAlgorithmTag = this.handleAlgorithmTag.bind(this);
-    this.handleTextTableTag = this.handleTextTableTag.bind(this);
+    // this.handleEquationTag = this.handleEquationTag.bind(this);
+    // this.handleAlgorithmTag = this.handleAlgorithmTag.bind(this);
+    // this.handleTextTableTag = this.handleTextTableTag.bind(this);
     this.handleHtmlInnards = this.handleHtmlInnards.bind(this);
 
     this.handlers = {
-      ol: this.handleOlTag,
-      proof: this.handleProofTag,
+      ol: this.buildOlTagHandler(),
+      proof: this.buildTagHandler<ProofBodyItem, "of" | "page">(
+        "proof",
+        (key, value) => {
+          switch (key) {
+            case "of":
+              return ["of", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ of }) => of,
+        },
+      ),
+      result: this.buildTagHandler<
+        ResultBodyItem,
+        "id" | "result_type" | "name" | "page"
+      >(
+        "result",
+        (key, value) => {
+          switch (key) {
+            case "id":
+              return ["id", value];
+            case "type":
+              return ["result_type", value];
+            case "name":
+              return ["name", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ id }) => id,
+        },
+      ),
+      equation: this.buildTagHandler<EquationBodyItem, "id" | "page">(
+        "equation",
+        (key, value) => {
+          switch (key) {
+            case "id":
+              return ["id", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ id }) => id,
+        },
+      ),
+      algorithm: this.buildTagHandler<
+        AlgorithmBodyItem,
+        "id" | "name" | "page"
+      >(
+        "algorithm",
+        (key, value) => {
+          switch (key) {
+            case "id":
+              return ["id", value];
+            case "name":
+              return ["name", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ id }) => id,
+        },
+      ),
+      texttable: this.buildTagHandler<TableBodyItem, "id" | "name" | "page">(
+        "table",
+        (key, value) => {
+          switch (key) {
+            case "id":
+              return ["id", value];
+            case "name":
+              return ["name", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ id }) => id,
+        },
+      ),
+      exercise: this.buildTagHandler<ExerciseBodyItem, "id" | "name" | "page">(
+        "exercise",
+        (key, value) => {
+          switch (key) {
+            case "id":
+              return ["id", value];
+            case "name":
+              return ["name", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ id }) => id,
+        },
+      ),
+      figure: this.buildTagHandler<FigureBodyItem, "id" | "name" | "page">(
+        "figure",
+        (key, value) => {
+          switch (key) {
+            case "id":
+              return ["id", value];
+            case "name":
+              return ["name", value];
+            case "page":
+              return ["page", parseInt(value, 10)];
+          }
+        },
+        {
+          referenceIdHandler: ({ id }) => id,
+        },
+      ),
       pagebreak: this.handlePageBreak,
-      equation: this.handleEquationTag,
-      algorithm: this.handleAlgorithmTag,
-      texttable: this.handleTextTableTag,
     };
   }
 
@@ -279,345 +394,150 @@ class TextbookFormatParser {
     return bodyTypes;
   }
 
-  private handleOlTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    { parentId, parentType }: ContextType,
-  ): ListBodyItem {
-    const list: Omit<ListBodyItem, "page"> &
-      Partial<Pick<ListBodyItem, "page">> = {
-      type: "list",
-      list_type: "roman",
-      body: [],
-      content: htmlContent,
-    };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "type":
-          if (value === "roman" || value === "letter") {
-            list.list_type = value;
-          }
-          break;
-        case "page":
-          list.page = parseInt(value, 10);
-          break;
-      }
-    });
-
-    // Handle li and pagebreak tags
-    const liAndPagebreakRegex = /(<li[^>]*>.*?<\/li>|<pagebreak[^>]*\/>)/gms;
-    let liAndPagebreakMatch;
-    while (
-      (liAndPagebreakMatch = liAndPagebreakRegex.exec(htmlContent)) !== null
-    ) {
-      const liAndPagebreakContent = liAndPagebreakMatch[1];
-      if (/^<li[^>]*>.*?<\/li>$/gms.test(liAndPagebreakContent)) {
-        const { attrs: liAttrs, body } = handleHTMLContent(
-          liAndPagebreakContent,
-          false,
-        );
-        const innards = this.handleHtmlInnards(body, { parentId, parentType });
-        list.body.push({
-          type: "list_item",
-          number: parseInt(liAttrs?.value),
-          roman: liAttrs?.roman,
-          letter: liAttrs?.letter,
-          body: innards,
-          content: liAndPagebreakContent,
-          reference: this.buildReference(
+  private buildOlTagHandler(): HandlerFunction {
+    const olContentHandler = (
+      htmlContent: string,
+      _attributes: Attributes,
+      { parentId, parentType }: ContextType,
+    ): Pick<ListBodyItem, "body"> => {
+      const listPartial: Pick<ListBodyItem, "body"> = {
+        body: [],
+      };
+      // Handle li and pagebreak tags
+      const liAndPagebreakRegex = /(<li[^>]*>.*?<\/li>|<pagebreak[^>]*\/>)/gms;
+      let liAndPagebreakMatch;
+      while (
+        (liAndPagebreakMatch = liAndPagebreakRegex.exec(htmlContent)) !== null
+      ) {
+        const liAndPagebreakContent = liAndPagebreakMatch[1];
+        if (/^<li[^>]*>.*?<\/li>$/gms.test(liAndPagebreakContent)) {
+          const { attrs: liAttrs, body } = handleHTMLContent(
+            liAndPagebreakContent,
+            false,
+          );
+          const innards = this.handleHtmlInnards(body, {
+            parentId,
             parentType,
-            `${parentId}(${liAttrs?.roman || liAttrs?.letter})`,
-          ),
-        });
-      } else if (/^<pagebreak[^>]*\/>$/gms.test(liAndPagebreakContent)) {
-        const pagebreakAttrMatch = /page="(\d+)"/.exec(liAndPagebreakContent);
-        const pageNumber =
-          pagebreakAttrMatch?.[1] && parseInt(pagebreakAttrMatch[1], 10);
+          });
+          listPartial.body.push({
+            type: "list_item",
+            number: parseInt(liAttrs?.value),
+            roman: liAttrs?.roman,
+            letter: liAttrs?.letter,
+            body: innards,
+            content: liAndPagebreakContent,
+            reference: this.buildReference(
+              parentType,
+              `${parentId}(${liAttrs?.roman || liAttrs?.letter})`,
+            ),
+          });
+        } else if (/^<pagebreak[^>]*\/>$/gms.test(liAndPagebreakContent)) {
+          const pagebreakAttrMatch = /page="(\d+)"/.exec(liAndPagebreakContent);
+          const pageNumber =
+            pagebreakAttrMatch?.[1] && parseInt(pagebreakAttrMatch[1], 10);
 
-        if (!pageNumber) {
-          continue;
+          if (!pageNumber) {
+            continue;
+          }
+
+          const pagebreak: PageBreakItem = {
+            type: "pagebreak",
+            page: pageNumber,
+          };
+          listPartial.body.push(pagebreak);
         }
-
-        const pagebreak: PageBreakItem = {
-          type: "pagebreak",
-          page: pageNumber,
-        };
-        list.body.push(pagebreak);
       }
-    }
-
-    return list;
-  }
-
-  private handleProofTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): ProofBodyItem {
-    const proof: Omit<ProofBodyItem, "of" | "page"> &
-      Partial<Pick<ProofBodyItem, "of" | "page">> = {
-      type: "proof",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.of
-          ? {
-              parentType: "proof",
-              parentId: tagAttributes.of,
-            }
-          : context,
-      ),
-      reference: this.buildReference("proof", tagAttributes.of),
-      content: htmlContent,
+      return listPartial;
     };
 
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "of":
-          proof[key] = value;
-          break;
-        case "page":
-          proof[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return proof as ProofBodyItem;
-  }
-
-  private handleExerciseTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): ExerciseBodyItem {
-    const exercise: Omit<ExerciseBodyItem, "id" | "name" | "page"> &
-      Partial<Pick<ExerciseBodyItem, "id" | "name" | "page">> = {
-      type: "exercise",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.id
-          ? {
-              parentType: "exercise",
-              parentId: tagAttributes.id,
+    return this.buildTagHandler<ListBodyItem, "type" | "page">(
+      "list",
+      (key, value) => {
+        switch (key) {
+          case "type":
+            if (value === "roman" || value === "letter") {
+              return ["list_type", value];
             }
-          : context,
-      ),
-      reference: this.buildReference("exercise", tagAttributes.id),
-      content: htmlContent,
-    };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "id":
-          exercise[key] = value;
-          break;
-        case "name":
-          exercise[key] = value;
-          break;
-        case "page":
-          exercise[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return exercise as ExerciseBodyItem;
+            return;
+          case "page":
+            return ["page", parseInt(value, 10)];
+        }
+      },
+      {
+        contentHandler: olContentHandler,
+      },
+    );
   }
 
-  private handleEquationTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): EquationBodyItem {
-    const equation: Omit<EquationBodyItem, "id" | "page"> &
-      Partial<Pick<EquationBodyItem, "id" | "page">> = {
-      type: "equation",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.id
-          ? {
-              parentType: "equation",
-              parentId: tagAttributes.id,
+  private buildTagHandler<
+    T extends BaseBodyItem<unknown>,
+    AttributeKeys extends keyof T,
+  >(
+    type: string,
+    attributeHandler: (
+      key: string,
+      value: string,
+    ) => [string, unknown] | undefined,
+    {
+      referenceIdHandler,
+      contentHandler,
+    }: {
+      referenceIdHandler?: (attributes: Attributes) => string;
+      contentHandler?: (
+        content: string,
+        attributes: Attributes,
+        context: ContextType,
+      ) => Partial<T>;
+    } = {},
+  ): HandlerFunction {
+    return (
+      content: string,
+      attributes: Attributes,
+      context: ContextType,
+    ): BodyItem => {
+      const referenceId = referenceIdHandler
+        ? referenceIdHandler(attributes)
+        : null;
+      const item = {
+        type,
+        body: this.handleHtmlInnards(
+          content,
+          referenceId
+            ? {
+                parentType: type,
+                parentId: referenceId,
+              }
+            : context,
+        ),
+        content,
+        reference: referenceId
+          ? this.buildReference(type, referenceId)
+          : undefined,
+        ...(Object.entries(attributes).reduce(
+          (accumulator, [key, value]) => {
+            const attributePair = attributeHandler(key, value);
+            if (!attributePair) {
+              return accumulator;
             }
-          : context,
-      ),
-      reference: this.buildReference("equation", tagAttributes.id),
-      content: htmlContent,
+            const [transformedKey, transformedValue] = attributePair;
+            accumulator[transformedKey as AttributeKeys] =
+              transformedValue as T[AttributeKeys];
+            return accumulator;
+          },
+          {} as Pick<T, AttributeKeys>,
+        ) as Pick<T, AttributeKeys>),
+        ...(contentHandler ? contentHandler(content, attributes, context) : {}),
+      } as Pick<T, "type" | "body" | "content"> &
+        Partial<Pick<T, AttributeKeys>> &
+        T extends BaseBodyItemWithReference<unknown>
+        ? { reference: string }
+        : {};
+      // This isn't great
+      return item as unknown as BodyItem;
     };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "id":
-          equation[key] = value;
-          break;
-        case "page":
-          equation[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return equation as EquationBodyItem;
   }
 
-  private handleAlgorithmTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): AlgorithmBodyItem {
-    const algorithm: Omit<AlgorithmBodyItem, "id" | "name" | "page"> &
-      Partial<Pick<AlgorithmBodyItem, "id" | "name" | "page">> = {
-      type: "algorithm",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.id
-          ? {
-              parentType: "algorithm",
-              parentId: tagAttributes.id,
-            }
-          : context,
-      ),
-      reference: this.buildReference("algorithm", tagAttributes.id),
-      content: htmlContent,
-    };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "id":
-          algorithm[key] = value;
-          break;
-        case "name":
-          algorithm[key] = value;
-          break;
-        case "page":
-          algorithm[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return algorithm as AlgorithmBodyItem;
-  }
-
-  private handleTextTableTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): TableBodyItem {
-    const table: Omit<TableBodyItem, "id" | "page"> &
-      Partial<Pick<TableBodyItem, "id" | "page">> = {
-      type: "table",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.id
-          ? {
-              parentType: "table",
-              parentId: tagAttributes.id,
-            }
-          : context,
-      ),
-      reference: this.buildReference("table", tagAttributes.id),
-      content: htmlContent,
-    };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "id":
-          table[key] = value;
-          break;
-        case "name":
-          table[key] = value;
-          break;
-        case "page":
-          table[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return table as TableBodyItem;
-  }
-
-  private handleFigureTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): FigureBodyItem {
-    const figure: Omit<FigureBodyItem, "id" | "name" | "page"> &
-      Partial<Pick<FigureBodyItem, "id" | "name" | "page">> = {
-      type: "figure",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.id
-          ? {
-              parentType: "figure",
-              parentId: tagAttributes.id,
-            }
-          : context,
-      ),
-      reference: this.buildReference("figure", tagAttributes.id),
-      content: htmlContent,
-    };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "id":
-          figure[key] = value;
-          break;
-        case "name":
-          figure[key] = value;
-          break;
-        case "page":
-          figure[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return figure as FigureBodyItem;
-  }
-
-  private handleResultTag(
-    htmlContent: string,
-    tagAttributes: { [key: string]: string },
-    context: ContextType,
-  ): ResultBodyItem {
-    const result: Omit<ResultBodyItem, "id" | "result_type" | "name" | "page"> &
-      Partial<Pick<ResultBodyItem, "id" | "result_type" | "name" | "page">> = {
-      type: "result",
-      body: this.handleHtmlInnards(
-        htmlContent,
-        tagAttributes?.id
-          ? {
-              parentType: "result",
-              parentId: tagAttributes.id,
-            }
-          : context,
-      ),
-      reference: this.buildReference("result", tagAttributes.id),
-      content: htmlContent,
-    };
-
-    Object.entries(tagAttributes).forEach(([key, value]) => {
-      switch (key) {
-        case "id":
-          result[key] = value;
-          break;
-        case "type":
-          // Convert to result_type
-          result.result_type = value;
-          break;
-        case "name":
-          result[key] = value;
-          break;
-        case "page":
-          result[key] = parseInt(value, 10);
-          break;
-      }
-    });
-
-    return result as ResultBodyItem;
-  }
-
-  private handlePageBreak(
-    _htmlContent: string,
-    tagAttributes: { [key: string]: string },
-  ) {
+  private handlePageBreak(_htmlContent: string, tagAttributes: Attributes) {
     const pageBreak = {
       type: "pagebreak",
     } as PageBreakItem;
@@ -792,48 +712,10 @@ class TextbookFormatParser {
         };
 
         let newBodyItems: Array<BodyItem> | null = null;
-        if (tagName === "result") {
-          const bodyItem = this.handleResultTag(
-            htmlContent,
-            tagAttributes,
-            context,
-          );
-          newBodyItems = [bodyItem];
-          // currentResult = bodyItem;
-        } else if (tagName === "proof") {
+        if (tagName in this.handlers) {
           newBodyItems = [
-            this.handleProofTag(htmlContent, tagAttributes, context),
+            this.handlers[tagName](htmlContent, tagAttributes, context),
           ];
-        } else if (tagName === "exercise") {
-          newBodyItems = [
-            this.handleExerciseTag(htmlContent, tagAttributes, context),
-          ];
-        } else if (tagName === "figure") {
-          newBodyItems = [
-            this.handleFigureTag(htmlContent, tagAttributes, context),
-          ];
-        } else if (tagName === "equation") {
-          newBodyItems = [
-            this.handleEquationTag(htmlContent, tagAttributes, context),
-          ];
-        } else if (tagName === "algorithm") {
-          newBodyItems = [
-            this.handleAlgorithmTag(htmlContent, tagAttributes, context),
-          ];
-        } else if (tagName === "texttable") {
-          newBodyItems = [
-            this.handleTextTableTag(htmlContent, tagAttributes, context),
-          ];
-        } else if (tagName === "ol") {
-          const bodyItem = this.handleOlTag(
-            htmlContent,
-            tagAttributes,
-            context,
-          );
-          newBodyItems = [bodyItem];
-          // currentList = bodyItem;
-        } else if (tagName === "pagebreak") {
-          newBodyItems = [this.handlePageBreak(htmlContent, tagAttributes)];
         } else if (tagName === "context-optional") {
           newBodyItems = this.handleHtmlInnards(htmlContent, context);
           newBodyItems.forEach((bodyItem) => {
