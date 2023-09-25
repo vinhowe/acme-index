@@ -703,8 +703,6 @@ class TextbookFormatParser {
           selfClosing,
         );
 
-        // body = body.replaceAll("<", "YAY").replaceAll(">", "YAY");
-
         htmlContent = body;
 
         const context = {
