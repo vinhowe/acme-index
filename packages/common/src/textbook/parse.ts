@@ -580,6 +580,7 @@ class TextbookFormatParser {
           currentChapter = {
             id,
             reference: this.buildReference("text", id),
+            childReferences: [],
             name: content.split(": ").slice(1).join(": "),
             body: [],
             content: "",
@@ -590,10 +591,12 @@ class TextbookFormatParser {
           currentSubsection = null;
         } else if (level === "2") {
           const id = content.split(": ", 2)[0];
+          const reference = this.buildReference("text", id);
           currentSection = {
             type: "section",
             id,
-            reference: this.buildReference("text", id),
+            reference,
+            childReferences: [],
             name: content.split(": ").slice(1).join(": "),
             body: [],
             content: "",
@@ -611,6 +614,7 @@ class TextbookFormatParser {
             type: "subsection",
             id,
             reference: this.buildReference("text", id),
+            childReferences: [],
             name: content.split(": ").slice(1).join(": "),
             content: "",
             body: [],
@@ -712,9 +716,15 @@ class TextbookFormatParser {
 
         let newBodyItems: Array<BodyItem> | null = null;
         if (tagName in this.handlers) {
-          newBodyItems = [
-            this.handlers[tagName](htmlContent, tagAttributes, context),
-          ];
+          const bodyItem = this.handlers[tagName](
+            htmlContent,
+            tagAttributes,
+            context,
+          );
+          if ("reference" in bodyItem) {
+            _currentSection.childReferences.push(bodyItem.reference);
+          }
+          newBodyItems = [bodyItem];
         } else if (tagName === "context-optional") {
           newBodyItems = this.handleHtmlInnards(htmlContent, context);
           newBodyItems.forEach((bodyItem) => {

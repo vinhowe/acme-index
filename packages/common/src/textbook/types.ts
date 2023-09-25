@@ -138,6 +138,7 @@ export interface BaseSectionItem<T = BodyItem> {
   type: "chapter" | "section" | "subsection";
   id: string;
   reference: string;
+  childReferences: Array<string>;
   name: string;
   page?: number;
   body: Array<T>;
@@ -163,6 +164,7 @@ export type SectionItem<T = BodyItem> =
 export interface BaseChapter<T = BodyItem> {
   id: string;
   reference: string;
+  childReferences: Array<string>;
   name: string;
   body: Array<BodyItem>;
   content: string;
