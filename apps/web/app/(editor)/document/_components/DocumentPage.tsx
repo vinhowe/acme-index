@@ -128,6 +128,10 @@ const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
     expansion: "\\lim_{${}} ${}",
     displayLabel: "\\lim",
   },
+  int: {
+    expansion: "\\int_{${}}^{${}} ${}",
+    displayLabel: "\\int",
+  },
   choose: {
     expansion: "{${} \\choose ${}}${}",
     displayLabel: "\\choose",
