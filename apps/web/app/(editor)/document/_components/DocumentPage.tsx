@@ -136,6 +136,10 @@ const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
     expansion: "\\sqrt{${}}${}",
     displayLabel: "\\sqrt",
   },
+  langle: {
+    expansion: "\\left\\langle ${}\\right\\rangle",
+    displayLabel: "\\langle",
+  },
   choose: {
     expansion: "{${} \\choose ${}}${}",
     displayLabel: "\\choose",
