@@ -27,7 +27,7 @@ export default async function Exercises({
 export async function generateStaticParams() {
   const chapters = {
     v1: ["1", "2"],
-    v2: ["1", "2"],
+    v2: ["1", "2", "3"],
   };
   return Object.entries(chapters).flatMap(([book, chapters]) =>
     chapters.map((id) => ({ book, chapter: id })),
