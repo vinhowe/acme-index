@@ -388,24 +388,6 @@ export default function DocumentPage({ id }: { id: string }) {
   );
   const [minHeight, setMinHeight] = useState<number>(0);
 
-  // <CodeMirror
-  //   value={cell?.content || ""}
-  //   autoFocus
-  //   className="text-sm w-full"
-  //   onChange={(value, viewUpdate) =>
-  //     handleEditorChange(value, viewUpdate, index)
-  //   }
-  //   // theme={githubDark}
-  //   theme={
-  //     window.matchMedia("(prefers-color-scheme: dark)")
-  //       .matches
-  //       ? vscodeDark
-  //       : "light"
-  //   }
-  //   basicSetup={false}
-  //   extensions={EXTENSIONS}
-  //   ref={setupEditorRef}
-  // />
   const editingCell =
     (cells && editingCellIndex !== null && cells[editingCellIndex]) || null;
   const { setContainer, view: editorView } = useCodeMirrorCells(
@@ -1065,8 +1047,6 @@ export default function DocumentPage({ id }: { id: string }) {
     const isPotentialCommand = (input: string): boolean => {
       return Object.keys(COMMANDS).some((command) => command.startsWith(input));
     };
-
-    // const currentRef = containerRef.current;
 
     // Attach the event listener
     window.addEventListener("keydown", handleKeyDown);
