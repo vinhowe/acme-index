@@ -188,5 +188,5 @@ export function useCodeMirrorCells(
     }
   }, [value, view]);
 
-  return { setContainer };
+  return { view, setContainer };
 }

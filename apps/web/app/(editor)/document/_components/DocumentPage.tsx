@@ -383,23 +383,43 @@ export default function DocumentPage({ id }: { id: string }) {
   );
   const [minHeight, setMinHeight] = useState<number>(0);
 
+  // <CodeMirror
+  //   value={cell?.content || ""}
+  //   autoFocus
+  //   className="text-sm w-full"
+  //   onChange={(value, viewUpdate) =>
+  //     handleEditorChange(value, viewUpdate, index)
+  //   }
+  //   // theme={githubDark}
+  //   theme={
+  //     window.matchMedia("(prefers-color-scheme: dark)")
+  //       .matches
+  //       ? vscodeDark
+  //       : "light"
+  //   }
+  //   basicSetup={false}
+  //   extensions={EXTENSIONS}
+  //   ref={setupEditorRef}
+  // />
   const editingCell =
     (cells && editingCellIndex !== null && cells[editingCellIndex]) || null;
-  const { setContainer } = useCodeMirrorCells(editingCell?.id || null, {
-    value: (editingCell?.type === "text" && editingCell?.content) || "",
-    autoFocus: true,
-    className: "text-sm w-full",
-    onChange: (value, viewUpdate) =>
-      handleEditorChange(value, viewUpdate, editingCellIndex || 0),
-    theme: window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? vscodeDark
-      : "light",
-    basicSetup: false,
-    extensions: EXTENSIONS,
-  });
+  const { setContainer, view: editorView } = useCodeMirrorCells(
+    editingCell?.id || null,
+    {
+      value: (editingCell?.type === "text" && editingCell?.content) || "",
+      autoFocus: true,
+      className: "text-sm w-full",
+      onChange: (value, viewUpdate) =>
+        handleEditorChange(value, viewUpdate, editingCellIndex || 0),
+      theme: window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? vscodeDark
+        : "light",
+      basicSetup: false,
+      extensions: EXTENSIONS,
+    },
+  );
 
   const editingTopRefs = useRef<Map<number, number>>(new Map());
-  const editorRefs = useRef<Map<number, ReactCodeMirrorRef>>(new Map());
   const editorValueRefs = useRef<Map<number, string>>(new Map());
   const commandBufferRef = useRef<string>("");
   const isDrawingRef = useRef<boolean>(false);
@@ -766,9 +786,6 @@ export default function DocumentPage({ id }: { id: string }) {
           const editingCell =
             editingCellIndex !== null ? cells[editingCellIndex] : null;
           if (editingCellIndex !== null && editingCell?.type === "text") {
-            const editorRef = editorRefs.current.get(editingCellIndex);
-            if (!editorRef) return;
-            const editorView = editorRef.view;
             if (!editorView) return;
             const cursor = editorView.state.selection.main.head;
             const transaction = editorView.state.update({
@@ -812,6 +829,7 @@ export default function DocumentPage({ id }: { id: string }) {
     handleCommitCell,
     document?.id,
     handleUpdateDocumentCells,
+    editorView,
   ]);
 
   const setupContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -841,28 +859,6 @@ export default function DocumentPage({ id }: { id: string }) {
       };
     }
   }, []);
-
-  const setupEditorRef = useCallback(
-    (newRefs: ReactCodeMirrorRef | null) => {
-      if (editingCellIndex === null) return;
-      if (
-        // !editorRefs.current.get(editingCellIndex) &&
-        newRefs?.editor &&
-        newRefs?.state &&
-        newRefs?.view
-      ) {
-        newRefs.editor.addEventListener("commitCell", handleCommitCell);
-        newRefs.editor.addEventListener(
-          "commitCellAndContinue",
-          handleCommitAndMoveToNextCell,
-        );
-        editorRefs.current.set(editingCellIndex, newRefs);
-      } else if (editorRefs.current.get(editingCellIndex) && !newRefs) {
-        editorRefs.current.delete(editingCellIndex);
-      }
-    },
-    [editingCellIndex, handleCommitAndMoveToNextCell, handleCommitCell],
-  );
 
   const setupEditorContainerRef = useCallback(
     (node: HTMLDivElement | null) => {
