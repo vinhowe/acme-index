@@ -302,7 +302,12 @@ const EXTENSIONS = [
     ...searchKeymap,
     ...historyKeymap,
     ...defaultKeymap.filter((binding) => {
-      return binding.key !== "Ctrl-k" && binding.mac !== "Ctrl-k";
+      return (
+        binding.key !== "Ctrl-k" &&
+        binding.key !== "Ctrl-v" &&
+        binding.mac !== "Ctrl-k" &&
+        binding.mac !== "Ctrl-v"
+      );
     }),
   ]),
   vim(),
