@@ -16,12 +16,16 @@ import katex from "katex"; // Make sure to import KaTeX
 
 interface KaTeXWidgetParams {
   latex: string;
+  display: boolean;
 }
 
 const katexWorker = new Worker(new URL("./katex-worker.ts", import.meta.url));
 
 // Create a promise-based mechanism to get the result
-const renderLatex = (latex: string): Promise<string> => {
+const renderLatex = (
+  latex: string,
+  { displayMode = false }: { displayMode: boolean },
+): Promise<string> => {
   return new Promise((resolve, reject) => {
     const id = Date.now().toString(); // A simple way to identify messages
     katexWorker.onmessage = (e) => {
@@ -34,15 +38,17 @@ const renderLatex = (latex: string): Promise<string> => {
       }
     };
 
-    katexWorker.postMessage({ id, latex });
+    katexWorker.postMessage({ id, latex, displayMode });
   });
 };
 
 class KaTeXWidget extends WidgetType {
   readonly latex;
-  constructor({ latex }: KaTeXWidgetParams) {
+  readonly display;
+  constructor({ latex, display }: KaTeXWidgetParams) {
     super();
     this.latex = latex;
+    this.display = display;
   }
 
   eq(kaTeXWidget: KaTeXWidget) {
@@ -52,17 +58,24 @@ class KaTeXWidget extends WidgetType {
   toDOM() {
     const container = document.createElement("div");
     container.setAttribute("aria-hidden", "true");
-    container.className = "cm-katex-container";
+    container.className = this.display ? "block" : "inline-block mx-1 p-1";
 
     try {
       // The initial render is done synchronously
-      const renderedKatex = katex.renderToString(this.latex, {
-        displayMode: true,
+      let renderedKatex = katex.renderToString(this.latex, {
+        displayMode: this.display,
+        throwOnError: false,
       });
       container.innerHTML = renderedKatex;
     } catch (error) {
+      console.log(error);
       // Ignore these because they will happen all the time
     }
+
+    container.style.backgroundColor = this.display
+      ? ""
+      : "color-mix(in srgb, currentColor 8%, transparent)";
+    container.style.borderRadius = "0.25rem";
 
     return container;
   }
@@ -70,9 +83,11 @@ class KaTeXWidget extends WidgetType {
   updateDOM(dom: HTMLElement, _view: EditorView): boolean {
     try {
       // All subsequent updates will be done via the worker
-      renderLatex(this.latex).then((rendered) => {
-        dom.innerHTML = rendered;
-      });
+      renderLatex(this.latex, { displayMode: this.display }).then(
+        (rendered) => {
+          dom.innerHTML = rendered;
+        },
+      );
     } catch (error) {
       // Ignore these because they will happen all the time
     }
@@ -88,15 +103,33 @@ export const katexDisplay = (): Extension => {
       enter: ({ type, from, to }) => {
         if (
           type.name === "BlockMathDollar" ||
-          type.name === "BlockMathBracket"
+          type.name === "BlockMathBracket" ||
+          type.name === "InlineMathDollar" ||
+          type.name === "InlineMathBracket"
         ) {
-          const latexString = state.doc.sliceString(from + 2, to - 2);
+          let latexString = state.doc.sliceString(from, to);
+          let display;
+          if (
+            type.name === "BlockMathDollar" ||
+            type.name === "BlockMathBracket"
+          ) {
+            latexString = latexString.slice(2, -2);
+            display = true;
+          } else if (
+            type.name === "InlineMathDollar" ||
+            type.name === "InlineMathBracket"
+          ) {
+            latexString = latexString.slice(1, -1);
+            display = false;
+          }
           widgets.push(
             Decoration.widget({
-              widget: new KaTeXWidget({ latex: latexString }),
-              side: 1,
-              block: false,
-            }).range(state.doc.lineAt(to).to),
+              widget: new KaTeXWidget({
+                latex: latexString,
+                display: display || false,
+              }),
+              side: -1,
+            }).range(to),
           );
         }
       },
