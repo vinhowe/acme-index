@@ -989,8 +989,8 @@ export default function DocumentPage({ id }: { id: string }) {
 
       if (currentCell.type === "drawing") {
         // If we're not on iPad, don't allow editing drawing cells
-        // @ts-expect-error
         if (
+          // @ts-expect-error
           typeof window.webkit?.messageHandlers?.drawingMode === "undefined"
         ) {
           return false;
