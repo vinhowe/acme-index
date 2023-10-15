@@ -83,6 +83,7 @@ import {
   Droppable,
   OnDragStartResponder,
 } from "@hello-pangea/dnd";
+import { imageDisplay } from "@/lib/editor/codemirror/image-view-plugin";
 
 interface SnippetDefinition {
   expansion: string;
@@ -350,6 +351,7 @@ const EXTENSIONS = [
   codeFolding(),
   foldGutter(),
   katexDisplay(),
+  imageDisplay(),
   markdown({
     extensions: [parseMathIPython(latexLanguage.parser)],
   }),
