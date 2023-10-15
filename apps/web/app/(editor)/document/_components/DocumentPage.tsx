@@ -76,6 +76,13 @@ import { ReactMarkdownOptions } from "react-markdown/lib/react-markdown";
 import { DrawingViewer } from "./DrawingViewer";
 import { useCodeMirrorCells } from "./useCodeMirrorCells";
 import { useHistoryState } from "./useHistoryState";
+import {
+  DragDropContext,
+  Draggable,
+  DropResult,
+  Droppable,
+  OnDragStartResponder,
+} from "@hello-pangea/dnd";
 
 interface SnippetDefinition {
   expansion: string;
@@ -926,32 +933,76 @@ export default function DocumentPage({ id }: { id: string }) {
     [document],
   );
 
-  const handleSelectCell = (index: number) => {
-    if (editingCellIndex !== index) {
+  const onDragStart: OnDragStartResponder = useCallback(
+    (start) => {
+      if (!document) return;
       if (editingCellIndex !== null) {
         handleUpdateDocumentCell(editingCellIndex);
       }
       setEditingCellIndex(null);
-    }
-    setSelectedCellIndex(index);
-  };
+      // Find the index of the cell being dragged
+      const sourceIndex = start.source.index;
+      setSelectedCellIndex(sourceIndex);
+    },
+    [document, editingCellIndex, handleUpdateDocumentCell],
+  );
 
-  const handleEditCell = (index: number) => {
-    const currentCell = cells[index];
-    if (!currentCell) return;
+  const onDragEnd = useCallback(
+    (result: DropResult) => {
+      if (!document) return;
+      if (!result.destination) return;
 
-    if (currentCell.type === "drawing") {
-      // If we're not on iPad, don't allow editing drawing cells
-      // @ts-expect-error
-      if (typeof window.webkit?.messageHandlers?.drawingMode === "undefined") {
-        return false;
+      const sourceIndex = result.source.index;
+      const destinationIndex = result.destination.index;
+
+      if (sourceIndex === destinationIndex) return;
+
+      setSelectedCellIndex(destinationIndex);
+      setEditingCellIndex(null);
+
+      const updatedCells = [...cells];
+      const [cell] = updatedCells.splice(sourceIndex, 1);
+      updatedCells.splice(destinationIndex, 0, cell);
+
+      handleUpdateDocumentCells(updatedCells);
+    },
+    [cells, document, handleUpdateDocumentCells],
+  );
+
+  const handleSelectCell = useCallback(
+    (index: number) => {
+      if (editingCellIndex !== index) {
+        if (editingCellIndex !== null) {
+          handleUpdateDocumentCell(editingCellIndex);
+        }
+        setEditingCellIndex(null);
       }
-    }
+      setSelectedCellIndex(index);
+    },
+    [editingCellIndex, handleUpdateDocumentCell],
+  );
 
-    setEditingCellIndex(index);
-    setSelectedCellIndex(index);
-    return true;
-  };
+  const handleEditCell = useCallback(
+    (index: number) => {
+      const currentCell = cells[index];
+      if (!currentCell) return;
+
+      if (currentCell.type === "drawing") {
+        // If we're not on iPad, don't allow editing drawing cells
+        // @ts-expect-error
+        if (
+          typeof window.webkit?.messageHandlers?.drawingMode === "undefined"
+        ) {
+          return false;
+        }
+      }
+
+      setEditingCellIndex(index);
+      setSelectedCellIndex(index);
+      return true;
+    },
+    [cells],
+  );
 
   useEffect(() => {
     const COMMANDS: { [key: string]: () => void } = {
@@ -1122,104 +1173,134 @@ export default function DocumentPage({ id }: { id: string }) {
       </div>
       <div className="py-6 flex flex-col gap-6">
         {cells.length > 0 && (
-          <div>
-            {cells.map((cell, index) => (
-              <div
-                key={index}
-                style={
-                  editingCellIndex === index
-                    ? {
-                        minHeight: `calc(${minHeight}px + 2px)`,
-                      }
-                    : {}
-                }
-              >
-                <div
-                  className={classNames(
-                    "border",
-                    (cell?.hidden || cellEmpty(cell)) && "print:hidden",
-                    cell?.hidden
-                      ? "border-dashed print:hidden"
-                      : "border-solid",
-                    selectedCellIndex === index
-                      ? "dark:bg-neutral-900 bg-neutral-100 border-neutral-400 print:bg-inherit print:border-transparent"
-                      : "border-transparent",
-                  )}
-                  onClick={() => handleSelectCell(index)}
-                  onDoubleClick={(event) => handleEditCell(index)}
-                >
-                  {editingCellIndex === index ? (
-                    <div>
-                      <div
-                        ref={(node) => editingTopRefCallback(node, index)}
-                      ></div>
-                      {!cell || cell?.type === "text" ? (
-                        <div ref={setupEditorContainerRef} />
-                      ) : (
-                        <div className="w-full overflow-x-clip">
-                          <div className="-m-px w-[210mm] overflow-x-clip">
-                            <MemoizedDrawingViewer
-                              selected
-                              drawing={cell.content}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      {!cell || cell?.type === "text" ? (
+          <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+            <Droppable droppableId="document">
+              {(provided, snapshot) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {cells.map((cell, index) => (
+                    <Draggable
+                      key={cell?.id}
+                      draggableId={cell?.id || index.toString()}
+                      index={index}
+                    >
+                      {(provided, snapshot) => (
                         <div
-                          className="px-6 py-4 overflow-x-clip"
-                          ref={(node) =>
-                            markdownContainerRefCallback(node, index)
-                          }
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          style={{
+                            ...(editingCellIndex === index
+                              ? {
+                                  minHeight: `calc(${minHeight}px + 2px)`,
+                                }
+                              : {}),
+                            ...provided.draggableProps.style,
+                          }}
                         >
-                          <MemoizedReactMarkdown
+                          <div
                             className={classNames(
-                              "prose",
-                              "prose-neutral",
-                              "dark:prose-invert",
-                              "prose-h1:font-light",
-                              "prose-headings:font-normal",
-                              "max-w-none",
-                              "w-full",
-                              !cell?.content?.trim() &&
-                                "italic dark:text-neutral-600",
+                              "border",
+                              (cell?.hidden || cellEmpty(cell)) &&
+                                "print:hidden",
+                              cell?.hidden
+                                ? "border-dashed print:hidden"
+                                : "border-solid",
+                              selectedCellIndex === index
+                                ? "dark:bg-neutral-900 bg-neutral-100 border-neutral-400 print:bg-inherit print:border-transparent"
+                                : "border-transparent",
                             )}
-                            remarkPlugins={REMARK_PLUGINS}
-                            rehypePlugins={REHYPE_PLUGINS}
-                            components={REACT_MARKDOWN_COMPONENTS}
+                            onClick={() => handleSelectCell(index)}
+                            onDoubleClick={() => handleEditCell(index)}
                           >
-                            {cell?.content?.trim() ||
-                              "Empty cell. Click to add content."}
-                          </MemoizedReactMarkdown>
-                        </div>
-                      ) : (
-                        <div className="w-full overflow-x-clip">
-                          <div className="w-[210mm]">
-                            <MemoizedDrawingViewer drawing={cell.content} />
+                            {editingCellIndex === index ? (
+                              <div>
+                                <div
+                                  ref={(node) =>
+                                    editingTopRefCallback(node, index)
+                                  }
+                                ></div>
+                                {!cell || cell?.type === "text" ? (
+                                  <div
+                                    ref={setupEditorContainerRef}
+                                    key={cell?.id}
+                                  />
+                                ) : (
+                                  <div className="w-full overflow-x-clip">
+                                    <div className="-m-px w-[210mm] overflow-x-clip">
+                                      <MemoizedDrawingViewer
+                                        selected
+                                        drawing={cell.content}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                {!cell || cell?.type === "text" ? (
+                                  <div
+                                    className="px-6 py-4 overflow-x-clip"
+                                    ref={(node) =>
+                                      markdownContainerRefCallback(node, index)
+                                    }
+                                  >
+                                    <MemoizedReactMarkdown
+                                      className={classNames(
+                                        "prose",
+                                        "prose-neutral",
+                                        "dark:prose-invert",
+                                        "prose-h1:font-light",
+                                        "prose-headings:font-normal",
+                                        "max-w-none",
+                                        "w-full",
+                                        !cell?.content?.trim() &&
+                                          "italic dark:text-neutral-600",
+                                      )}
+                                      remarkPlugins={REMARK_PLUGINS}
+                                      rehypePlugins={REHYPE_PLUGINS}
+                                      components={REACT_MARKDOWN_COMPONENTS}
+                                    >
+                                      {cell?.content?.trim() ||
+                                        "Empty cell. Click to add content."}
+                                    </MemoizedReactMarkdown>
+                                  </div>
+                                ) : (
+                                  <div className="w-full overflow-x-clip">
+                                    <div className="w-[210mm]">
+                                      <MemoizedDrawingViewer
+                                        drawing={cell.content}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                {cell && (
+                                  <div className="absolute top-0 right-0 left-auto p-4 opacity-50 print:hidden">
+                                    <button
+                                      role="button"
+                                      onClick={() =>
+                                        setCellHidden(index, !cell.hidden)
+                                      }
+                                    >
+                                      <span className="material-symbols-rounded select-none -mb-[0.1em]">
+                                        {cell.hidden
+                                          ? "visibility_off"
+                                          : "visibility"}
+                                      </span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
-                      {cell && (
-                        <div className="absolute top-0 right-0 left-auto p-4 opacity-50 print:hidden">
-                          <button
-                            role="button"
-                            onClick={() => setCellHidden(index, !cell.hidden)}
-                          >
-                            <span className="material-symbols-rounded select-none -mb-[0.1em]">
-                              {cell.hidden ? "visibility_off" : "visibility"}
-                            </span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         )}
         <div className="mx-6 flex justify-center gap-4 print:hidden">
           <button
