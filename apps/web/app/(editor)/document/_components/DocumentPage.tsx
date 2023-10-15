@@ -1306,18 +1306,22 @@ export default function DocumentPage({ id }: { id: string }) {
           <button
             className="py-2 px-4 bg-blue-500 dark:bg-blue-800 text-white"
             onClick={() => handleAppendCell("text")}
+            tabIndex={-1}
           >
             Add Text Cell
           </button>
           <button
             className="py-2 px-4 bg-blue-500 dark:bg-blue-800 text-white"
             onClick={() => handleAppendCell("drawing")}
+            tabIndex={-1}
           >
             Add Drawing Cell
           </button>
         </div>
         <div className="flex justify-center opacity-50 print:hidden">
-          <button onClick={restoreDeletedCells}>Restore deleted cells</button>
+          <button onClick={restoreDeletedCells} tabIndex={-1}>
+            Restore deleted cells
+          </button>
         </div>
       </div>
     </div>
