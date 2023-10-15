@@ -33,10 +33,6 @@ import {
 import { Prec } from "@codemirror/state";
 import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
 import { getCM, vim } from "@replit/codemirror-vim";
-import CodeMirror, {
-  ReactCodeMirrorRef,
-  useCodeMirror,
-} from "@uiw/react-codemirror";
 import { offsetDrawing } from "@/lib/editor/drawing-utils";
 import ReactMarkdown from "react-markdown";
 import classNames from "classnames";
