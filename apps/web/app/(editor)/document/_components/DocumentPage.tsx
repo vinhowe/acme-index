@@ -1101,9 +1101,11 @@ export default function DocumentPage({ id }: { id: string }) {
         commandBufferRef.current = "";
       } else if (COMMANDS.hasOwnProperty(newBuffer)) {
         COMMANDS[newBuffer as keyof typeof COMMANDS]();
+        e.preventDefault();
         commandBufferRef.current = "";
       } else if (isPotentialCommand(newBuffer)) {
         commandBufferRef.current = newBuffer;
+        e.preventDefault();
       } else {
         commandBufferRef.current = "";
       }
