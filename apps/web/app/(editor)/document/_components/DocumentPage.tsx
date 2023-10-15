@@ -1307,14 +1307,14 @@ export default function DocumentPage({ id }: { id: string }) {
         )}
         <div className="mx-6 flex justify-center gap-4 print:hidden">
           <button
-            className="py-2 px-4 bg-blue-500 dark:bg-blue-800 text-white"
+            className="py-2 px-4 bg-neutral-300 dark:bg-neutral-800 dark:text-white text-black"
             onClick={() => handleAppendCell("text")}
             tabIndex={-1}
           >
             Add Text Cell
           </button>
           <button
-            className="py-2 px-4 bg-blue-500 dark:bg-blue-800 text-white"
+            className="py-2 px-4 bg-neutral-300 dark:bg-neutral-800 dark:text-white text-black"
             onClick={() => handleAppendCell("drawing")}
             tabIndex={-1}
           >
