@@ -643,6 +643,7 @@ export default function DocumentPage({ id }: { id: string }) {
               content: editorValueRef,
             };
             updatedCells[index] = updatedCell;
+            editorValueRefs.current.delete(index);
           } else {
             updatedCell = cell;
           }
