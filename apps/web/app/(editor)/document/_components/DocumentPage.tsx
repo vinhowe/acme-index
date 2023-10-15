@@ -75,6 +75,7 @@ import { katexDisplay } from "@/lib/editor/codemirror/katex-view-plugin";
 import { ReactMarkdownOptions } from "react-markdown/lib/react-markdown";
 import { DrawingViewer } from "./DrawingViewer";
 import { useCodeMirrorCells } from "./useCodeMirrorCells";
+import { useHistoryState } from "./useHistoryState";
 
 interface SnippetDefinition {
   expansion: string;
@@ -377,7 +378,14 @@ export default function DocumentPage({ id }: { id: string }) {
   );
   const [document, setDocument] = useState<Document | null>(null);
 
-  const [cells, setCells] = useState<Array<DocumentCell | null>>([]);
+  const {
+    state: cells,
+    set: setCells,
+    setWithoutHistory: setCellsWithoutHistory,
+    undo: undoCells,
+    redo: redoCells,
+    clearHistory: clearCellsHistory,
+  } = useHistoryState<Array<DocumentCell | null>>([]);
   const [editingCellIndex, setEditingCellIndex] = useState<number | null>(null);
   const [selectedCellIndex, setSelectedCellIndex] = useState<number | null>(
     null,
@@ -426,7 +434,8 @@ export default function DocumentPage({ id }: { id: string }) {
         );
         Promise.all(cells)
           .then((cells) => {
-            setCells(cells);
+            setCellsWithoutHistory(cells);
+            clearCellsHistory();
             setStatus("loaded");
           })
           .catch((error) => {
@@ -437,7 +446,7 @@ export default function DocumentPage({ id }: { id: string }) {
         setStatus("error");
         setError(error.message);
       });
-  }, [id]);
+  }, [clearCellsHistory, id, setCells, setCellsWithoutHistory]);
 
   const handleUpdateReference = useCallback(
     (id: string) => {
@@ -475,7 +484,7 @@ export default function DocumentPage({ id }: { id: string }) {
         return updatedCells;
       });
     },
-    [document],
+    [document, setCells],
   );
 
   const handleUpdateTitle = useCallback(
@@ -659,7 +668,7 @@ export default function DocumentPage({ id }: { id: string }) {
         return updatedCells;
       });
     },
-    [document?.id, editorValueRefs],
+    [document?.id, setCells],
   );
 
   const handleCommitAndMoveToNextCell = useCallback(() => {
@@ -814,6 +823,7 @@ export default function DocumentPage({ id }: { id: string }) {
     document?.id,
     handleUpdateDocumentCells,
     editorView,
+    setCells,
   ]);
 
   const setupContainerRef = useCallback((node: HTMLDivElement | null) => {
@@ -954,6 +964,8 @@ export default function DocumentPage({ id }: { id: string }) {
       b: () => addCell("below"),
       dd: () => deleteSelectedCell(),
       "⇧⏎": handleCommitAndMoveToNextCell,
+      "⌘z": () => undoCells(),
+      "⌘⇧z": () => redoCells(),
       // ... any other Vim-like commands
     };
 
@@ -1017,6 +1029,10 @@ export default function DocumentPage({ id }: { id: string }) {
 
       let keyString: string = "";
 
+      if (e.metaKey) {
+        keyString += "⌘";
+      }
+
       if (e.shiftKey) {
         keyString += "⇧";
       }
@@ -1060,6 +1076,8 @@ export default function DocumentPage({ id }: { id: string }) {
     handleCommitAndMoveToNextCell,
     handleUpdateDocumentCells,
     createNewCell,
+    undoCells,
+    redoCells,
   ]);
 
   if (status === "error") {
