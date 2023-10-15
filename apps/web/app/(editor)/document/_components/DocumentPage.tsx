@@ -31,6 +31,7 @@ import {
   rectangularSelection,
 } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
+import { languages } from "@codemirror/language-data";
 import { history, defaultKeymap, historyKeymap } from "@codemirror/commands";
 import { getCM, vim } from "@replit/codemirror-vim";
 import { offsetDrawing } from "@/lib/editor/drawing-utils";
@@ -354,6 +355,7 @@ const EXTENSIONS = [
   imageDisplay(),
   markdown({
     extensions: [parseMathIPython(latexLanguage.parser)],
+    codeLanguages: languages,
   }),
   EditorView.lineWrapping,
   latexLanguage.data.of({
