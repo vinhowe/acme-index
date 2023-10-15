@@ -401,6 +401,7 @@ export default function DocumentPage({ id }: { id: string }) {
 
   const editingCell =
     (cells && editingCellIndex !== null && cells[editingCellIndex]) || null;
+
   const { setContainer, view: editorView } = useCodeMirrorCells(
     editingCell?.id || null,
     {
