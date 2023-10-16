@@ -142,6 +142,14 @@ const LATEX_SNIPPETS: Record<string, SnippetDefinition> = {
     expansion: "\\sqrt{${}}${}",
     displayLabel: "\\sqrt",
   },
+  sin: {
+    expansion: "\\sin ${}",
+    displayLabel: "\\sin",
+  },
+  cos: {
+    expansion: "\\cos ${}",
+    displayLabel: "\\cos",
+  },
   langle: {
     expansion: "\\left\\langle ${}\\right\\rangle${}",
     displayLabel: "\\langle",
