@@ -50,7 +50,7 @@ export async function generateStaticParams() {
   // const chapters = await getTextbookChapters("v1");
   const chapters = {
     v1: ["1", "2"],
-    v2: ["1", "2", "3"],
+    v2: ["1", "2", "3", "4"],
   };
   return Object.entries(chapters).flatMap(([book, chapters]) =>
     chapters.map((id) => ({ book, chapter: id })),
