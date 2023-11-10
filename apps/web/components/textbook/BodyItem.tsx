@@ -19,38 +19,50 @@ import Table from "./Table";
 export interface BodyItemsProps {
   bodyItems: BodyItemType[];
   nearestId?: string;
+  virtualizing?: boolean;
 }
 
 export interface BodyItemProps {
   bodyItem: BodyItemType;
   nearestId?: string;
+  virtualizing?: boolean;
 }
 
 export const BodyItems: React.FC<BodyItemsProps> = ({
   bodyItems,
   nearestId,
+  virtualizing = true,
 }) => {
   return (
     <div className="overflow-x-clip">
       {bodyItems.map((item, itemIndex) => {
         return (
-          <BodyItem bodyItem={item} nearestId={nearestId} key={itemIndex} />
+          <MemoBodyItem
+            bodyItem={item}
+            nearestId={nearestId}
+            key={itemIndex}
+            virtualizing={virtualizing}
+          />
         );
       })}
     </div>
   );
 };
 
-const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
+const BodyItem: React.FC<BodyItemProps> = ({
+  bodyItem,
+  nearestId,
+  virtualizing = true,
+}) => {
   nearestId = "id" in bodyItem ? (bodyItem.id as string) : nearestId;
 
   switch (bodyItem.type) {
     case "text":
-      return (
-        <VirtualizedItemWrapper>
-          <InlineBody items={bodyItem.body} />
-        </VirtualizedItemWrapper>
-      );
+      const body = <InlineBody items={bodyItem.body} />;
+      if (virtualizing) {
+        return <VirtualizedItemWrapper>{body}</VirtualizedItemWrapper>;
+      }
+      return body;
     case "standalone_heading":
       const HeadingTag = `h${bodyItem.level}` as keyof JSX.IntrinsicElements;
       return (
@@ -68,9 +80,10 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
     case "exercise":
       return (
         <Exercise exercise={bodyItem}>
-          <BodyItems
+          <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`exercise-${bodyItem.id}`}
+            virtualizing={virtualizing}
           />
         </Exercise>
       );
@@ -93,7 +106,13 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
                     </div>
                   )}
                   {item.body.map((bodyItem, bodyItemIndex) => {
-                    return <BodyItem bodyItem={bodyItem} key={bodyItemIndex} />;
+                    return (
+                      <MemoBodyItem
+                        bodyItem={bodyItem}
+                        key={bodyItemIndex}
+                        virtualizing={virtualizing}
+                      />
+                    );
                   })}
                 </li>
               );
@@ -137,51 +156,60 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
     case "equation":
       return (
         <Equation equation={bodyItem}>
-          <BodyItems
+          <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`equation-${bodyItem.id}`}
+            virtualizing={virtualizing}
           />
         </Equation>
       );
     case "algorithm":
       return (
         <Algorithm algorithm={bodyItem}>
-          <BodyItems
+          <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`algorithm-${bodyItem.id}`}
+            virtualizing={virtualizing}
           />
         </Algorithm>
       );
     case "table":
       return (
         <Table table={bodyItem}>
-          <BodyItems
+          <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`table-${bodyItem.id}`}
+            virtualizing={virtualizing}
           />
         </Table>
       );
     case "result":
       return (
         <Result result={bodyItem}>
-          <BodyItems
+          <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`result-${bodyItem.id}`}
+            virtualizing={virtualizing}
           />
         </Result>
       );
     case "figure":
       return (
         <Figure figure={bodyItem}>
-          <BodyItems bodyItems={bodyItem.body} nearestId={nearestId} />
+          <MemoBodyItems
+            bodyItems={bodyItem.body}
+            nearestId={nearestId}
+            virtualizing={virtualizing}
+          />
         </Figure>
       );
     case "proof":
       return (
         <Proof proof={bodyItem}>
-          <BodyItems
+          <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`proof-${bodyItem.of}`}
+            virtualizing={virtualizing}
           />
         </Proof>
       );
@@ -189,5 +217,8 @@ const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
       return <PageBreak page={bodyItem.page} />;
   }
 };
+
+const MemoBodyItem = React.memo(BodyItem);
+const MemoBodyItems = React.memo(BodyItems);
 
 export default BodyItem;
