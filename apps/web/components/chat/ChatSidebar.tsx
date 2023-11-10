@@ -410,37 +410,37 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
   }
 
   return (
-    <div className="overflow-hidden flex-1 w-full px-4 py-4">
-      <div className="h-full max-h-full flex flex-col justify-between">
-        <div className="shrink grow-1 overflow-scroll -mt-4 pt-4 -mb-5 pb-5 -mx-4 px-4">
-          <div className="flex flex-wrap w-full justify-between items-baseline mb-4 gap-2">
-            {referenceId && (
-              <div className="flex justify-start gap-1">
-                <h2 className="text-lg font-button">
-                  {displayReference || referenceId}
-                </h2>
-              </div>
-            )}
-            {chat && (
-              <div className="flex justify-start gap-1">
-                <div
-                  className={classNames(
-                    "font-button",
-                    "text-sm",
-                    "px-1",
-                    "py-0.5",
-                    "text-blue-900",
-                    "dark:text-blue-200",
-                    "bg-blue-200",
-                    "dark:bg-blue-900",
-                    "rounded",
-                  )}
-                >
-                  {chat.provider}/{chat.model}
-                </div>
-              </div>
-            )}
+    <div className="overflow-hidden flex flex-col flex-1 w-full h-full px-4 py-4">
+      <div className="flex flex-wrap w-full justify-between items-baseline mb-4 gap-2">
+        {referenceId && (
+          <div className="flex justify-start gap-1">
+            <h2 className="text-lg font-button">
+              {displayReference || referenceId}
+            </h2>
           </div>
+        )}
+        {chat && (
+          <div className="flex justify-start gap-1">
+            <div
+              className={classNames(
+                "font-button",
+                "text-sm",
+                "px-1",
+                "py-0.5",
+                "text-blue-900",
+                "dark:text-blue-200",
+                "bg-blue-200",
+                "dark:bg-blue-900",
+                "rounded",
+              )}
+            >
+              {chat.provider}/{chat.model}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="shrink grow flex flex-col justify-between overflow-scroll">
+        <div className="shrink grow overflow-scroll -mt-4 pt-4 -mb-5 pb-5 -mx-4 px-4">
           <div>
             <div>
               {turns &&
