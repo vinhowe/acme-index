@@ -44,7 +44,7 @@
     "katex": "^0.16.7",
     "micromark-util-symbol": "^2.0.0",
     "mime-types": "^2.1.35",
-    "next": "13.4.13",
+    "next": "14.0.1",
     "postcss": "8.4.23",
     "react": "18.2.0",
     "react-dom": "18.2.0",
