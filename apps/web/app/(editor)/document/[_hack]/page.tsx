@@ -1,5 +1,3 @@
-"use client";
-
 import dynamic from "next/dynamic";
 
 const DocumentPage = dynamic(
@@ -9,6 +7,14 @@ const DocumentPage = dynamic(
   },
 );
 
-export default function RootDocumentPage() {
+export default async function RootDocumentPage({
+  params: _,
+}: {
+  params: { id: string };
+}) {
   return <DocumentPage />;
+}
+
+export function generateStaticParams() {
+  return [{ _hack: "hack" }];
 }

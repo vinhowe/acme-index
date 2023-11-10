@@ -1,10 +1,19 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: "export",
-  // images: { unoptimized: true },
-  // reactStrictMode: true,
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
-};
+module.exports = (phase, { defaultConfig }) => {
+  if (process.env.NODE_ENV === "production") {
+    /** @type {import('next').NextConfig} */
+    return {
+      output: "export",
+      // images: { unoptimized: true },
+      // reactStrictMode: true,
+      trailingSlash: true,
+      skipTrailingSlashRedirect: true,
+    };
+  }
 
-module.exports = nextConfig;
+  return {
+    // images: { unoptimized: true },
+    // reactStrictMode: true,
+    trailingSlash: true,
+    skipTrailingSlashRedirect: true,
+  };
+};
