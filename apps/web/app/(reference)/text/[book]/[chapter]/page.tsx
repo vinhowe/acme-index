@@ -26,8 +26,8 @@ export default async function Textbook({
 
 export async function generateStaticParams() {
   const chapters = {
-    v1: ["1", "2", "3", "4"],
-    v2: ["1", "2", "3", "4"],
+    v1: ["1", "2", "3", "4", "5"],
+    v2: ["1", "2", "3", "4", "5", "6", "7", "8"],
   };
   return Object.entries(chapters).flatMap(([book, chapters]) =>
     chapters.map((id) => ({ book, chapter: id })),

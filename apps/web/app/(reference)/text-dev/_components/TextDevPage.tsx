@@ -1,17 +1,15 @@
 "use client";
 import React, { Fragment } from "react";
-import ReferenceChapterText from "@/components/textbook/ReferenceChapterText";
 import { getTextbookChapterExercises, getTextbookChapterText } from "@/lib/api";
 import { ExercisesChapter, TextChapter } from "@acme-index/common";
 import { useEffect, useState, memo } from "react";
 import equal from "fast-deep-equal";
-import { BodyItems, MemoBodyItems } from "@/components/textbook/BodyItem";
+import { MemoBodyItems } from "@/components/textbook/BodyItem";
 import {
   MemoSectionItem,
   SectionItemsProps,
 } from "@/components/textbook/SectionItems";
 import { ChangeHighlightingContextProvider } from "@/components/textbook/ChangeHighlightingItemWrapper";
-import Exercise from "@/components/textbook/Exercise";
 import MathRender from "@/components/textbook/MathRender";
 
 interface ChapterWithIntegratedExercisesProps {
@@ -82,17 +80,27 @@ const ExerciseIntegratedSectionItems: React.FC<
   );
 };
 
-export default function Textbook({
-  params,
-}: {
-  params: { book: string; chapter: string };
-}) {
-  const { book, chapter: chapterId } = params;
+const urlRegex = /\/text-dev\/(?<book>[^?&#/]*)\/(?<chapter>[^?&#/]*)/;
+
+const bookAndChapter = (pathname: string) => {
+  const match = urlRegex.exec(pathname);
+  if (!match || !match.groups) {
+    return {};
+  }
+  return { book: match.groups.book, chapter: match.groups.chapter };
+};
+
+export default function Textbook() {
+  const { book, chapter: chapterId } = bookAndChapter(window.location.pathname);
   const [chapter, setChapter] = useState<TextChapter | null>(null);
   const [exercises, setExercises] = useState<ExercisesChapter | null>(null);
   const [changeCount, setChangeCount] = useState(0);
 
   useEffect(() => {
+    if (!book || !chapterId) {
+      return;
+    }
+
     // Function to fetch chapter text
     const fetchChapterText = async () => {
       const chapterText = (await getTextbookChapterText(
@@ -129,8 +137,7 @@ export default function Textbook({
   }, [book, chapter, chapterId, exercises]);
 
   return (
-    chapter &&
-    exercises && (
+    (book && chapter && exercises && (
       <div className="p-8 sm:p-10">
         <main className="prose prose-neutral mx-auto mt-8 dark:prose-invert">
           <ChangeHighlightingContextProvider changeCount={changeCount}>
@@ -142,6 +149,6 @@ export default function Textbook({
           </ChangeHighlightingContextProvider>
         </main>
       </div>
-    )
+    )) || <div>Loading...</div>
   );
 }

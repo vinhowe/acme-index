@@ -482,7 +482,7 @@ const ChatTurnSection = ({
                           back: string;
                           reference: string;
                         },
-                        i,
+                        i: number,
                       ) => (
                         <ChatBasicFlashcardSuggestionViewer
                           key={i}
@@ -531,7 +531,7 @@ const ChatTurnSection = ({
                           steps: { context: string; content: string }[];
                           reference: string;
                         },
-                        i,
+                        i: number,
                       ) => (
                         <ChatWorkedFlashcardSuggestionViewer
                           key={i}
