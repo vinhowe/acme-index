@@ -41,11 +41,7 @@ const ActionButton = ({
   );
 };
 
-const MarkdownRenderer = ({
-  children,
-}: {
-  children: React.ReactNode;
-}): JSX.Element => {
+const MarkdownRenderer = ({ children }: { children: string }): JSX.Element => {
   return (
     <ReactMarkdown
       className={classNames(
@@ -355,8 +351,9 @@ export default function FlashcardStudyPage() {
               <div className="flex flex-col gap-4">
                 <MarkdownRenderer>
                   {/* {currentFlashcard?.type currentFlashcard?.content?.back || "..."} */}
-                  {currentFlashcard?.type === "basic" &&
-                    currentFlashcard?.content?.back}
+                  {currentFlashcard?.type === "basic"
+                    ? currentFlashcard?.content?.back
+                    : "No content…"}
                 </MarkdownRenderer>
                 <div className="flex justify-center gap-6">
                   <ActionButton onClick={() => scheduleFlashcard(0.25)}>

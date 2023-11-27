@@ -1,12 +1,5 @@
-import {
-  API_URL,
-  getFlashcard,
-  updateFlashcard,
-  uploadFile,
-} from "@/lib/api";
-import {
-  Flashcard,
-} from "@acme-index/common";
+import { API_URL, getFlashcard, updateFlashcard, uploadFile } from "@/lib/api";
+import { Flashcard } from "@acme-index/common";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ResizableReferenceInput from "../../document/_components/ResizableReferenceInput";
 import {
@@ -379,6 +372,7 @@ function FlashcardEditor({
 
   return (
     <div className="flex gap-4">
+      {/* @ts-ignore */}
       <div ref={editor} className="flex-[5]" />
       <MemoizedReactMarkdown
         className={classNames(
