@@ -6,6 +6,15 @@ interface HistoryState<T> {
   future: T[];
 }
 
+export interface HistoryStateType<T> {
+  state: T;
+  set: (newState: T | ((prevState: T) => T)) => void;
+  setWithoutHistory: (newState: T | ((prevState: T) => T)) => void;
+  undo: () => void;
+  redo: () => void;
+  clearHistory: () => void;
+}
+
 export function useHistoryState<T>(
   initialState: T,
   maxHistoryLength: number = Infinity,

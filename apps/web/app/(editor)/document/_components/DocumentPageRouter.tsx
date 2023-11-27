@@ -1,12 +1,11 @@
 "use client";
 import { usePathname } from "next/navigation";
 import DocumentsPage from "./DocumentsPage";
-import { getDocument, createDocument, updateDocument } from "@/lib/api";
-import { useCallback, useEffect, useState } from "react";
+import { createDocument } from "@/lib/api";
+import { useCallback, useState } from "react";
 import ResizableDocumentTitleInput from "./ResizableDocumentTitleInput";
-import ResizableReferenceInput from "./ResizableReferenceInput";
-import { Document } from "@acme-index/common";
 import DocumentPage from "./DocumentPage";
+import { PrintAwareDocumentFrame } from "./PrintAwareDocumentFrame";
 
 const urlRegex = /\/document\/(?<id>[^?&#]*)/;
 
@@ -27,14 +26,14 @@ function NewDocumentPage() {
   }, []);
 
   return (
-    <div className="mx-auto w-[210mm] bg-[#fafafa] dark:bg-[#0a0a0a] relative">
+    <PrintAwareDocumentFrame>
       <div className="p-6 flex flex-col items-start gap-4">
         <ResizableDocumentTitleInput
           initialSelected={true}
           onSubmit={handleCreateDocument}
         />
       </div>
-    </div>
+    </PrintAwareDocumentFrame>
   );
 }
 
