@@ -1,5 +1,5 @@
 "use client";
-import { ChatHistoryItem } from "@/lib/api";
+import { ChatHistoryItem, createFlashcard, getFlashcard } from "@/lib/api";
 import classNames from "classnames";
 import {
   MutableRefObject,
@@ -27,7 +27,7 @@ import {
 import wikiLinkPlugin from "@/lib/textbook/link-parsing/remark-plugin";
 import { parseRef } from "textref";
 import { buildDisplayReference } from "@/lib/textbook/textbook-ref";
-import { ChatTurn } from "@acme-index/common";
+import { ChatTurn, CompletionResponse } from "@acme-index/common";
 import { ReactMarkdownOptions } from "react-markdown/lib/react-markdown";
 import rehypeRaw from "rehype-raw";
 
@@ -209,6 +209,156 @@ const REACT_MARKDOWN_COMPONENTS: ReactMarkdownOptions["components"] = {
 
 const MemoizedReactMarkdown = memo(ReactMarkdown);
 
+const ChatTurnMarkdownRenderer = ({ children }: { children: string }) => {
+  return (
+    <MemoizedReactMarkdown
+      className={classNames(
+        "mb-2",
+        "prose",
+        "prose-neutral",
+        "dark:prose-invert",
+        "w-full",
+      )}
+      remarkPlugins={REMARK_PLUGINS}
+      rehypePlugins={REHYPE_PLUGINS}
+      components={REACT_MARKDOWN_COMPONENTS}
+    >
+      {children}
+    </MemoizedReactMarkdown>
+  );
+};
+
+const ChatBasicFlashcardSuggestionViewer = ({
+  suggestion,
+}: {
+  suggestion: { back: string; front: string; reference?: string };
+}) => {
+  const createSuggestedFlashcard = useCallback(() => {
+    return createFlashcard({
+      type: "basic",
+      content: {
+        front: suggestion.front,
+        back: suggestion.back,
+      },
+      reference: suggestion.reference,
+    });
+  }, [suggestion.back, suggestion.front, suggestion.reference]);
+
+  const createAndOpenSuggestedFlashcard = useCallback(() => {
+    createSuggestedFlashcard().then((flashcard) => {
+      window.open(`/flashcard/edit/${flashcard.id}`, "_blank");
+    });
+  }, [createSuggestedFlashcard]);
+
+  return (
+    <div className="my-2 flex flex-col items-start p-4 rounded border dark:border-blue-800/50 dark:bg-blue-950/20 w-full">
+      <div className="flex justify-between w-full items-baseline">
+        <span className="uppercase font-mono text-xs mb-4 font-bold tracking-wider dark:text-neutral-300">
+          Flashcard
+        </span>
+        <span className="font-button text-sm">{suggestion.reference}</span>
+      </div>
+      <div className="flex flex-col gap-2 w-full">
+        <ChatTurnMarkdownRenderer>{suggestion.front}</ChatTurnMarkdownRenderer>
+        <hr className="dark:border-t-neutral-700" />
+        <ChatTurnMarkdownRenderer>{suggestion.back}</ChatTurnMarkdownRenderer>
+      </div>
+      <div className="w-full flex justify-center mt-1 gap-2">
+        <button
+          className={classNames(
+            "material-symbols-rounded select-none text-xl dark:bg-blue-950 w-full rounded py-1",
+          )}
+          role="button"
+          onClick={createSuggestedFlashcard}
+        >
+          add
+        </button>
+        <button
+          className={classNames(
+            "material-symbols-rounded select-none text-xl dark:bg-blue-950 w-full rounded py-1",
+          )}
+          role="button"
+          onClick={createAndOpenSuggestedFlashcard}
+        >
+          open_in_new
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ChatWorkedFlashcardSuggestionViewer = ({
+  suggestion,
+}: {
+  suggestion: {
+    steps: {
+      context: string;
+      content: string;
+    }[];
+    reference?: string;
+  };
+}) => {
+  const createSuggestedFlashcard = useCallback(() => {
+    return createFlashcard({
+      type: "worked",
+      content: {
+        steps: suggestion.steps,
+      },
+      reference: suggestion.reference,
+    });
+  }, [suggestion.reference, suggestion.steps]);
+
+  const createAndOpenSuggestedFlashcard = useCallback(() => {
+    createSuggestedFlashcard().then((flashcard) => {
+      window.open(`/flashcard/edit/${flashcard.id}`, "_blank");
+    });
+  }, [createSuggestedFlashcard]);
+
+  return (
+    <div className="my-2 flex flex-col items-start p-4 rounded border dark:border-blue-800/50 dark:bg-blue-950/20 w-full">
+      <span className="uppercase font-mono text-xs mb-3 font-bold tracking-wider dark:text-neutral-300">
+        Worked Flashcard
+      </span>
+      <div className="flex flex-col gap-2">
+        {suggestion.steps.map((step, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            {step.context && (
+              <>
+                <hr className="dark:border-t-neutral-700" />
+                <ChatTurnMarkdownRenderer>
+                  {step.context}
+                </ChatTurnMarkdownRenderer>
+              </>
+            )}
+            <hr className="dark:border-t-neutral-700" />
+            <ChatTurnMarkdownRenderer>{step.content}</ChatTurnMarkdownRenderer>
+          </div>
+        ))}
+      </div>
+      <div className="w-full flex justify-center mt-1 gap-2">
+        <button
+          className={classNames(
+            "material-symbols-rounded select-none text-xl dark:bg-blue-950 w-full rounded py-1",
+          )}
+          role="button"
+          onClick={createSuggestedFlashcard}
+        >
+          add
+        </button>
+        <button
+          className={classNames(
+            "material-symbols-rounded select-none text-xl dark:bg-blue-950 w-full rounded py-1",
+          )}
+          role="button"
+          onClick={createAndOpenSuggestedFlashcard}
+        >
+          open_in_new
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ChatTurnSection = ({
   turn,
   onEdit,
@@ -217,7 +367,14 @@ const ChatTurnSection = ({
   onEdit?: () => void;
 }) => {
   const copyToClipboard = useCallback(() => {
-    navigator.clipboard.writeText(turn.response || "");
+    navigator.clipboard.writeText(
+      typeof turn.response === "string"
+        ? turn.response
+        : turn.response
+            ?.filter((chunk) => chunk.type === "completion" && chunk.content)
+            ?.map((chunk) => (chunk as CompletionResponse).content)
+            ?.join("") || "",
+    );
   }, [turn.response]);
 
   return (
@@ -271,20 +428,134 @@ const ChatTurnSection = ({
           </button>
         </div>
       </div>
-      <MemoizedReactMarkdown
-        className={classNames(
-          "mb-2",
-          "prose",
-          "prose-neutral",
-          "dark:prose-invert",
-          "w-full",
-        )}
-        remarkPlugins={REMARK_PLUGINS}
-        rehypePlugins={REHYPE_PLUGINS}
-        components={REACT_MARKDOWN_COMPONENTS}
-      >
-        {turn.response || ""}
-      </MemoizedReactMarkdown>
+      {turn.response &&
+        (typeof turn.response === "string" ? (
+          <ChatTurnMarkdownRenderer>
+            {turn.response || ""}
+          </ChatTurnMarkdownRenderer>
+        ) : (
+          turn.response?.map((chunk, i) => {
+            if (chunk.type === "completion") {
+              return (
+                <ChatTurnMarkdownRenderer key={i}>
+                  {chunk.content}
+                </ChatTurnMarkdownRenderer>
+              );
+            } else {
+              let functionData;
+              try {
+                functionData = JSON.parse(
+                  chunk.arguments.replaceAll("\\", "\\\\").replaceAll("\n", ""),
+                );
+              } catch (e) {
+                return chunk.arguments;
+              }
+              console.log(functionData);
+              if (chunk.name === "create_basic_flashcard") {
+                return (
+                  <ChatBasicFlashcardSuggestionViewer
+                    key={i}
+                    suggestion={
+                      {
+                        front: functionData.front
+                          .replaceAll("\\\\", "\\")
+                          .replaceAll("\\n", "\n"),
+                        back: functionData.back
+                          .replaceAll("\\\\", "\\")
+                          .replaceAll("\\n", "\n"),
+                        reference: functionData.reference,
+                      } as {
+                        front: string;
+                        back: string;
+                        reference?: string;
+                      }
+                    }
+                  />
+                );
+              } else if (chunk.name === "create_basic_flashcards") {
+                return (
+                  <div key={i}>
+                    {functionData.cards.map(
+                      (
+                        flashcard: {
+                          front: string;
+                          back: string;
+                          reference: string;
+                        },
+                        i,
+                      ) => (
+                        <ChatBasicFlashcardSuggestionViewer
+                          key={i}
+                          suggestion={{
+                            front: flashcard.front
+                              .replaceAll("\\\\", "\\")
+                              .replaceAll("\\n", "\n"),
+                            back: flashcard.back
+                              .replaceAll("\\\\", "\\")
+                              .replaceAll("\\n", "\n"),
+                            reference: flashcard.reference,
+                          }}
+                        />
+                      ),
+                    )}
+                  </div>
+                );
+              } else if (chunk.name === "create_worked_flashcard") {
+                return (
+                  <ChatWorkedFlashcardSuggestionViewer
+                    key={i}
+                    suggestion={
+                      {
+                        steps: functionData.steps.map((step: any) => ({
+                          context: step.context
+                            ?.replaceAll("\\\\", "\\")
+                            ?.replaceAll("\\n", "\n"),
+                          content: step.content
+                            .replaceAll("\\\\", "\\")
+                            .replaceAll("\\n", "\n"),
+                        })),
+                        reference: functionData.reference,
+                      } as {
+                        steps: { context: string; content: string }[];
+                        reference?: string;
+                      }
+                    }
+                  />
+                );
+              } else if (chunk.name === "create_worked_flashcards") {
+                return (
+                  <div key={i}>
+                    {functionData.cards.map(
+                      (
+                        flashcard: {
+                          steps: { context: string; content: string }[];
+                          reference: string;
+                        },
+                        i,
+                      ) => (
+                        <ChatWorkedFlashcardSuggestionViewer
+                          key={i}
+                          suggestion={{
+                            steps: flashcard.steps.map((step: any) => ({
+                              context: step.context
+                                ?.replaceAll("\\\\", "\\")
+                                ?.replaceAll("\\n", "\n"),
+                              content: step.content
+                                .replaceAll("\\\\", "\\")
+                                .replaceAll("\\n", "\n"),
+                            })),
+                            reference: flashcard.reference,
+                          }}
+                        />
+                      ),
+                    )}
+                  </div>
+                );
+              }
+              return `Unknown function: ${chunk.name}`;
+            }
+          })
+        ))}
     </div>
   );
 };
@@ -319,27 +590,30 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
   useEffect(() => {
     const turns = state.chatData?.turns;
     if (!turns) {
-      setStreamingTurn(null);
+      if (streamingTurn) {
+        setStreamingTurn(null);
+      }
       setTurns(null);
       return;
     }
 
     if (turns.length === 0) {
-      setStreamingTurn(null);
+      if (streamingTurn) {
+        setStreamingTurn(null);
+      }
       setTurns([]);
       return;
     }
 
-    const lastTurn = turns[turns.length - 1];
-
-    if (!lastTurn || lastTurn.status !== "pending") {
-      setTurns(turns);
-      setStreamingTurn(null);
-    } else {
+    if (streaming && streamingTurn && streamingTurn.chatId === chat?.id) {
       setTurns(turns.slice(0, -1));
-      setStreamingTurn(lastTurn as ChatTurn);
+    } else {
+      setTurns(turns);
+      if (streamingTurn) {
+        setStreamingTurn(null);
+      }
     }
-  }, [state.chatData?.turns]);
+  }, [chat?.id, state.chatData?.turns, streamingTurn, streaming]);
 
   useEffect(() => {
     if (state?.initialComposingText) {
@@ -364,6 +638,7 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
       lastTimeClickedRef.current = now;
       if (streaming) {
         cancelStreaming();
+        setStreamingTurn(null);
         return;
       }
       if (abortSignalRef.current) {
@@ -378,12 +653,24 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
         },
       });
       setStreaming(true);
+      setStreamingTurn({
+        query,
+        status: "pending",
+        chatId: chat?.id,
+      } as ChatTurn);
+      let streamingTurnSet = false;
       await sendMessage(
         query,
         turns?.length ? turns[turns.length - 1].id : null,
         chat ?? null,
         referenceId,
-        (turn: ChatTurn) => streamingUpdateRef.current(turn),
+        (turn: ChatTurn) => {
+          if (!streamingTurnSet) {
+            setStreamingTurn(turn);
+            streamingTurnSet = true;
+          }
+          streamingUpdateRef.current(turn);
+        },
         dispatch,
         abortSignalRef.current.signal,
       );
@@ -455,6 +742,7 @@ const ChatSession = ({ referenceId }: { referenceId: string }) => {
                 <StreamingChatTurnSection
                   streamingRef={streamingUpdateRef}
                   turn={streamingTurn}
+                  key={streamingTurn?.id}
                 />
               )}
             </div>
@@ -603,7 +891,10 @@ const ChatSidebar: React.FC = () => {
             activeId={state?.chatData?.chat?.id || state?.referenceId || null}
           />
           {state.referenceId ? (
-            <ChatSession referenceId={state.referenceId} />
+            <ChatSession
+              referenceId={state.referenceId}
+              key={state.referenceId}
+            />
           ) : (
             <ChatHistoryPanel />
           )}

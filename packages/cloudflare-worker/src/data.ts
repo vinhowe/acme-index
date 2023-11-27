@@ -1,4 +1,15 @@
-import { Chat, ChatTurn, Document, DocumentCell, History, Reference, UniqueID, UniqueObject } from '@acme-index/common';
+import {
+  Chat,
+  ChatTurn,
+  Document,
+  DocumentCell,
+  Flashcard,
+  History,
+  Reference,
+  StructuredChatResponse,
+  UniqueID,
+  UniqueObject,
+} from '@acme-index/common';
 import { v4 as uuid } from 'uuid';
 
 export type CreateChatTurnBody = Pick<ChatTurn, 'chatId' | 'parent' | 'additionalContextReferences' | 'query' | 'response' | 'error'>;
@@ -20,6 +31,7 @@ export interface Database {
   documents: DocumentAccess;
   documentCells: DocumentCellAccess;
   references: ReferenceAccess;
+  flashcards: FlashcardAccess;
 }
 
 export class HistoryAccess implements MutableObjectTable<History> {
@@ -195,6 +207,53 @@ export class DocumentAccess implements ObjectTable<Document> {
   }
 }
 
+export class FlashcardAccess implements ObjectTable<Flashcard> {
+  constructor(private table: MutableObjectTable<Flashcard>) {
+    this.table = table;
+  }
+
+  async get(id: string): Promise<Flashcard | null> {
+    return this.table.get(id);
+  }
+
+  async getAll(): Promise<Flashcard[]> {
+    return this.table.getAll();
+  }
+
+  async set(id: string, value: Omit<Flashcard, keyof UniqueObject>): Promise<Flashcard> {
+    return this.table.set(id, value);
+  }
+
+  async create(value: Pick<Flashcard, 'type' | 'reference' | 'content'>): Promise<Flashcard> {
+    const createdAt = new Date().toISOString();
+    return this.table.create({
+      ...value,
+      deleted: false,
+      suspended: false,
+      special: false,
+      createdAt,
+      updatedAt: createdAt,
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.table.delete(id);
+  }
+
+  async update(id: string, value: Partial<Omit<Flashcard, keyof UniqueObject | 'createdAt' | 'updatedAt'>>): Promise<Flashcard> {
+    const cell = await this.get(id);
+    if (!cell) {
+      throw new Error('Cell not found');
+    }
+    const filteredValue: Partial<Flashcard> = Object.fromEntries(Object.entries(value).filter(([_, v]) => v !== undefined));
+    return this.table.set(id, {
+      ...cell,
+      ...filteredValue,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+}
+
 export class ChatAccess implements ObjectTable<Chat> {
   constructor(private table: MutableObjectTable<Chat>) {
     this.table = table;
@@ -357,7 +416,7 @@ export class ChatTurnAccess implements ObjectTable<ChatTurn> {
     await this.table.set(id, turn);
   }
 
-  async updateStreamingTurn(id: UniqueID, updatedResponse: string) {
+  async updateStreamingTurn(id: UniqueID, updatedResponse: string | StructuredChatResponse[]) {
     const turn = await this.get(id);
     if (!turn) {
       throw new Error('Turn not found');

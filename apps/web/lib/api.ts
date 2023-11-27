@@ -9,7 +9,11 @@ import {
   Document,
   DocumentCell,
   ChatHistoryInfo,
+  StructuredChatResponse,
+  FunctionCallResponse,
+  CompletionResponse,
 } from "@acme-index/common";
+import { Flashcard } from "@acme-index/common";
 
 export interface ChatHistoryItem {
   id: string;
@@ -153,10 +157,63 @@ export async function generateTurnStreaming(
       if (message.event === "update") {
         const update = JSON.parse(message.data);
         if (!turn?.response) {
-          turn!.response = "";
+          turn!.response = [];
         }
         if (update.completion) {
-          turn!.response += update.completion;
+          const turnResponseChunk =
+            turn!.response.length > 0
+              ? turn!.response[turn!.response.length - 1]
+              : null;
+
+          if (
+            !turnResponseChunk ||
+            (typeof turnResponseChunk !== "string" &&
+              (turnResponseChunk.type === "function_call") !==
+                (update.completion?.function_call !== undefined))
+          ) {
+            let newResponseChunk: StructuredChatResponse;
+            if (update.completion.function_call) {
+              newResponseChunk = {
+                type: "function_call",
+                name: update.completion?.function_call?.name,
+                arguments: update.completion?.function_call?.arguments || "",
+              };
+            } else {
+              newResponseChunk = {
+                type: "completion",
+                content: update.completion?.content || "",
+              };
+            }
+
+            (turn!.response as StructuredChatResponse[]).push(newResponseChunk);
+          } else {
+            if (update.completion?.function_call) {
+              if (
+                !turnResponseChunk ||
+                (turnResponseChunk as StructuredChatResponse).type !==
+                  "function_call"
+              ) {
+                throw new Error("Invalid completion chunk");
+              }
+              if (update.completion?.function_call?.name) {
+                (turnResponseChunk as FunctionCallResponse).name =
+                  update.completion?.function_call?.name;
+              } else if (update.completion?.function_call?.arguments) {
+                (turnResponseChunk as FunctionCallResponse).arguments +=
+                  update.completion?.function_call?.arguments;
+              }
+            } else {
+              if (
+                !turnResponseChunk ||
+                (turnResponseChunk as StructuredChatResponse).type !==
+                  "completion"
+              ) {
+                throw new Error("Invalid completion chunk");
+              }
+              (turnResponseChunk as CompletionResponse).content +=
+                update.completion.content || "";
+            }
+          }
         }
         if (update.tokenCount) {
           turn!.tokenCount = update.tokenCount;
@@ -238,6 +295,75 @@ export const getTextbookChapters = cache(
     return json;
   },
 );
+
+export const createFlashcard = async ({
+  content,
+  type,
+  reference,
+}: Pick<Flashcard, "content" | "type" | "reference">): Promise<Flashcard> => {
+  const response = await fetch(`${API_URL}/flashcard`, {
+    method: "POST",
+    body: JSON.stringify({ content, type, reference }),
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json;
+};
+
+export const getFlashcard = async (id: string): Promise<Flashcard> => {
+  const response = await fetch(`${API_URL}/flashcard/${id}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json;
+};
+
+export const updateFlashcard = async (
+  id: string,
+  update: Partial<Flashcard>,
+): Promise<Flashcard> => {
+  const response = await fetch(`${API_URL}/flashcard/${id}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(update),
+  });
+  const json = await response.json();
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json;
+};
+
+export const getFlashcards = async (): Promise<Flashcard[]> => {
+  const response = await fetch(`${API_URL}/flashcard`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await response.json();
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json;
+};
 
 export const createDocument = async (
   id: string,

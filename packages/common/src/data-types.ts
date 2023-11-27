@@ -18,6 +18,23 @@ export type Chat = UniqueObject & {
   updatedAt: string;
 };
 
+type BaseStructuredChatResponse = {
+  type: string;
+}
+
+export interface CompletionResponse extends BaseStructuredChatResponse {
+  type: "completion";
+  content: string;
+}
+
+export interface FunctionCallResponse extends BaseStructuredChatResponse {
+  type: "function_call";
+  name: string;
+  arguments: string;
+}
+
+export type StructuredChatResponse = CompletionResponse | FunctionCallResponse;
+
 export type ChatTurn = UniqueObject & {
   chatId: UniqueID;
   child?: UniqueID;
@@ -27,7 +44,7 @@ export type ChatTurn = UniqueObject & {
   additionalContextReferences?: string[];
   query: string;
   status: "pending" | "finished" | "error";
-  response?: string;
+  response?: string | StructuredChatResponse[];
   error?: string;
   tokenCount?: number;
   createdAt: string;
@@ -79,3 +96,35 @@ export type Document = UniqueObject & {
   createdAt: string;
   updatedAt: string;
 };
+
+export type BaseFlashcard<T> = UniqueObject & {
+  type: string;
+  reference?: string;
+  createdAt: string;
+  updatedAt: string;
+  deleted: boolean;
+  suspended: boolean;
+  // Magic for exams
+  special: boolean;
+  content: T;
+};
+
+export interface BasicFlashcard
+  extends BaseFlashcard<{
+    front: string;
+    back: string;
+  }> {
+  type: "basic";
+}
+
+export interface WorkedFlashcard
+  extends BaseFlashcard<{
+    steps: Array<{
+      context: string;
+      content: string;
+    }>;
+  }> {
+  type: "worked";
+}
+
+export type Flashcard = BasicFlashcard | WorkedFlashcard;

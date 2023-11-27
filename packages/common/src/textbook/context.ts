@@ -97,7 +97,8 @@ class TextbookContextRenderer {
         // —one way to do this is to add a list of references to keep
         // track of—we can pull it from the exercise or the target
         return (
-          !["example", "unexample", "application", "vista"].includes(
+          // !["example", "unexample", "application", "vista"].includes(
+          !["application", "vista"].includes(
             bodyItem.result_type,
           ) ||
           (this.pinnedReferences !== undefined &&

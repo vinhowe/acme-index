@@ -41,7 +41,9 @@ const ReferenceInteractions = ({ reference }: ReferenceInteractionsProps) => {
               className="line-clamp-2 flex w-full items-start gap-3"
               onClick={() => openChat(interaction.id, dispatch)}
             >
-              <span className="underline">{interaction.description}</span>
+              <span className="underline line-clamp-2">
+                {interaction.description}
+              </span>
               <div className="flex justify-start gap-1 shrink-0 mt-1">
                 <div
                   className={classNames(

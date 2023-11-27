@@ -10,6 +10,7 @@ import {
   ChatTurn,
   ExercisesChapter,
   SectionItem,
+  StructuredChatResponse,
   TextChapter,
   renderExerciseHelpContext,
   renderReferenceSuggestionsContext,
@@ -17,7 +18,7 @@ import {
 import { ChatAccess, ChatTurnAccess } from './data';
 import { Tiktoken, TiktokenModel, encodingForModel } from 'js-tiktoken';
 import claude from './claude.json';
-import { ChatCompletionMessage } from 'openai/resources/chat';
+import { ChatCompletionChunk, ChatCompletionMessage } from 'openai/resources/chat';
 
 export interface CompletionOptions {
   maxTokens?: number;
@@ -33,9 +34,15 @@ export interface CompletionUpdate {
   id: string;
 }
 
+interface ChatMessageFunctionCall {
+  arguments: string;
+  name: string;
+}
+
 interface ChatMessage {
-  role: 'user' | 'model' | 'system';
-  content: string;
+  role: 'user' | 'model' | 'tool' | 'system';
+  content: string | null;
+  function_call?: ChatMessageFunctionCall;
 }
 
 interface BaseCompletionSource<T extends string> {
@@ -52,8 +59,146 @@ const DEFAULT_OPENAI_MODEL: OpenAIChatModel = 'gpt-3.5-turbo';
 const OPENAI_ROLE_MAPPING: Record<string, OpenAI.Chat.Completions.CreateChatCompletionRequestMessage['role']> = {
   user: 'user',
   model: 'assistant',
+  tool: 'function',
   system: 'system',
 };
+
+const AVAILABLE_FUNCTIONS = [
+  {
+    name: 'create_basic_flashcard',
+    description: 'Create a basic flashcard with a front and a back',
+    parameters: {
+      type: 'object',
+      properties: {
+        front: {
+          type: 'string',
+          description: 'The content for the front of the flashcard',
+        },
+        back: {
+          type: 'string',
+          description: 'The content for the back of the flashcard',
+        },
+        reference: {
+          type: 'string',
+          description: 'Optional reference for the flashcard',
+        },
+      },
+      required: ['front', 'back'],
+    },
+  },
+  {
+    name: 'create_worked_flashcard',
+    description:
+      'Create a worked problem flashcard with a series of steps to solve a problem. This format is more suited for homework-style problems than facts.',
+    parameters: {
+      type: 'object',
+      properties: {
+        steps: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              context: {
+                type: 'string',
+                description:
+                  'This is a mental cue for the user to help them recall `content`, which is hidden until the user reveals it. This should only be enough information to help the user, not enough to solve the problem on its own.',
+              },
+              content: {
+                type: 'string',
+                description:
+                  'One of the steps to solve the problem (or build up to a concept). Steps are hidden until the user reveals them, one at a time, in order. They should be statements, mathematical or otherwise, and not questions or otherwise open-ended.',
+              },
+            },
+            required: ['content'],
+          },
+          description: 'A list of steps, each with optional context and a question',
+        },
+        reference: {
+          type: 'string',
+          description: 'Optional reference for the flashcard',
+        },
+      },
+      required: ['steps'],
+    },
+  },
+  {
+    name: 'create_basic_flashcards',
+    description: 'Create multiple basic flashcards, each with a front and a back',
+    parameters: {
+      type: 'object',
+      properties: {
+        cards: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              front: {
+                type: 'string',
+                description: 'The content for the front of the flashcard',
+              },
+              back: {
+                type: 'string',
+                description: 'The content for the back of the flashcard',
+              },
+              reference: {
+                type: 'string',
+                description: 'Optional reference for the flashcard (MUST BE IN FORMAT `acme:v1/result/1.2.3`)',
+              },
+            },
+            required: ['front', 'back'],
+          },
+          description: 'An array of objects, each representing a basic flashcard',
+        },
+      },
+      required: ['cards'],
+    },
+  },
+  {
+    name: 'create_worked_flashcards',
+    description:
+      'Create multiple worked problem flashcards, each with a series of steps to solve a problem. This format is more suited for homework-style problems than facts.',
+    parameters: {
+      type: 'object',
+      properties: {
+        cards: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              steps: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    context: {
+                      type: 'string',
+                      description:
+                        'This is a mental cue for the user to help them recall `content`, which is hidden until the user reveals it. This should only be enough information to help the user, not enough to solve the problem on its own.',
+                    },
+                    content: {
+                      type: 'string',
+                      description:
+                        'One of the steps to solve the problem (or build up to a concept). Steps are hidden until the user reveals them, one at a time, in order. They should be statements, mathematical or otherwise, and not questions or otherwise open-ended.',
+                    },
+                  },
+                  required: ['content'],
+                },
+                description: 'A list of steps, each with optional context and content, for the flashcard',
+              },
+              reference: {
+                type: 'string',
+                description: 'Optional reference for the flashcard (MUST BE IN FORMAT `acme:v1/result/1.2.3`)',
+              },
+            },
+            required: ['steps'],
+          },
+          description: 'An array of objects, each representing a worked problem flashcard',
+        },
+      },
+      required: ['cards'],
+    },
+  },
+];
 
 export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatModel> {
   constructor(private client: OpenAI) {}
@@ -64,7 +209,7 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
         model: options?.model || DEFAULT_OPENAI_MODEL,
         // max_tokens: options?.maxTokens,
         messages: messages.map((message) => ({
-          content: message.content,
+          content: message.content || '',
           role: OPENAI_ROLE_MAPPING[message.role],
         })),
         logit_bias: {
@@ -94,14 +239,18 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
     messages: ChatMessage[],
     options?: CompletionOptions,
   ): Promise<ChatCompletionMessage.FunctionCall | null> {
+    const mappedMessages = messages.map((message) => ({
+      content: message.function_call
+        ? 'User was shown the output of this operation and had the opportunity to act on it.'
+        : message.content,
+      name: message.function_call?.name,
+      role: OPENAI_ROLE_MAPPING[message.role],
+    }));
     const response = await this.client.chat.completions.create(
       {
         model: options?.model || DEFAULT_OPENAI_MODEL,
         // max_tokens: options?.maxTokens,
-        messages: messages.map((message) => ({
-          content: message.content,
-          role: OPENAI_ROLE_MAPPING[message.role],
-        })),
+        messages: mappedMessages,
         logit_bias: {
           // " [["
           4416: 2,
@@ -109,8 +258,8 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
           400: 2,
         },
         stream: false,
-        functions: options?.functions ?? [],
-        function_call: options?.function_call ?? 'auto',
+        functions: options?.functions,
+        function_call: options?.function_call,
       },
       {
         signal: options?.signal,
@@ -122,6 +271,48 @@ export class OpenAICompletionSource implements BaseCompletionSource<OpenAIChatMo
     }
 
     return null;
+  }
+
+  async *generateStreamingFunctionCallingCompletion(
+    messages: ChatMessage[],
+    options?: CompletionOptions,
+  ): AsyncGenerator<ChatCompletionChunk.Choice.Delta | null> {
+    const mappedMessages = messages.map((message) => ({
+      content: message.function_call ? message.function_call.arguments : message.content,
+      name: message.function_call?.name,
+      role: OPENAI_ROLE_MAPPING[message.role],
+    }));
+    const stream = await this.client.chat.completions.create(
+      {
+        model: options?.model || DEFAULT_OPENAI_MODEL,
+        // max_tokens: options?.maxTokens,
+        messages: mappedMessages,
+        logit_bias: {
+          // " [["
+          4416: 2,
+          // " $"
+          400: 2,
+          // " $$"
+          27199: 2,
+        },
+        stream: true,
+        functions: options?.functions,
+        function_call: options?.function_call,
+      },
+      {
+        signal: options?.signal,
+      },
+    );
+
+    for await (const part of stream) {
+      const deltaContent = part.choices[0].delta;
+      if (deltaContent) {
+        yield deltaContent;
+      }
+    }
+    // Trying to get the last token through
+    yield {};
+    yield {};
   }
 
   async calculateTokenCount(messages: ChatMessage[], model: OpenAIChatModel = DEFAULT_OPENAI_MODEL) {
@@ -312,12 +503,21 @@ export class CompletionManager {
             content: turn.query,
           },
           ...(turn.response
-            ? [
-                {
-                  role: 'model' as ChatMessage['role'],
-                  content: turn.response,
-                },
-              ]
+            ? typeof turn.response === 'string'
+              ? [
+                  {
+                    role: 'model' as ChatMessage['role'],
+                    content: turn.response,
+                  },
+                ]
+              : turn.response.map((response) => ({
+                  role: (response.type === 'function_call' ? 'tool' : 'model') as ChatMessage['role'],
+                  content: 'content' in response ? response?.content : null,
+                  function_call:
+                    response.type === 'function_call'
+                      ? { arguments: (response as ChatMessageFunctionCall).arguments, name: (response as ChatMessageFunctionCall).name }
+                      : undefined,
+                }))
             : []),
         ];
       })
@@ -337,39 +537,93 @@ export class CompletionManager {
       throw new Error('Invalid completion source');
     }
 
-    const generator = completionSource.generateCompletion(messages, {
-      ...options,
-      model: chat.model,
-    });
-
-    let text = '';
+    let text = turn.response || [];
     let eventCount = 0;
 
+    // if completionSource is not openai, throw error for now
+    if (chat.provider !== 'openai') {
+      throw new Error('Invalid completion source');
+    }
+
+    const generator = (completionSource as OpenAICompletionSource).generateStreamingFunctionCallingCompletion(messages, {
+      ...options,
+      model: chat.model,
+      functions: AVAILABLE_FUNCTIONS,
+    });
+
+    let completingChunk: Partial<StructuredChatResponse> | null = null;
+
     for await (const delta of generator) {
-      yield { completion: delta };
+      if (!completingChunk || (completingChunk.type === 'function_call') !== (delta?.function_call !== undefined)) {
+        if (delta?.function_call) {
+          completingChunk = {
+            type: 'function_call',
+            name: delta?.function_call?.name,
+            arguments: delta?.function_call?.arguments || '',
+          };
+          text.push(completingChunk);
+        } else {
+          // TODO: This is bad
+          if (delta?.content || delta?.role) {
+            completingChunk = {
+              type: 'completion',
+              content: delta?.content || '',
+            };
+            text.push(completingChunk);
+          }
+        }
+      }
 
       // Update turn with completion
-      text += delta;
-      // This reduces the number of write operations we do (which can get expensive)
-      if (eventCount % 10 === 0) {
-        this.chatTurns.updateStreamingTurn(turn.id, text);
+      if (delta?.function_call) {
+        if (!completingChunk || completingChunk.type !== 'function_call') {
+          throw new Error('Invalid completion chunk');
+        }
+        if (delta?.function_call?.name) {
+          completingChunk.name = delta?.function_call?.name;
+        } else if (delta?.function_call?.arguments) {
+          completingChunk.arguments += delta?.function_call?.arguments;
+        }
+      } else {
+        if (!completingChunk || completingChunk.type !== 'completion') {
+          throw new Error('Invalid completion chunk');
+        }
+        completingChunk.content += delta?.content || '';
       }
+
+      // This reduces the number of write operations we do (which can get expensive)
+      // if (eventCount % 10 === 0 || Object.entries(delta || {}).length === 0) {
+      this.chatTurns.updateStreamingTurn(turn.id, text as StructuredChatResponse[]);
+      // }
       eventCount += 1;
+
+      yield { completion: delta };
     }
 
     const messagesWithCompletion: ChatMessage[] = [
       ...messages,
-      {
-        role: 'model' as ChatMessage['role'],
-        content: text,
-      },
+      ...text.map((chunk) =>
+        chunk.type === 'function_call'
+          ? {
+              role: 'tool' as ChatMessage['role'],
+              content: null,
+              function_call: {
+                name: chunk.name,
+                arguments: chunk.arguments,
+              } as ChatMessageFunctionCall,
+            }
+          : {
+              role: 'model' as ChatMessage['role'],
+              content: chunk.type === 'completion' ? chunk.content ?? null : null,
+            },
+      ),
     ];
 
     const tokenCount = await completionSource.calculateTokenCount(messagesWithCompletion);
 
     yield { tokenCount };
 
-    await this.chatTurns.finishTurn(turn.id, { response: text, tokenCount });
+    await this.chatTurns.finishTurn(turn.id, { response: text as StructuredChatResponse[], tokenCount });
   }
 
   async generateReferenceSuggestions(reference: string) {

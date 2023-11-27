@@ -6,10 +6,8 @@ import {
   generateTurnStreaming,
   getChat,
   getChatHistory,
-  getChats,
   getReference,
   requestReferenceSuggestions,
-  getTurn,
   getTurnsTo,
 } from "@/lib/api";
 import { buildDisplayReference } from "@/lib/textbook/textbook-ref";
@@ -283,7 +281,7 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
 // Chat context
 export const ChatContext = createContext<ChatContextProps>({
   state: initialState,
-  dispatch: () => null,
+  dispatch: () => {},
 });
 
 // Chat context provider

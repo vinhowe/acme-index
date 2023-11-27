@@ -1,16 +1,24 @@
 import { IRequest, Router, json } from 'itty-router';
 import { AuthenticatedRequest, withAuthenticatedRequest } from '../auth';
 import { Env } from '../types';
-import { DocumentCellAccess, ChatAccess, ChatTurnAccess, Database, DocumentAccess, KVObjectTable, ReferenceAccess } from '../data';
+import {
+  DocumentCellAccess,
+  ChatAccess,
+  ChatTurnAccess,
+  Database,
+  DocumentAccess,
+  KVObjectTable,
+  ReferenceAccess,
+  FlashcardAccess,
+} from '../data';
 import { BotOctokitRequest, withBotOctokit } from '../github';
 import { parseRef } from 'textref';
 import { AnthropicCompletionSource, CompletionManager, CompletionSourceMap, OpenAICompletionSource } from '../completions';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { getTextbook } from '../textbook/util';
-import { Chat, ChatTurn, DocumentCell, ExercisesChapter, TextChapter, UniqueID } from '@acme-index/common';
+import { Chat, ChatTurn, DocumentCell, ExercisesChapter, TextChapter, UniqueID, Flashcard } from '@acme-index/common';
 import { v4 as uuid } from 'uuid';
-import { extension } from 'mime-types';
 
 type UserDataRequest = IRequest & AuthenticatedRequest & { database: Database };
 type CompletionManagerRequest = UserDataRequest & { completionManager: CompletionManager };
@@ -30,19 +38,21 @@ const withUserData = async (request: IRequest & Partial<AuthenticatedRequest> & 
     documents: new DocumentAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:documents`)),
     documentCells: new DocumentCellAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:document-cells`)),
     references: new ReferenceAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:references`)),
+    flashcards: new FlashcardAccess(new KVObjectTable(env.USER_DATA, `user:${request.session.githubId}:flashcards`)),
   };
 };
 
 const withCompletionManager = async (request: UserDataRequest, env: Env) => {
-  const [openaiApiKey, anthropicApiKey] = await Promise.all([
+  const [openaiApiKey, openaiOrg, anthropicApiKey] = await Promise.all([
     env.USER_DATA.get(`user:${request.session.githubId}:openai-api-key`),
+    env.USER_DATA.get(`user:${request.session.githubId}:openai-org`),
     env.USER_DATA.get(`user:${request.session.githubId}:anthropic-api-key`),
   ]);
 
   const completionSources: CompletionSourceMap = {};
 
   if (openaiApiKey) {
-    const openaiClient = new OpenAI({ apiKey: openaiApiKey });
+    const openaiClient = new OpenAI({ apiKey: openaiApiKey, organization: openaiOrg });
     completionSources.openai = new OpenAICompletionSource(openaiClient);
   }
 
@@ -142,7 +152,8 @@ router
     const chat = await request.database.chats.create({
       reference: reference,
       provider: 'openai',
-      model: 'gpt-4',
+      // model: 'gpt-4',
+      model: 'gpt-4-1106-preview',
     });
 
     return json(chat);
@@ -294,6 +305,57 @@ router
     });
 
     return json(suggestions);
+  })
+  .get<UserDataRequest>('/flashcard', async (req, env) => {
+    const flashcards = await req.database.flashcards.getAll();
+    return json(flashcards);
+  })
+  .get<UserDataRequest>('/flashcard/:id', async (req, env) => {
+    const { id } = req.params;
+    const flashcard = await req.database.flashcards.get(id);
+
+    if (!flashcard) {
+      return json({ error: 'Flashcard not found' }, { status: 404 });
+    }
+
+    return json(flashcard);
+  })
+  .post<UserDataRequest>('/flashcard', async (req, env) => {
+    const { type, reference, content } = await req.json<{
+      type: Flashcard['type'];
+      reference: Flashcard['reference'];
+      content: Flashcard['content'];
+    }>();
+
+    const flashcard = await req.database.flashcards.create({
+      type,
+      reference,
+      content,
+    });
+
+    return json(flashcard);
+  })
+  .patch<UserDataRequest>('/flashcard/:id', async (req, env) => {
+    const { id } = req.params;
+    const { type, reference, content, suspended, special, deleted } = await req.json<{
+      type: Flashcard['type'];
+      reference: Flashcard['reference'];
+      content: Flashcard['content'];
+      suspended: Flashcard['suspended'];
+      special: Flashcard['special'];
+      deleted: Flashcard['deleted'];
+    }>();
+
+    const flashcard = await req.database.flashcards.update(id, {
+      type,
+      reference,
+      content,
+      suspended,
+      special,
+      deleted,
+    });
+
+    return json(flashcard);
   })
   .get<UserDataRequest>('/document', async (req, env) => {
     const documents = await req.database.documents.getAll();
