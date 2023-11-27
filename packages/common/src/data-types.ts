@@ -20,7 +20,7 @@ export type Chat = UniqueObject & {
 
 type BaseStructuredChatResponse = {
   type: string;
-}
+};
 
 export interface CompletionResponse extends BaseStructuredChatResponse {
   type: "completion";

@@ -98,9 +98,7 @@ class TextbookContextRenderer {
         // track of—we can pull it from the exercise or the target
         return (
           // !["example", "unexample", "application", "vista"].includes(
-          !["application", "vista"].includes(
-            bodyItem.result_type,
-          ) ||
+          !["application", "vista"].includes(bodyItem.result_type) ||
           (this.pinnedReferences !== undefined &&
             this.pinnedReferences.has(
               this.buildReference("result", bodyItem.id),
