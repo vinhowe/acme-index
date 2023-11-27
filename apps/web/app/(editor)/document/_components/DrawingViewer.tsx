@@ -154,8 +154,12 @@ export function DrawingViewer({
     }
   }, []);
 
-  const height = drawing ? drawing.bounds[1][1] + drawing.bounds[0][1] + 20 : 0;
   const patternSize = Math.max((width - 1) / 30, 5);
+  const height = Math.max(
+    drawing ? drawing.bounds[1][1] + drawing.bounds[0][1] + 20 : 0,
+    patternSize * 4,
+  );
+  const drawingOffsetHeight = drawing ? drawing.bounds[1][1] : 0;
 
   return (
     <div
@@ -163,7 +167,7 @@ export function DrawingViewer({
       style={
         drawing
           ? {
-              height: `${drawing.bounds[1][1] + drawing.bounds[0][1]}px`,
+              height: `${height}px`,
             }
           : {}
       }
@@ -173,7 +177,7 @@ export function DrawingViewer({
         xmlns="http://www.w3.org/2000/svg"
         className="w-full print:hidden"
         style={{
-          height: `${Math.max((width - 1) * (4 / 30), height)}px`,
+          height: `${height}px`,
         }}
         ref={setupPatternRef}
       >
@@ -204,7 +208,7 @@ export function DrawingViewer({
           className="absolute w-full pointer-events-none break-before-avoid"
           style={{
             top: `${drawing.bounds[0][1]}px`,
-            height: `${drawing.bounds[1][1] - drawing.bounds[0][1]}px`,
+            height: `${drawingOffsetHeight}px`,
           }}
         >
           <div className="relative w-full h-full">
