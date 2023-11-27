@@ -1,3 +1,4 @@
+import { CodeCell } from "./code-types";
 import { Drawing } from "./drawing-types";
 
 export type UniqueID = string;
@@ -20,7 +21,7 @@ export type Chat = UniqueObject & {
 
 type BaseStructuredChatResponse = {
   type: string;
-}
+};
 
 export interface CompletionResponse extends BaseStructuredChatResponse {
   type: "completion";
@@ -82,6 +83,10 @@ export interface DocumentTextCell extends BaseDocumentCell<string> {
 
 export interface DocumentDrawingCell extends BaseDocumentCell<Drawing> {
   type: "drawing";
+}
+
+export interface DocumentCodeCell extends BaseDocumentCell<CodeCell> {
+  type: "code";
 }
 
 export type DocumentCell = DocumentTextCell | DocumentDrawingCell;
