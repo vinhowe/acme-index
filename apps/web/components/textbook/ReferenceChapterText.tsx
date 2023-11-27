@@ -1,14 +1,11 @@
-import React, { memo } from "react";
+import React from "react";
 import { TextChapter } from "@acme-index/common";
-import { BodyItems } from "./BodyItem";
-import { SectionItems } from "./SectionItems";
+import { MemoBodyItems } from "./BodyItem";
+import { MemoSectionItems } from "./SectionItems";
 
 export interface ChapterTextProps {
   chapter: TextChapter;
 }
-
-const MemoBodyItems = memo(BodyItems);
-const MemoSectionItems = memo(SectionItems);
 
 const ReferenceChapterText: React.FC<ChapterTextProps> = ({ chapter }) => {
   return (
@@ -18,15 +15,10 @@ const ReferenceChapterText: React.FC<ChapterTextProps> = ({ chapter }) => {
       </h2>
       {chapter.body && (
         <section>
-          <MemoBodyItems bodyItems={chapter.body} virtualizing={false} />
+          <MemoBodyItems bodyItems={chapter.body} />
         </section>
       )}
-      {chapter.sections && (
-        <MemoSectionItems
-          sectionItems={chapter.sections}
-          virtualizing={false}
-        />
-      )}
+      {chapter.sections && <MemoSectionItems sectionItems={chapter.sections} />}
     </article>
   );
 };

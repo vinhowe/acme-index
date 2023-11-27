@@ -1,7 +1,7 @@
 // src/routes/Textbook.js
 import React from "react";
 import ReferenceChapterText from "@/components/textbook/ReferenceChapterText";
-import { getTextbookChapterText, getTextbookChapters } from "@/lib/api";
+import { getTextbookChapterText } from "@/lib/api";
 import { TextChapter } from "@acme-index/common";
 
 export default async function Textbook({
@@ -26,7 +26,7 @@ export default async function Textbook({
 
 export async function generateStaticParams() {
   const chapters = {
-    v1: ["1", "2"],
+    v1: ["1", "2", "3", "4"],
     v2: ["1", "2", "3", "4"],
   };
   return Object.entries(chapters).flatMap(([book, chapters]) =>

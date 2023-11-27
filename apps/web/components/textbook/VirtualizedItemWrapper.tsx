@@ -23,9 +23,7 @@ interface BatchItemVirtualizationContextProps {
 
 // Create context
 export const BatchItemVirtualizationContext =
-  createContext<BatchItemVirtualizationContextProps>({
-    visible: true,
-  });
+  createContext<BatchItemVirtualizationContextProps | null>(null);
 
 const useEnhancedFirstChild = (
   children: React.ReactNode,
@@ -86,10 +84,12 @@ export const BatchItemVirtualizationProvider: React.FC<PropsWithChildren> = ({
   );
 };
 
-export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
+const VirtualizedItemInnerWrapper: React.FC<PropsWithChildren> = ({
   children,
 }) => {
-  const { visible } = useContext(BatchItemVirtualizationContext);
+  const { visible } = useContext(
+    BatchItemVirtualizationContext,
+  ) as BatchItemVirtualizationContextProps;
   const [laggingVisible, setLaggingVisible] = useState<boolean>(true);
   const sizeRef = useRef<{ width: number; height: number }>({
     width: 0,
@@ -147,4 +147,16 @@ export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
       }}
     ></p>
   );
+};
+
+export const VirtualizedItemWrapper: React.FC<PropsWithChildren> = ({
+  children,
+}) => {
+  const context = useContext(BatchItemVirtualizationContext);
+
+  if (!context) {
+    return <>{children}</>;
+  }
+
+  return <VirtualizedItemInnerWrapper>{children}</VirtualizedItemInnerWrapper>;
 };

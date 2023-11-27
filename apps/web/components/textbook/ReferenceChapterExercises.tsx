@@ -1,7 +1,7 @@
 import React from "react";
 import { ExercisesChapter, TextChapter } from "@acme-index/common";
-import { BodyItems } from "./BodyItem";
-import { SectionItems } from "./SectionItems";
+import { MemoBodyItems } from "./BodyItem";
+import { MemoSectionItems } from "./SectionItems";
 
 export interface ChapterExercisesProps {
   chapter: ExercisesChapter | TextChapter;
@@ -17,10 +17,10 @@ const ReferenceChapterExercises: React.FC<ChapterExercisesProps> = ({
       </h2>
       {chapter.body && (
         <section>
-          <BodyItems bodyItems={chapter.body} />
+          <MemoBodyItems bodyItems={chapter.body} />
         </section>
       )}
-      {chapter.sections && <SectionItems sectionItems={chapter.sections} />}
+      {chapter.sections && <MemoSectionItems sectionItems={chapter.sections} />}
     </article>
   );
 };

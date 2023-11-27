@@ -1,17 +1,10 @@
 "use client";
-import { ChatContext, newChat, openChat } from "@/components/chat/ChatProvider";
 import ReferenceInteractions from "@/components/chat/ReferenceInteractions";
-import { BodyItems } from "@/components/textbook/BodyItem";
-import { CopyContentButton } from "@/components/textbook/CopyContentButton";
+import { MemoBodyItems } from "@/components/textbook/BodyItem";
 import Exercise from "@/components/textbook/Exercise";
-import {
-  BaseBodyItem,
-  BodyItem,
-  BodyItemWithReference,
-  ExerciseBodyItem,
-} from "@acme-index/common";
+import { ExerciseBodyItem } from "@acme-index/common";
 import classNames from "classnames";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type IntegratedExercisesProps = {
   book: string;
@@ -62,7 +55,7 @@ export default function IntegratedExercises({
       <div className="w-full">
         {exercises[selectedExercise].body && (
           <Exercise exercise={exercises[selectedExercise]}>
-            <BodyItems bodyItems={exercises[selectedExercise].body} />
+            <MemoBodyItems bodyItems={exercises[selectedExercise].body} />
             <div className="-mx-4 p-4 border-t dark:border-white dark:border-opacity-25">
               <ReferenceInteractions
                 reference={exercises[selectedExercise].reference}

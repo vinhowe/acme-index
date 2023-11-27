@@ -1,43 +1,29 @@
 import React, { memo } from "react";
 import { SectionItem as SectionItemType } from "@acme-index/common";
-import { BodyItems } from "./BodyItem";
 import HeadingAnchor from "./HeadingAnchor";
+import equal from "fast-deep-equal";
+import { MemoBodyItems } from "./BodyItem";
+import MathRender from "./MathRender";
 
 export interface SectionItemsProps {
   sectionItems: SectionItemType[];
-  virtualizing?: boolean;
 }
 
 export interface SectionItemProps {
   sectionItem: SectionItemType;
-  virtualizing?: boolean;
 }
 
-const MemoBodyItems = memo(BodyItems);
-
-export const SectionItems: React.FC<SectionItemsProps> = ({
-  sectionItems,
-  virtualizing = true,
-}) => {
+export const SectionItems: React.FC<SectionItemsProps> = ({ sectionItems }) => {
   return (
     <>
       {sectionItems.map((item, itemIndex) => {
-        return (
-          <MemoSectionItem
-            sectionItem={item}
-            key={itemIndex}
-            virtualizing={virtualizing}
-          />
-        );
+        return <MemoSectionItem sectionItem={item} key={itemIndex} />;
       })}
     </>
   );
 };
 
-const SectionItem: React.FC<SectionItemProps> = ({
-  sectionItem,
-  virtualizing = true,
-}) => {
+const SectionItem: React.FC<SectionItemProps> = ({ sectionItem }) => {
   const HeadingTag = sectionItem.type === "section" ? "h2" : "h3";
   const headingClass = `text-${
     sectionItem.type === "section" ? "2xl" : "xl"
@@ -46,28 +32,26 @@ const SectionItem: React.FC<SectionItemProps> = ({
   return (
     <section>
       <HeadingTag className={headingClass} id={sectionItem.id}>
-        {sectionItem.id}&ensp;{sectionItem.name}{" "}
+        <MathRender body={`${sectionItem.id}&ensp;${sectionItem.name} `} />
         <HeadingAnchor id={sectionItem.id} />
       </HeadingTag>
       {sectionItem.body && (
         <section>
-          <MemoBodyItems
-            bodyItems={sectionItem.body}
-            virtualizing={virtualizing}
-          />
+          <MemoBodyItems bodyItems={sectionItem.body} />
         </section>
       )}
       {sectionItem.type === "section" && sectionItem.sections && (
-        <MemoSectionItems
-          sectionItems={sectionItem.sections}
-          virtualizing={virtualizing}
-        />
+        <MemoSectionItems sectionItems={sectionItem.sections} />
       )}
     </section>
   );
 };
 
-const MemoSectionItem = memo(SectionItem);
-const MemoSectionItems = memo(SectionItems);
+export const MemoSectionItem = memo(SectionItem, (prev, next) => {
+  return equal(prev.sectionItem, next.sectionItem);
+});
+export const MemoSectionItems = memo(SectionItems, (prev, next) => {
+  return equal(prev.sectionItems, next.sectionItems);
+});
 
 export default SectionItem;

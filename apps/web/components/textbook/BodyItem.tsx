@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import Result from "./Result";
 import Proof from "./Proof";
 import PageBreak from "./PageBreak";
@@ -15,54 +15,43 @@ import rehypeHighlight from "rehype-highlight";
 import "@/lib/highlightjs/github-theme-switching.css";
 import { VirtualizedItemWrapper } from "./VirtualizedItemWrapper";
 import Table from "./Table";
+import equal from "fast-deep-equal";
+import { ChangeHighlightingItemWrapper } from "./ChangeHighlightingItemWrapper";
 
 export interface BodyItemsProps {
   bodyItems: BodyItemType[];
   nearestId?: string;
-  virtualizing?: boolean;
 }
 
 export interface BodyItemProps {
   bodyItem: BodyItemType;
   nearestId?: string;
-  virtualizing?: boolean;
 }
 
 export const BodyItems: React.FC<BodyItemsProps> = ({
   bodyItems,
   nearestId,
-  virtualizing = true,
 }) => {
   return (
     <div className="overflow-x-clip">
       {bodyItems.map((item, itemIndex) => {
         return (
-          <MemoBodyItem
-            bodyItem={item}
-            nearestId={nearestId}
-            key={itemIndex}
-            virtualizing={virtualizing}
-          />
+          <ChangeHighlightingItemWrapper key={itemIndex} data={item}>
+            <MemoBodyItem bodyItem={item} nearestId={nearestId} />
+          </ChangeHighlightingItemWrapper>
         );
       })}
     </div>
   );
 };
 
-const BodyItem: React.FC<BodyItemProps> = ({
-  bodyItem,
-  nearestId,
-  virtualizing = true,
-}) => {
+const BodyItem: React.FC<BodyItemProps> = ({ bodyItem, nearestId }) => {
   nearestId = "id" in bodyItem ? (bodyItem.id as string) : nearestId;
 
   switch (bodyItem.type) {
     case "text":
       const body = <InlineBody items={bodyItem.body} />;
-      if (virtualizing) {
-        return <VirtualizedItemWrapper>{body}</VirtualizedItemWrapper>;
-      }
-      return body;
+      return <VirtualizedItemWrapper>{body}</VirtualizedItemWrapper>;
     case "standalone_heading":
       const HeadingTag = `h${bodyItem.level}` as keyof JSX.IntrinsicElements;
       return (
@@ -83,7 +72,6 @@ const BodyItem: React.FC<BodyItemProps> = ({
           <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`exercise-${bodyItem.id}`}
-            virtualizing={virtualizing}
           />
         </Exercise>
       );
@@ -107,11 +95,12 @@ const BodyItem: React.FC<BodyItemProps> = ({
                   )}
                   {item.body.map((bodyItem, bodyItemIndex) => {
                     return (
-                      <MemoBodyItem
-                        bodyItem={bodyItem}
+                      <ChangeHighlightingItemWrapper
                         key={bodyItemIndex}
-                        virtualizing={virtualizing}
-                      />
+                        data={bodyItem}
+                      >
+                        <MemoBodyItem bodyItem={bodyItem} />
+                      </ChangeHighlightingItemWrapper>
                     );
                   })}
                 </li>
@@ -159,7 +148,6 @@ const BodyItem: React.FC<BodyItemProps> = ({
           <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`equation-${bodyItem.id}`}
-            virtualizing={virtualizing}
           />
         </Equation>
       );
@@ -169,7 +157,6 @@ const BodyItem: React.FC<BodyItemProps> = ({
           <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`algorithm-${bodyItem.id}`}
-            virtualizing={virtualizing}
           />
         </Algorithm>
       );
@@ -179,7 +166,6 @@ const BodyItem: React.FC<BodyItemProps> = ({
           <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`table-${bodyItem.id}`}
-            virtualizing={virtualizing}
           />
         </Table>
       );
@@ -189,18 +175,13 @@ const BodyItem: React.FC<BodyItemProps> = ({
           <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`result-${bodyItem.id}`}
-            virtualizing={virtualizing}
           />
         </Result>
       );
     case "figure":
       return (
         <Figure figure={bodyItem}>
-          <MemoBodyItems
-            bodyItems={bodyItem.body}
-            nearestId={nearestId}
-            virtualizing={virtualizing}
-          />
+          <MemoBodyItems bodyItems={bodyItem.body} nearestId={nearestId} />
         </Figure>
       );
     case "proof":
@@ -209,7 +190,6 @@ const BodyItem: React.FC<BodyItemProps> = ({
           <MemoBodyItems
             bodyItems={bodyItem.body}
             nearestId={`proof-${bodyItem.of}`}
-            virtualizing={virtualizing}
           />
         </Proof>
       );
@@ -218,7 +198,15 @@ const BodyItem: React.FC<BodyItemProps> = ({
   }
 };
 
-const MemoBodyItem = React.memo(BodyItem);
-const MemoBodyItems = React.memo(BodyItems);
+export const MemoBodyItem = memo(BodyItem, (prev, next) => {
+  return (
+    equal(prev.bodyItem, next.bodyItem) && prev.nearestId === next.nearestId
+  );
+});
+export const MemoBodyItems = memo(BodyItems, (prev, next) => {
+  return (
+    equal(prev.bodyItems, next.bodyItems) && prev.nearestId === next.nearestId
+  );
+});
 
 export default BodyItem;
