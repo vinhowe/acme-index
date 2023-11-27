@@ -3,9 +3,9 @@ import { usePathname } from "next/navigation";
 import DocumentsPage from "./DocumentsPage";
 import { createDocument } from "@/lib/api";
 import { useCallback, useState } from "react";
-import ResizableDocumentTitleInput from "./ResizableDocumentTitleInput";
 import DocumentPage from "./DocumentPage";
-import { PrintAwareDocumentFrame } from "./PrintAwareDocumentFrame";
+import ResizableDocumentTitleInput from "@/components/document/ResizableDocumentTitleInput";
+import { PrintAwareDocumentFrame } from "@/components/document/PrintAwareDocumentFrame";
 
 const urlRegex = /\/document\/(?<id>[^?&#]*)/;
 

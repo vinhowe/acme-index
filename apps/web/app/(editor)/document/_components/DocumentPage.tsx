@@ -12,11 +12,11 @@ import DocumentCellView from "./DocumentCellView";
 import {
   DocumentEditingProvider,
   useDocumentEditing,
-} from "./DocumentEditingProvider";
-import { PrintAwareDocumentFrame } from "./PrintAwareDocumentFrame";
-import ResizableDocumentTitleInput from "./ResizableDocumentTitleInput";
-import ResizableReferenceInput from "./ResizableReferenceInput";
-import { useDocumentKeybinds } from "./hooks";
+} from "@/components/document/DocumentEditingProvider";
+import { useDocumentKeybinds } from "@/components/document/useDocumentKeybinds";
+import { PrintAwareDocumentFrame } from "@/components/document/PrintAwareDocumentFrame";
+import ResizableDocumentTitleInput from "@/components/document/ResizableDocumentTitleInput";
+import ResizableReferenceInput from "../../flashcard/_components/ResizableReferenceInput";
 
 export function DocumentView() {
   const {

@@ -50,18 +50,11 @@ import {
   useState,
 } from "react";
 import { DocumentCell, DocumentDrawingCell, Drawing } from "@acme-index/common";
-import { DrawingViewer } from "./DrawingViewer";
 import { useCodeMirror } from "@uiw/react-codemirror";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
-import DocumentMarkdownRenderer from "./DocumentMarkdownRenderer";
 import { API_URL, uploadFile } from "@/lib/api";
 import { extension } from "mime-types";
 import { offsetDrawing } from "@/lib/editor/drawing-utils";
-import {
-  CellEditingState,
-  useDocumentEditing,
-} from "./DocumentEditingProvider";
-import { usePrintAwareFrame } from "./PrintAwareDocumentFrame";
 import {
   CreatePortalMethod,
   createPortalMethod,
@@ -70,6 +63,13 @@ import {
   destroyPortalMethodConf,
 } from "@/lib/editor/codemirror/react-portal-extension";
 import { createPortal } from "react-dom";
+import { DrawingViewer } from "@/components/document/DrawingViewer";
+import {
+  CellEditingState,
+  useDocumentEditing,
+} from "@/components/document/DocumentEditingProvider";
+import { usePrintAwareFrame } from "@/components/document/PrintAwareDocumentFrame";
+import DocumentMarkdownRenderer from "@/components/document/DocumentMarkdownRenderer";
 
 interface SnippetDefinition {
   expansion: string;
