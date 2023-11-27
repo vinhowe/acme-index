@@ -32,6 +32,9 @@ export default function ResizableDocumentTitleInput({
 
   const finishEditing = useCallback(() => {
     setSelected(false);
+    if (value.trim().length === 0) {
+      return;
+    }
     onSubmit?.(value, slugify(value));
   }, [onSubmit, value]);
 
