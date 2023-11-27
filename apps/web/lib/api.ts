@@ -388,9 +388,9 @@ export const getDocumentCell = async (
   return json;
 };
 
-export const uploadFile = async (file: File): Promise<{ id: string }> => {
+export const uploadFile = async (blob: Blob): Promise<{ id: string }> => {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", blob);
   const response = await fetch(`${API_URL}/file`, {
     method: "POST",
     credentials: "include",
@@ -401,4 +401,19 @@ export const uploadFile = async (file: File): Promise<{ id: string }> => {
     throw new Error(json.error);
   }
   return json;
+};
+
+export const ocrMathImage = async (blob: Blob): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", blob);
+  const response = await fetch(`${API_URL}/util/math-ocr`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  const json = await response.json();
+  if (json.error) {
+    throw new Error(json.error);
+  }
+  return json.text;
 };

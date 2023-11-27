@@ -470,4 +470,38 @@ router
     return new Response(file.body, {
       headers,
     });
+  })
+  .post<AuthenticatedRequest>('/util/math-ocr', withAuthenticatedRequest, async (request, env: Env) => {
+    // Get image from form data
+    const requestFormData = await request.formData();
+    const file = requestFormData.get('file') as unknown as File;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Add the options_json to the FormData object
+    const optionsJson = {
+      math_inline_delimiters: ['$', '$'],
+      math_block_delimiters: ['$$', '$$'],
+      rm_spaces: true,
+    };
+    formData.append('options_json', JSON.stringify(optionsJson));
+
+    // Perform the fetch request
+    const response = await fetch('https://api.mathpix.com/v3/text', {
+      method: 'POST',
+      headers: {
+        app_id: env.MATHPIX_APP_ID,
+        app_key: env.MATHPIX_APP_KEY,
+      },
+      body: formData,
+    });
+
+    // Parse the response
+    const result = await response.json();
+
+    // Return the result
+    return new Response(JSON.stringify(result), {
+      status: 200,
+    });
   });

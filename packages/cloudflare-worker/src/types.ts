@@ -22,5 +22,7 @@ export interface Env {
   TEXT_REPOSITORY: string;
   JWT_SECRET: string;
   WEBCRYPT_SESSION_SECRET: string;
+  MATHPIX_APP_KEY: string;
+  MATHPIX_APP_ID: string;
   ENVIRONMENT: 'development' | 'production';
 }
