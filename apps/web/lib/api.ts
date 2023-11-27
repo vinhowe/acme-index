@@ -138,6 +138,7 @@ export async function generateTurnStreaming(
   let turn: ChatTurn | null = null;
 
   await fetchEventSource(`${API_URL}/chat/${chatId}/turn`, {
+    openWhenHidden: true,
     method: "POST",
     credentials: "include",
     headers: {
